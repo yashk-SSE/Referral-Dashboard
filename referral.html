@@ -194,14 +194,16 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .ch-btn.active{background:var(--sur);color:var(--bl);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
 .ch-btn:hover:not(.active){color:var(--t1)}
 body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
-/* Digital sidebar section */
-.sh-d{background:#0f4c81;color:#fff}
-.ni-d{color:#e0efff}
-.ni-d.active,.ni-d:hover{background:#1a56db22;color:#60a5fa}
-/* Compare section */
-.sh-cmp{background:#5b21b6;color:#fff}
-.ni-cmp{color:#ede9fe}
-.ni-cmp.active,.ni-cmp:hover{background:#7c3aed22;color:#a78bfa}
+/* Digital sidebar section — matches Referral styling */
+.sh-d{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--t3);padding:10px 12px 4px;text-transform:uppercase}
+.ni-d{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:var(--t2);border-left:2px solid transparent;transition:background .1s}
+.ni-d:hover{background:var(--bg)}
+.ni-d.active{background:var(--bll);color:var(--bl);border-left-color:var(--bl);font-weight:600}
+/* Compare section — matches Referral styling */
+.sh-cmp{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--t3);padding:10px 12px 4px;text-transform:uppercase}
+.ni-cmp{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:var(--t2);border-left:2px solid transparent;transition:background .1s}
+.ni-cmp:hover{background:var(--bg)}
+.ni-cmp.active{background:var(--bll);color:var(--bl);border-left-color:var(--bl);font-weight:600}
 /* Comparison tab styles */
 .ch-col{flex:1;min-width:0}
 .ch-col-hdr{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;margin-bottom:8px;text-align:center}
@@ -4365,134 +4367,192 @@ function bCompare(){
   const yd=C.yd,months=C.months,mtdDay=yd.getDate();
   const rI=C.india,dI=DC.india,rIL=C.indiaL,dIL=DC.indiaL;
   function aggR(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
+  // MoM growth helper
+  function momGrowth(cur,prev){if(!prev||prev===0)return null;return((cur-prev)/prev*100);}
+  function growthBadge(pct,label,inverted=false){
+    if(pct==null)return`<span style="color:var(--t3);font-size:10px">n/a</span>`;
+    const good=inverted?(pct<0):(pct>=0);
+    const col=good?'var(--gn)':'var(--rd)';
+    return`<span style="color:${col};font-size:11px;font-weight:600">${pct>=0?'+':''}${pct.toFixed(1)}%</span><span style="font-size:9px;color:var(--t3);margin-left:2px">${label}</span>`;
+  }
+  // Compare MoM growth badge: who grew faster?
+  function growthCmp(rPct,dPct,label){
+    if(rPct==null&&dPct==null)return`<td style="text-align:center;color:var(--t3)">-</td>`;
+    const rG=rPct!=null?`<span style="color:#1a56db;font-weight:600">${rPct>=0?'+':''}${rPct.toFixed(1)}%</span>`:`<span style='color:var(--t3)'>n/a</span>`;
+    const dG=dPct!=null?`<span style="color:#059669;font-weight:600">${dPct>=0?'+':''}${dPct.toFixed(1)}%</span>`:`<span style='color:var(--t3)'>n/a</span>`;
+    let winner='';
+    if(rPct!=null&&dPct!=null){
+      if(rPct>dPct+1)winner=`<span class="win-badge win-r" style="font-size:8px;margin-left:3px">REF faster</span>`;
+      else if(dPct>rPct+1)winner=`<span class="win-badge win-d" style="font-size:8px;margin-left:3px">DIG faster</span>`;
+      else winner=`<span class="win-badge win-tie" style="font-size:8px;margin-left:3px">≈ similar</span>`;
+    }
+    return`<td style="text-align:center">${rG}<br>${dG}${winner}</td>`;
+  }
 
-  // India KPI cards
-  const kpiCols={BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
-  const kpiCards=['BQL','MS','MD','Order','HOTO'].map(m=>{
-    const rv=rI[m],dv=dI[m],rvl=rIL[m],dvl=dIL[m];
-    const rChg=rvl>0?Math.round((rv-rvl)/rvl*100):0,dChg=dvl>0?Math.round((dv-dvl)/dvl*100):0;
-    const winner=rv>dv?'R':dv>rv?'D':'=';
-    return`<div class="cmp-card">
-      <div class="cmp-metric">${m} — MTD</div>
-      <div class="cmp-vals">
-        <div><div class="cmp-r">${f(rv)}</div><span class="cmp-lbl">Referral <span style="color:${rChg>=0?'var(--gn)':'var(--rd)'};">${rChg>=0?'+':''}${rChg}%</span></span></div>
-        <div style="font-size:14px;color:var(--t3);align-self:center">vs</div>
-        <div><div class="cmp-d">${f(dv)}</div><span class="cmp-lbl">Digital <span style="color:${dChg>=0?'var(--gn)':'var(--rd)'};">${dChg>=0?'+':''}${dChg}%</span></span></div>
-        <div style="align-self:center;margin-left:auto"><span class="win-badge ${winner==='R'?'win-r':winner==='D'?'win-d':'win-tie'}">${winner==='R'?'REF ↑':winner==='D'?'DIG ↑':'TIED'}</span></div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Funnel conversion KPIs
-  const rBMS=pN(rI.MS,rI.BQL).toFixed(1),dBMS=pN(dI.MS,dI.BQL).toFixed(1);
-  const rMMD=pN(rI.MD,rI.MS).toFixed(1),dMMD=pN(dI.MD,dI.MS).toFixed(1);
-  const rMO=pN(rI.Order,rI.MD).toFixed(1),dMO=pN(dI.Order,dI.MD).toFixed(1);
-  const rMH=pN(rI.HOTO,rI.MD).toFixed(1),dMH=pN(dI.HOTO,dI.MD).toFixed(1);
-  const funnelCards=[
-    {lbl:'BQL→MS%',rv:rBMS,dv:dBMS},{lbl:'MS→MD%',rv:rMMD,dv:dMMD},
-    {lbl:'MD→Order%',rv:rMO,dv:dMO},{lbl:'MD→HOTO%',rv:rMH,dv:dMH}
-  ].map(({lbl,rv,dv})=>{
-    const rn=parseFloat(rv),dn=parseFloat(dv);
-    const winner=rn>dn?'R':dn>rn?'D':'=';
-    return`<div class="cmp-card">
-      <div class="cmp-metric">${lbl}</div>
-      <div class="cmp-vals">
-        <div><div class="cmp-r">${rv}%</div><span class="cmp-lbl">Referral</span></div>
-        <div style="font-size:14px;color:var(--t3);align-self:center">vs</div>
-        <div><div class="cmp-d">${dv}%</div><span class="cmp-lbl">Digital</span></div>
-        <div style="align-self:center;margin-left:auto"><span class="win-badge ${winner==='R'?'win-r':winner==='D'?'win-d':'win-tie'}">${winner==='R'?'REF ↑':winner==='D'?'DIG ↑':'TIED'}</span></div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // MoM 6M comparison table
-  const moRows=months.map((mo,i)=>{
-    const isCur=i===months.length-1;
+  // Build 6M MoM growth table (full months; MTD row is last)
+  const moData=months.map((mo,i)=>{
     const r=aggR(ED.filter(x=>x.year===mo.y&&x.month===mo.m));
     const d=aggR(DED.filter(x=>x.year===mo.y&&x.month===mo.m));
-    const rBms=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),dBms=(d.MS/Math.max(d.BQL,1)*100).toFixed(1);
-    const rMmd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),dMmd=(d.MD/Math.max(d.MS,1)*100).toFixed(1);
-    const rMo=(r.Order/Math.max(r.MD,1)*100).toFixed(1),dMo=(d.Order/Math.max(d.MD,1)*100).toFixed(1);
-    const win=(rv,dv)=>`<span class="win-badge ${parseFloat(rv)>parseFloat(dv)?'win-r':parseFloat(dv)>parseFloat(rv)?'win-d':'win-tie'}" style="font-size:8px">${parseFloat(rv)>parseFloat(dv)?'R':parseFloat(dv)>parseFloat(rv)?'D':'='}</span>`;
-    return`<tr ${isCur?'style="background:#f0f9ff"':''}>
-      <td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">MTD</span>':''}</td>
-      <td><span style="color:#1a56db;font-weight:600">${f(r.BQL)}</span> / <span style="color:#059669;font-weight:600">${f(d.BQL)}</span></td>
-      <td><span style="color:#1a56db">${f(r.MS)}</span> / <span style="color:#059669">${f(d.MS)}</span></td>
-      <td><span style="color:#1a56db">${f(r.MD)}</span> / <span style="color:#059669">${f(d.MD)}</span></td>
-      <td><span style="color:#1a56db">${f(r.Order)}</span> / <span style="color:#059669">${f(d.Order)}</span></td>
-      <td><span style="color:#1a56db">${f(r.HOTO)}</span> / <span style="color:#059669">${f(d.HOTO)}</span></td>
-      <td><span style="color:#1a56db">${rBms}%</span> / <span style="color:#059669">${dBms}%</span>${win(rBms,dBms)}</td>
-      <td><span style="color:#1a56db">${rMmd}%</span> / <span style="color:#059669">${dMmd}%</span>${win(rMmd,dMmd)}</td>
-      <td><span style="color:#1a56db">${rMo}%</span> / <span style="color:#059669">${dMo}%</span>${win(rMo,dMo)}</td>
+    const rF={BQL:pN(r.MS,r.BQL),MS_MD:pN(r.MD,r.MS),MD_Ord:pN(r.Order,r.MD)};
+    const dF={BQL:pN(d.MS,d.BQL),MS_MD:pN(d.MD,d.MS),MD_Ord:pN(d.Order,d.MD)};
+    return{mo,r,d,rF,dF,i};
+  });
+
+  const momRows=moData.map(({mo,r,d,rF,dF,i})=>{
+    const isCur=i===months.length-1;
+    const prev=i>0?moData[i-1]:null;
+    const metrics=['BQL','MS','MD','Order','HOTO'];
+    const cells=metrics.map(m=>{
+      const rPct=prev?momGrowth(r[m],prev.r[m]):null;
+      const dPct=prev?momGrowth(d[m],prev.d[m]):null;
+      return growthCmp(rPct,dPct,m);
+    });
+    const fCells=[
+      {rF:rF.BQL,dF:dF.BQL,lbl:'BQL→MS%'},
+      {rF:rF.MS_MD,dF:dF.MS_MD,lbl:'MS→MD%'},
+      {rF:rF.MD_Ord,dF:dF.MD_Ord,lbl:'MD→Ord%'}
+    ].map(({rF:rf,dF:df})=>{
+      const rPct=prev?momGrowth(rf,prev.rF[Object.keys(prev.rF)[['BQL→MS%','MS→MD%','MD→Ord%'].indexOf(_=>false)]]):null;
+      // funnel %: just show value change in pp
+      const rPP=prev?(rf-prev.rF.BQL):null; // placeholder — use actual pp diff
+      return''; // handled below
+    });
+    // funnel pp change
+    const fCellsHtml=[
+      [rF.BQL,dF.BQL,prev?.rF.BQL,prev?.dF.BQL],
+      [rF.MS_MD,dF.MS_MD,prev?.rF.MS_MD,prev?.dF.MS_MD],
+      [rF.MD_Ord,dF.MD_Ord,prev?.rF.MD_Ord,prev?.dF.MD_Ord]
+    ].map(([rv,dv,rp,dp])=>{
+      const rPP=rp!=null?(rv-rp):null;
+      const dPP=dp!=null?(dv-dp):null;
+      const rT=`<span style="color:#1a56db;font-weight:600">${rv.toFixed(1)}%${rPP!=null?` <span style="font-size:9px">(${rPP>=0?'+':''}${rPP.toFixed(1)}pp)</span>`:''}</span>`;
+      const dT=`<span style="color:#059669;font-weight:600">${dv.toFixed(1)}%${dPP!=null?` <span style="font-size:9px">(${dPP>=0?'+':''}${dPP.toFixed(1)}pp)</span>`:''}</span>`;
+      let win='';
+      if(rPP!=null&&dPP!=null){
+        win=rPP>dPP+0.5?`<span class="win-badge win-r" style="font-size:8px">REF+</span>`:dPP>rPP+0.5?`<span class="win-badge win-d" style="font-size:8px">DIG+</span>`:`<span class="win-badge win-tie" style="font-size:8px">≈</span>`;
+      }
+      return`<td style="text-align:center">${rT}<br>${dT} ${win}</td>`;
+    }).join('');
+
+    return`<tr ${isCur?'style="background:#eff6ff"':''}>
+      <td style="font-weight:${isCur?700:500}">${mo.lbl}${isCur?` <span class="badge bb">MTD</span>`:''}</td>
+      ${cells.join('')}
+      ${fCellsHtml}
     </tr>`;
   }).join('');
 
-  // City comparison table
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const cityRows=CITIES.slice().sort((a,b)=>(tierOrd[TIERS[a]]||9)-(tierOrd[TIERS[b]]||9)).map(c=>{
-    const rv=C.cMTD[c],dv=DC.cMTD[c];
-    if(!rv.BQL&&!dv.BQL&&!rv.HOTO&&!dv.HOTO)return'';
-    const rBms=pN(rv.MS,rv.BQL).toFixed(1),dBms=pN(dv.MS,dv.BQL).toFixed(1);
-    const rMmd=pN(rv.MD,rv.MS).toFixed(1),dMmd=pN(dv.MD,dv.MS).toFixed(1);
-    const rMo=pN(rv.Order,rv.MD).toFixed(1),dMo=pN(dv.Order,dv.MD).toFixed(1);
-    const winCell=(rv,dv,isNum=true)=>{const rn=parseFloat(rv),dn=parseFloat(dv);const better=rn>dn?'win-r':dn>rn?'win-d':'win-tie';const lbl=rn>dn?'R':dn>rn?'D':'=';return`<td><span style="color:#1a56db;font-weight:600">${isNum?f(rn):rv}</span><br><span style="color:#059669">${isNum?f(dn):dv}</span><span class="win-badge ${better}" style="font-size:8px;margin-left:3px">${lbl}</span></td>`;};
-    const fcWin=(rv,dv)=>{const rn=parseFloat(rv),dn=parseFloat(dv);const better=rn>dn?'win-r':dn>rn?'win-d':'win-tie';const lbl=rn>dn?'R':dn>rn?'D':'=';return`<td><span style="color:#1a56db">${rv}%</span> / <span style="color:#059669">${dv}%</span><span class="win-badge ${better}" style="font-size:8px;margin-left:2px">${lbl}</span></td>`;};
-    return`<tr>
-      <td><strong>${c}</strong><span class="ctag">${TIERS[c]||''}</span></td>
-      ${winCell(rv.BQL,dv.BQL)}${winCell(rv.MS,dv.MS)}${winCell(rv.MD,dv.MD)}
-      ${winCell(rv.Order,dv.Order)}${winCell(rv.HOTO,dv.HOTO)}
-      ${fcWin(rBms,dBms)}${fcWin(rMmd,dMmd)}${fcWin(rMo,dMo)}
-    </tr>`;
-  }).filter(Boolean).join('');
+  // Summary KPI cards: current month growth vs last month, for each metric
+  const METRICS=['BQL','MS','MD','Order','HOTO'];
+  const curMo=moData[moData.length-1],prevMo=moData[moData.length-2];
+  const kpiCards=METRICS.map(m=>{
+    const rv=curMo.r[m],dv=curMo.d[m];
+    const rPct=prevMo?momGrowth(rv,prevMo.r[m]):null;
+    const dPct=prevMo?momGrowth(dv,prevMo.d[m]):null;
+    const colors={BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
+    let winner='';
+    if(rPct!=null&&dPct!=null){
+      winner=rPct>dPct+1?`<span class="win-badge win-r">REF grew faster</span>`:dPct>rPct+1?`<span class="win-badge win-d">DIG grew faster</span>`:`<span class="win-badge win-tie">≈ similar growth</span>`;
+    }
+    return`<div class="cmp-card">
+      <div class="cmp-metric" style="color:${colors[m]};font-weight:700">${m} — MoM Growth (MTD vs LMTD)</div>
+      <div style="display:flex;gap:14px;align-items:flex-end;margin-top:4px">
+        <div>
+          <div class="cmp-r" style="font-size:16px">${rPct!=null?(rPct>=0?'+':'')+rPct.toFixed(1)+'%':'n/a'}</div>
+          <span class="cmp-lbl">Referral (${f(rv)} vs ${f(prevMo?.r[m]||0)})</span>
+        </div>
+        <div style="font-size:12px;color:var(--t3);align-self:center">vs</div>
+        <div>
+          <div class="cmp-d" style="font-size:16px">${dPct!=null?(dPct>=0?'+':'')+dPct.toFixed(1)+'%':'n/a'}</div>
+          <span class="cmp-lbl">Digital (${f(dv)} vs ${f(prevMo?.d[m]||0)})</span>
+        </div>
+        <div style="align-self:center;margin-left:auto">${winner}</div>
+      </div>
+    </div>`;
+  }).join('');
 
-  // Auto-generate insights
+  // Funnel growth cards
+  const rBMS=pN(rI.MS,rI.BQL),dBMS=pN(dI.MS,dI.BQL);
+  const rMMD=pN(rI.MD,rI.MS),dMMD=pN(dI.MD,dI.MS);
+  const rMO=pN(rI.Order,rI.MD),dMO=pN(dI.Order,dI.MD);
+  const rLBMS=pN(C.indiaL.MS,C.indiaL.BQL),dLBMS=pN(DC.indiaL.MS,DC.indiaL.BQL);
+  const rLMMD=pN(C.indiaL.MD,C.indiaL.MS),dLMMD=pN(DC.indiaL.MD,DC.indiaL.MS);
+  const rLMO=pN(C.indiaL.Order,C.indiaL.MD),dLMO=pN(DC.indiaL.Order,DC.indiaL.MD);
+
+  const funnelCards=[
+    {lbl:'BQL→MS%',rv:rBMS,dv:dBMS,rvL:rLBMS,dvL:dLBMS},
+    {lbl:'MS→MD%',rv:rMMD,dv:dMMD,rvL:rLMMD,dvL:dLMMD},
+    {lbl:'MD→Order%',rv:rMO,dv:dMO,rvL:rLMO,dvL:dLMO}
+  ].map(({lbl,rv,dv,rvL,dvL})=>{
+    const rPP=rv-rvL,dPP=dv-dvL;
+    let winner=rPP>dPP+0.5?`<span class="win-badge win-r">REF improving faster</span>`:dPP>rPP+0.5?`<span class="win-badge win-d">DIG improving faster</span>`:`<span class="win-badge win-tie">≈ similar</span>`;
+    return`<div class="cmp-card">
+      <div class="cmp-metric" style="font-weight:700">${lbl} — MTD vs LMTD change (pp)</div>
+      <div style="display:flex;gap:14px;align-items:flex-end;margin-top:4px">
+        <div>
+          <div class="cmp-r" style="font-size:16px">${rv.toFixed(1)}% <span style="font-size:11px;color:${rPP>=0?'var(--gn)':'var(--rd)'}">(${rPP>=0?'+':''}${rPP.toFixed(1)}pp)</span></div>
+          <span class="cmp-lbl">Referral (was ${rvL.toFixed(1)}%)</span>
+        </div>
+        <div style="font-size:12px;color:var(--t3);align-self:center">vs</div>
+        <div>
+          <div class="cmp-d" style="font-size:16px">${dv.toFixed(1)}% <span style="font-size:11px;color:${dPP>=0?'var(--gn)':'var(--rd)'}">(${dPP>=0?'+':''}${dPP.toFixed(1)}pp)</span></div>
+          <span class="cmp-lbl">Digital (was ${dvL.toFixed(1)}%)</span>
+        </div>
+        <div style="align-self:center;margin-left:auto">${winner}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Channel insights — growth narrative
   const insights=[];
-  // Overall funnel comparison
-  if(parseFloat(rBMS)>parseFloat(dBMS)+3)insights.push({lv:'info',line:`<strong>Referral converts BQL→MS faster</strong> — ${rBMS}% vs Digital ${dBMS}% (+${(parseFloat(rBMS)-parseFloat(dBMS)).toFixed(1)}pp). Referral leads have higher intent at top of funnel.`});
-  else if(parseFloat(dBMS)>parseFloat(rBMS)+3)insights.push({lv:'info',line:`<strong>Digital converts BQL→MS faster</strong> — ${dBMS}% vs Referral ${rBMS}% (+${(parseFloat(dBMS)-parseFloat(rBMS)).toFixed(1)}pp). Digital leads show strong initial response.`});
-  if(parseFloat(rMO)>parseFloat(dMO)+3)insights.push({lv:'info',line:`<strong>Referral MD→Order% is higher</strong> — ${rMO}% vs Digital ${dMO}%. Referral channel closes better post-meeting.`});
-  else if(parseFloat(dMO)>parseFloat(rMO)+3)insights.push({lv:'info',line:`<strong>Digital MD→Order% is higher</strong> — ${dMO}% vs Referral ${rMO}%. Digital leads convert more after meeting done.`});
-  // Volume comparison
-  if(rI.BQL>0&&dI.BQL>0){const ratio=(rI.BQL/dI.BQL).toFixed(1);insights.push({lv:'info',line:`<strong>Volume ratio</strong> — Referral generates ${ratio}x more BQL than Digital this month (${f(rI.BQL)} vs ${f(dI.BQL)}).`});}
-  // City-level winners
-  const refWinCities=CITIES.filter(c=>pN(C.cMTD[c].Order,C.cMTD[c].MD)>pN(DC.cMTD[c].Order,DC.cMTD[c].MD)+5&&C.cMTD[c].MD>5);
-  const digWinCities=CITIES.filter(c=>pN(DC.cMTD[c].Order,DC.cMTD[c].MD)>pN(C.cMTD[c].Order,C.cMTD[c].MD)+5&&DC.cMTD[c].MD>5);
-  if(refWinCities.length)insights.push({lv:'appr',line:`<strong>Referral stronger MD→Order</strong> in: ${refWinCities.slice(0,5).join(', ')}. These cities show Referral closing advantage.`});
-  if(digWinCities.length)insights.push({lv:'appr',line:`<strong>Digital stronger MD→Order</strong> in: ${digWinCities.slice(0,5).join(', ')}. Invest in Digital quality in these cities.`});
-  if(!insights.length)insights.push({lv:'info',line:'Both channels performing at similar levels this month. Monitor weekly for divergence.'});
-  const IAC2={info:{bg:'#eff6ff',bd:'#bfdbfe',dk:'#1a56db'},appr:{bg:'#f0fdf4',bd:'#bbf7d0',dk:'#166534'},crit:{bg:'#fef2f2',bd:'#fecaca',dk:'#dc2626'}};
+  const checkGrowth=(m,rPct,dPct)=>{
+    if(rPct==null||dPct==null)return;
+    const diff=rPct-dPct;
+    if(Math.abs(diff)<3)insights.push({lv:'info',line:`<strong>${m} growing at similar pace</strong> — Referral ${rPct>=0?'+':''}${rPct.toFixed(1)}% vs Digital ${dPct>=0?'+':''}${dPct.toFixed(1)}% MoM. Both channels aligned.`});
+    else if(diff>3)insights.push({lv:'appr',line:`<strong>Referral outgrowing Digital on ${m}</strong> — ${rPct.toFixed(1)}% vs ${dPct.toFixed(1)}% MoM (+${diff.toFixed(1)}pp gap). Referral momentum stronger.`});
+    else insights.push({lv:'warn',line:`<strong>Digital outgrowing Referral on ${m}</strong> — ${dPct.toFixed(1)}% vs ${rPct.toFixed(1)}% MoM (+${Math.abs(diff).toFixed(1)}pp gap). Digital accelerating; check referral quality initiatives.`});
+  };
+  METRICS.forEach(m=>{
+    const rPct=prevMo?momGrowth(curMo.r[m],prevMo.r[m]):null;
+    const dPct=prevMo?momGrowth(curMo.d[m],prevMo.d[m]):null;
+    checkGrowth(m,rPct,dPct);
+  });
+  // Funnel comparison
+  const rBMSdiff=rBMS-rLBMS,dBMSdiff=dBMS-dLBMS;
+  if(Math.abs(rBMSdiff-dBMSdiff)>2)insights.push({lv:'info',line:`<strong>BQL→MS funnel shift</strong> — Referral ${rBMSdiff>=0?'+':''}${rBMSdiff.toFixed(1)}pp vs Digital ${dBMSdiff>=0?'+':''}${dBMSdiff.toFixed(1)}pp. ${rBMSdiff>dBMSdiff?'Referral LRM engagement improving faster.':'Digital LRM response improving faster.'}`});
+  const rMOdiff=rMO-rLMO,dMOdiff=dMO-dLMO;
+  if(Math.abs(rMOdiff-dMOdiff)>2)insights.push({lv:'info',line:`<strong>MD→Order closure shift</strong> — Referral ${rMOdiff>=0?'+':''}${rMOdiff.toFixed(1)}pp vs Digital ${dMOdiff>=0?'+':''}${dMOdiff.toFixed(1)}pp. ${rMOdiff>dMOdiff?'Referral SC closing improving faster.':'Digital SC closing improving faster.'}`});
+  if(!insights.length)insights.push({lv:'info',line:'Both channels growing at comparable rates across all metrics this month.'});
+  const IAC2={info:{bg:'#eff6ff',bd:'#bfdbfe',dk:'#1a56db'},appr:{bg:'#f0fdf4',bd:'#bbf7d0',dk:'#166534'},warn:{bg:'#fffbeb',bd:'#fde68a',dk:'#d97706'},crit:{bg:'#fef2f2',bd:'#fecaca',dk:'#dc2626'}};
   const insHtml=insights.map(i=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:${IAC2[i.lv]?.bg||'#f9fafb'};border:1px solid ${IAC2[i.lv]?.bd||'#e5e7eb'};border-left:3px solid ${IAC2[i.lv]?.dk||'#6b7280'};border-radius:6px;margin-bottom:5px">
     <span style="font-size:11px;line-height:1.5;color:var(--t1)">${i.line}</span>
   </div>`).join('');
 
   document.getElementById('p-compare').innerHTML=`
-<div class="ptitle">Referral vs Digital — Channel Comparison</div>
-<div class="psub">MTD as of ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})} . <span style="color:#1a56db;font-weight:600">Blue = Referral</span> . <span style="color:#059669;font-weight:600">Green = Digital</span> . R/D/= winner badges</div>
+<div class="ptitle">Referral vs Digital — MoM Growth Comparison</div>
+<div class="psub">How fast is each channel growing? <span style="color:#1a56db;font-weight:600">Blue = Referral MoM%</span> · <span style="color:#059669;font-weight:600">Green = Digital MoM%</span> · MTD vs LMTD · ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 13px;margin-bottom:12px;font-size:11px;color:#1e40af;line-height:1.6"><strong>How to read:</strong> Each cell shows MoM growth rate for Referral and Digital independently. If Referral BQL grew +15% and Digital grew +8%, Referral is accelerating faster. Funnel % rows show pp change vs prior month.</div>
+<div class="stitle">Volume Growth — MTD vs LMTD <span style="font-size:10px;font-weight:400;color:var(--t3)">(% change each channel grew this MTD vs last MTD)</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px">${kpiCards}</div>
 
-<div class="stitle">India — Volume Metrics MTD</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px">${kpiCards}</div>
+<div class="stitle">Funnel Efficiency — MTD vs LMTD <span style="font-size:10px;font-weight:400;color:var(--t3)">(conversion % this MTD vs last MTD, and pp change)</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:14px">${funnelCards}</div>
 
-<div class="stitle">India — Funnel Conversion MTD</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px">${funnelCards}</div>
-
-<div class="stitle">MoM Trend — 6 Months <span style="font-size:10px;font-weight:400;color:var(--t3)">(Referral / Digital per cell)</span></div>
+<div class="stitle">6-Month MoM Growth Trend <span style="font-size:10px;font-weight:400;color:var(--t3)">(each month's growth % vs prior month · <span style="color:#1a56db">Blue=Referral</span> / <span style="color:#059669">Green=Digital</span> · "REF faster" / "DIG faster" when gap >1pp)</span></div>
 <div class="tw"><table>
-<thead><tr>
+<thead><tr style="background:#f1f3f6">
   <th>Month</th>
-  <th>BQL (R/D)</th><th>MS (R/D)</th><th>MD (R/D)</th><th>Order (R/D)</th><th>HOTO (R/D)</th>
-  <th>BQL→MS% (R/D)</th><th>MS→MD% (R/D)</th><th>MD→Ord% (R/D)</th>
+  <th style="text-align:center">BQL MoM%</th>
+  <th style="text-align:center">MS MoM%</th>
+  <th style="text-align:center">MD MoM%</th>
+  <th style="text-align:center">Order MoM%</th>
+  <th style="text-align:center">HOTO MoM%</th>
+  <th style="text-align:center">BQL→MS% (pp Δ)</th>
+  <th style="text-align:center">MS→MD% (pp Δ)</th>
+  <th style="text-align:center">MD→Ord% (pp Δ)</th>
 </tr></thead>
-<tbody>${moRows}</tbody></table></div>
+<tbody>${momRows}</tbody></table></div>
 
-<div class="stitle">City-Level Comparison — MTD <span style="font-size:10px;font-weight:400;color:var(--t3)">(Referral top / Digital bottom . R/D/= winner)</span></div>
-<div class="tw"><table>
-<thead><tr>
-  <th>City</th><th>BQL</th><th>MS</th><th>MD</th><th>Order</th><th>HOTO</th>
-  <th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th>
-</tr></thead>
-<tbody>${cityRows}</tbody></table></div>
-
-<div class="stitle">⚡ Channel Insights</div>
+<div class="stitle">⚡ Growth Narrative</div>
 ${insHtml}`;
   autoSort(document.getElementById('p-compare'));
 }
