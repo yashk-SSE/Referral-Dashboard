@@ -193,6 +193,7 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .ch-btn{padding:4px 14px;border:none;background:transparent;border-radius:6px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s;white-space:nowrap}
 .ch-btn.active{background:var(--sur);color:var(--bl);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
 .ch-btn:hover:not(.active){color:var(--t1)}
+body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 /* Digital sidebar section */
 .sh-d{background:#0f4c81;color:#fff}
 .ni-d{color:#e0efff}
@@ -323,7 +324,7 @@ const BIG=['Indore','Jabalpur','Chennai','Bhopal','Delhi','Nashik','Kanpur'];
 const MID=['Gwalior','Aurangabad','Hyderabad','Bangalore','Amravati','Jaipur','Ahmedabad','Kolhapur','Varanasi'];
 
 let ED=[],LD=[],C={},rendered={},chartInst={},curTab='exec';
-let DED=[],DLD=[],DC={},ACTIVE_CH='referral';
+let DED=[],DLD=[],DC={},ACTIVE_CH='referral',dataLoaded=false;
 
 // ?? DATE UTILS ??
 const D0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
@@ -464,26 +465,23 @@ function precompute(){
 
 // ?? CHANNEL SWITCHER ??
 function setChannel(ch,el){
-  ACTIVE_CH=ch;
-  // Update channel buttons
+  // Always update button highlight so it feels responsive
   document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
-  // Show/hide sidebar items
+  ACTIVE_CH=ch;
+  // Block sidebar/tab navigation until data is fully loaded
+  if(!dataLoaded) return;
+  // Items WITH data-ch: show only matching channel
   document.querySelectorAll('[data-ch]').forEach(item=>{
-    const itemCh=item.getAttribute('data-ch');
-    const isSection=(item.classList.contains('sh-d')||item.classList.contains('sh-cmp'));
-    // Referral items: show only when ch=referral (they have no data-ch or data-ch=referral)
-    item.style.display=itemCh===ch?'':'none';
+    item.style.display=item.getAttribute('data-ch')===ch?'':'none';
   });
-  // Always show referral base nav items (they don't have data-ch)
-  document.querySelectorAll('.ni:not([data-ch]),.sh:not([data-ch])').forEach(item=>{
+  // Original referral nav (no data-ch attr): show only on Referral
+  document.querySelectorAll('.ni:not([data-ch]),.sh:not([data-ch]):not(.sh-d):not(.sh-cmp)').forEach(item=>{
     item.style.display=ch==='referral'?'':'none';
   });
-  // Navigate to default tab for channel
   const defaults={referral:'exec',digital:'dexec',compare:'compare'};
   const target=defaults[ch]||'exec';
-  // Force re-navigate
-  if(curTab===target){rendered[target]=false;}
+  rendered[target]=false;
   sw(target,null);
 }
 
@@ -542,9 +540,6 @@ function precomputeDigital(){
     return{...agg(DED.filter(r=>r.date>=ms&&r.date<=me)),lbl:mo.lbl,m:mo.m,y:mo.y};
   });
 }
-  document.getElementById('main').scrollTop=0;
-}
-// buildTab and precomputeDigital defined above
 
 
 // ================================================================
@@ -759,17 +754,35 @@ function insertMCWidget(containerId,widgetId,onchange){
 // No Google Sheets, no API key, no CORS issues — works locally too
 async function init(){
   rendered={};
+  dataLoaded=false;
   Object.values(chartInst).forEach(c=>{try{c.destroy()}catch(e){}});chartInst={};
-  document.getElementById('p-exec').innerHTML=`<div class="loading"><div class="spin"></div><div>Loading data…</div></div>`;
+
+  // Progressive loading UI — shows file-by-file status
+  const loadEl=document.getElementById('p-exec');
+  function setLoad(msg){
+    loadEl.innerHTML=`<div class="loading"><div class="spin"></div><div style="font-size:13px;color:var(--t2);margin-top:6px">${msg}</div></div>`;
+  }
+  setLoad('Connecting to data…');
+  document.body.classList.add('loading-data');
+
   try{
-    // Load all 5 JSON files in parallel
-    const[eR,lR,mopR,deR,dlR]=await Promise.all([
-      fetchJSON('referral_effort.json'),
-      fetchJSON('referral_leads.json'),
-      fetchJSON('referral_mop.json').catch(()=>[]),
-      fetchJSON('digital_effort.json').catch(()=>[]),
-      fetchJSON('digital_leads.json').catch(()=>[])
-    ]);
+    // Load files one-by-one so progress is visible (total ~10 MB)
+    setLoad('Loading Referral effort data… (1/5)');
+    const eR  = await fetchJSON('referral_effort.json');
+
+    setLoad('Loading Referral lead data… (2/5)');
+    const lR  = await fetchJSON('referral_leads.json');
+
+    setLoad('Loading MOP targets… (3/5)');
+    const mopR= await fetchJSON('referral_mop.json').catch(()=>[]);
+
+    setLoad('Loading Digital effort data… (4/5)');
+    const deR = await fetchJSON('digital_effort.json').catch(()=>[]);
+
+    setLoad('Loading Digital lead data… (5/5)');
+    const dlR = await fetchJSON('digital_leads.json').catch(()=>[]);
+
+    setLoad('Processing data…');
 
     // ── MOP: read from referral_mop.json ─────────────────────────────────
     // To update MOP each month: edit data/referral_mop.json in your GitHub repo
@@ -859,9 +872,21 @@ async function init(){
     document.getElementById('upd-lbl').textContent=`MTD ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
     const fyP=Math.round(C.ytdHoto/FY_T*100);
     document.getElementById('fy-mini').textContent=`FY27: ${f(C.ytdHoto)}/${f(FY_T)} (${fyP}%)`;
-    buildTab('exec');
+
+    // Mark data as loaded — channel switcher now fully functional
+    dataLoaded=true;
+    document.body.classList.remove('loading-data');
+
+    // If user switched channel while data was loading, apply it now
+    if(ACTIVE_CH!=='referral'){
+      setChannel(ACTIVE_CH, document.getElementById('ch-'+ACTIVE_CH.replace('compare','cmp')));
+    } else {
+      buildTab('exec');
+    }
 
   }catch(e){
+    dataLoaded=false;
+    document.body.classList.remove('loading-data');
     const isLocal=window.location.protocol==='file:';
     const localMsg=isLocal?`<br><br><strong style="color:#b91c1c">⚠️ You're opening this file locally (file://). Browsers block local JSON fetching for security.</strong>
     <br><br><strong>Fix:</strong> Run a local server in the same folder:<br>
@@ -872,7 +897,7 @@ async function init(){
       <strong>Checklist:</strong>
       <ul style="margin:8px 0 0 16px;line-height:2">
         <li>Does <code>data/referral_effort.json</code> exist in your repo?</li>
-        <li>Did the GitHub Action run successfully? (Check Actions tab)</li>
+        <li>Did the App Script trigger run? (Check script logs)</li>
         <li>Is GitHub Pages enabled for this repo?</li>
       </ul>
     </div>`;
