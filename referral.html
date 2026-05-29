@@ -1526,8 +1526,98 @@ function filterCityTable(){
 function buildSCTrendHtml(cf){
   const months=C.months,yd=C.yd,mtdDay=yd.getDate();
   const pD=(curr,prev,label)=>{if(!prev)return`<td>-</td>`;const d=curr-prev,p=Math.round(d/prev*100);const cls=d>=0?'green':'red';const tip='title="'+label+': '+(d>=0?'+':'')+f(d)+' ('+(d>=0?'+':'')+p+'% vs prior month)"';return`<td class="${cls}" style="font-weight:600" ${tip}>${d>=0?'+':'-'}${Math.abs(p)}%</td>`;};
-  const trendHtml='<div class="tw"><table><thead><tr><th>Sub-Channel</th>'+months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'+m.lbl+(i===months.length-1?' <span class="badge bb" style="font-size:8px">Current MTD</span>':'')+'</th>').join('')+'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr><tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')+'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead><tbody>'+SCS.map(s=>{const cols=months.map(mo=>{let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});const curr=cols[cols.length-1],prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};return`<tr><td style="font-weight:600">${s}</td>`+cols.map((c,i)=>{const p=i>0?cols[i-1]:null;const isLast=i===cols.length-1;return'<td style="border-left:2px solid var(--bd2)">'+(isLast?'<span class="mono" style="color:#1f2937;font-weight:600">'+f(c.BQL)+'</span>':(p?cv(c.BQL,p.BQL):'<span class="mono">'+f(c.BQL)+'</span>'))+'</td><td>'+(isLast?'<span class="mono" style="color:#1f2937;font-weight:600">'+f(c.Order)+'</span>':(p?cv(c.Order,p.Order):'<span class="mono">'+f(c.Order)+'</span>'))+'</td><td>'+(isLast?'<span class="mono" style="color:#1f2937;font-weight:600">'+f(c.HOTO)+'</span>':(p?cv(c.HOTO,p.HOTO):'<span class="mono">'+f(c.HOTO)+'</span>'))+'</td>';}).join('')+pD(curr.BQL,prev.BQL,'BQL')+pD(curr.Order,prev.Order,'Order')+pD(curr.HOTO,prev.HOTO,'HOTO')+'</tr>';}).join('')+'</tbody></table></div>';
-  const mtdTrendHtml='<div class="tw"><table><thead><tr><th>Sub-Channel</th>'+months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'+m.lbl+' <span style="font-size:8px;color:var(--t3)">till '+mtdDay+'</span>'+(i===months.length-1?' <span class="badge bb" style="font-size:8px">Current</span>':'')+'</th>').join('')+'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr><tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')+'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead><tbody>'+SCS.map(s=>{const mtdCols=months.map(mo=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});const curr=mtdCols[mtdCols.length-1],prev=mtdCols[mtdCols.length-2]||{BQL:0,HOTO:0,Order:0};return`<tr><td style="font-weight:600">${s}</td>`+mtdCols.map((c,i)=>{const p=i>0?mtdCols[i-1]:null;return'<td style="border-left:2px solid var(--bd2)">'+(p?cv(c.BQL,p.BQL):'<span class="mono">'+f(c.BQL)+'</span>')+'</td><td>'+(p?cv(c.Order,p.Order):'<span class="mono">'+f(c.Order)+'</span>')+'</td><td>'+(p?cv(c.HOTO,p.HOTO):'<span class="mono">'+f(c.HOTO)+'</span>')+'</td>';}).join('')+pD(curr.BQL,prev.BQL,'BQL MTD')+pD(curr.Order,prev.Order,'Order MTD')+pD(curr.HOTO,prev.HOTO,'HOTO MTD')+'</tr>';}).join('')+'</tbody></table></div>';
+  // ── helper: aggregate all sub-channels for a month window ──
+  function aggAllSC(mo, tillDay){
+    let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    const ms=new Date(mo.y,mo.m-1,1);
+    const me=tillDay?new Date(mo.y,mo.m-1,tillDay):new Date(mo.y,mo.m,0);
+    ED.forEach(x=>{
+      if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;
+      if(cf&&x.city!==cf)return;
+      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+    });
+    return r;
+  }
+  // ── helper: build one data row (India overall or a single SC) ──
+  function buildTrendRow(label, cols, isIndia){
+    const curr=cols[cols.length-1], prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};
+    const style=isIndia?'style="font-weight:700;background:#f8faff;border-bottom:2px solid #1a56db;border-top:2px solid #1a56db"':'';
+    const lbl=isIndia
+      ?`<td style="font-weight:700;white-space:nowrap"><span style="color:#1a56db">⊕</span> ${label} <span class="ctag" style="background:#1a56db;color:#fff">All SCs</span></td>`
+      :`<td style="font-weight:600">${label}</td>`;
+    return`<tr ${style}>${lbl}`
+      +cols.map((c,i)=>{
+        const p=i>0?cols[i-1]:null;
+        const isLast=i===cols.length-1;
+        const bqlCell=isLast?`<span class="mono" style="color:${isIndia?'#1a56db':'#1f2937'};font-weight:700">${f(c.BQL)}</span>`:(p?cv(c.BQL,p.BQL):`<span class="mono">${f(c.BQL)}</span>`);
+        const ordCell=isLast?`<span class="mono" style="color:${isIndia?'#1a56db':'#1f2937'};font-weight:700">${f(c.Order)}</span>`:(p?cv(c.Order,p.Order):`<span class="mono">${f(c.Order)}</span>`);
+        const hotoCell=isLast?`<span class="mono" style="color:${isIndia?'#1a56db':'#1f2937'};font-weight:700">${f(c.HOTO)}</span>`:(p?cv(c.HOTO,p.HOTO):`<span class="mono">${f(c.HOTO)}</span>`);
+        return`<td style="border-left:2px solid var(--bd2)">${bqlCell}</td><td>${ordCell}</td><td>${hotoCell}</td>`;
+      }).join('')
+      +pD(curr.BQL,prev.BQL,label+' BQL')
+      +pD(curr.Order,prev.Order,label+' Order')
+      +pD(curr.HOTO,prev.HOTO,label+' HOTO')
+      +'</tr>';
+  }
+  // ── helper: build one data row for MTD table ──
+  function buildMtdRow(label, cols, isIndia){
+    const curr=cols[cols.length-1], prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};
+    const style=isIndia?'style="font-weight:700;background:#f8faff;border-bottom:2px solid #1a56db;border-top:2px solid #1a56db"':'';
+    const lbl=isIndia
+      ?`<td style="font-weight:700;white-space:nowrap"><span style="color:#1a56db">⊕</span> ${label} <span class="ctag" style="background:#1a56db;color:#fff">All SCs</span></td>`
+      :`<td style="font-weight:600">${label}</td>`;
+    return`<tr ${style}>${lbl}`
+      +cols.map((c,i)=>{
+        const p=i>0?cols[i-1]:null;
+        const bqlCell=p?cv(c.BQL,p.BQL):`<span class="mono">${f(c.BQL)}</span>`;
+        const ordCell=p?cv(c.Order,p.Order):`<span class="mono">${f(c.Order)}</span>`;
+        const hotoCell=p?cv(c.HOTO,p.HOTO):`<span class="mono">${f(c.HOTO)}</span>`;
+        return`<td style="border-left:2px solid var(--bd2)">${bqlCell}</td><td>${ordCell}</td><td>${hotoCell}</td>`;
+      }).join('')
+      +pD(curr.BQL,prev.BQL,label+' BQL')
+      +pD(curr.Order,prev.Order,label+' Ord')
+      +pD(curr.HOTO,prev.HOTO,label+' HOTO')
+      +'</tr>';
+  }
+
+  // ── Full Month table ──
+  const indiaFullCols=months.map(mo=>aggAllSC(mo,null));
+  const indiaFullRow=buildTrendRow('India Overall',indiaFullCols,true);
+  const scFullRows=SCS.map(s=>{
+    const cols=months.map(mo=>{
+      let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+      ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});
+      return r;
+    });
+    return buildTrendRow(s,cols,false);
+  }).join('');
+  const trendHtml='<div class="tw"><table>'
+    +'<thead><tr><th>Sub-Channel</th>'
+    +months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'+m.lbl+(i===months.length-1?' <span class="badge bb" style="font-size:8px">Current MTD</span>':'')+'</th>').join('')
+    +'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr>'
+    +'<tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')
+    +'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead>'
+    +'<tbody>'+indiaFullRow+scFullRows+'</tbody></table></div>';
+
+  // ── MTD apple-to-apple table ──
+  const indiaMtdCols=months.map(mo=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);return aggAllSC(mo,mtdDay);});
+  const indiaMtdRow=buildMtdRow('India Overall',indiaMtdCols,true);
+  const scMtdRows=SCS.map(s=>{
+    const mtdCols=months.map(mo=>{
+      const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
+      let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+      ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});
+      return r;
+    });
+    return buildMtdRow(s,mtdCols,false);
+  }).join('');
+  const mtdTrendHtml='<div class="tw"><table>'
+    +'<thead><tr><th>Sub-Channel</th>'
+    +months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'+m.lbl+' <span style="font-size:8px;color:var(--t3)">till '+mtdDay+'</span>'+(i===months.length-1?' <span class="badge bb" style="font-size:8px">Current</span>':'')+'</th>').join('')
+    +'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr>'
+    +'<tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')
+    +'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead>'
+    +'<tbody>'+indiaMtdRow+scMtdRows+'</tbody></table></div>';
   return{trendHtml,mtdTrendHtml};
 }
 function refreshSCTrendTables(cf){
