@@ -251,6 +251,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <span class="mob-tab" onclick="sw('dod',this)">DoD View</span>
   <span class="mob-tab" onclick="sw('dodfunnel',this)">DoD Funnel</span>
   <span class="mob-tab" onclick="sw('cohort',this)">MoM Cohort</span>
+  <span class="mob-tab" onclick="sw('citymom',this)">City MoM</span>
 </div>
 <div class="layout">
 <nav class="sidebar">
@@ -273,6 +274,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="ni" data-ch="referral" onclick="sw('dod',this)">◈ Day-on-Day</div>
   <div class="ni" data-ch="referral" onclick="sw('dodfunnel',this)">⊞ DoD Funnel</div>
   <div class="ni" data-ch="referral" onclick="sw('cohort',this)">⬡ MoM Cohort</div>
+  <div class="ni" data-ch="referral" onclick="sw('citymom',this)">⬡ City MoM</div>
   <!-- DIGITAL CHANNEL -->
   <div class="sh sh-d" data-ch="digital" style="display:none">Digital Channel</div>
   <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dexec',this)">⬡ Executive</div>
@@ -304,6 +306,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-dod" class="panel"></div>
   <div id="p-dodfunnel" class="panel"></div>
   <div id="p-cohort" class="panel"></div>
+  <div id="p-citymom" class="panel"></div>
   <!-- Digital panels -->
   <div id="p-dexec" class="panel"></div>
   <div id="p-dindia" class="panel"></div>
@@ -490,7 +493,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
+  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -505,14 +508,14 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
 }
 
 function buildTab(t){
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
+  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -1105,7 +1108,7 @@ function bMop(){
     const ordBgCls=ordDiff<0?(Math.abs(ordPctV)>=20?'def-hi':'def-md'):'sur-hi';
     const ordTip=`title="Actual Order: ${f(actOrder)} | MOP HOTO MTD: ${f(mopHotoMtd)} | LMTD Order: ${f(lmtdOrder)} | vs MOP: ${ordPctV>=0?'+':''}${ordPctV}%"`;
     const ordCell=`<td class="${ordBgCls}" ${ordTip} style="font-weight:600">${f(actOrder)}</td>`;
-    const ordPctCell=`<td class="${ordBgCls}" ${ordTip} style="border-left:3px solid #92400e">${ordPctV>=0?'+':''}${ordPctV}%</td>`;
+    const ordPctCell=`<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>`;
 
     return`<tr ${rowStyle}>
       <td style="font-weight:600;white-space:nowrap">${isIndia?'<>India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
@@ -1172,7 +1175,7 @@ function filterMop(cf,tf){
     const ordBgCls=ordDiff<0?(Math.abs(ordPctV)>=20?'def-hi':'def-md'):'sur-hi';
     const ordTip=`title="Order: ${f(actOrder)} | MOP HOTO MTD: ${f(mopHotoMtd)} | LMTD Order: ${f(lmtdOrder)} | vs MOP: ${ordPctV>=0?'+':''}${ordPctV}%"`;
     const ordCell=`<td class="${ordBgCls}" ${ordTip} style="font-weight:600">${f(actOrder)}</td>`;
-    return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'<>India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${cells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${cells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${cells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${cells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}<td class="${ordBgCls}" ${ordTip} style="border-left:3px solid #92400e">${ordPctV>=0?'+':''}${ordPctV}%</td>${cells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td></tr>`;
+    return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'<>India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${cells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${cells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${cells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${cells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>${cells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td></tr>`;
   }
   const cities=cf?[cf]:tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
   const tbody=document.querySelector('#mop-tbl tbody');
@@ -1373,6 +1376,40 @@ function bCity(){
       <th>MD->Ord%<br><span style="font-size:8px;font-weight:400">curr / LMTD (pp)</span></th>
     </tr></thead>
     <tbody>
+    ${(()=>{
+      // Overall row aggregated across all sub-channels
+      const totV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+      const totPV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+      scd.forEach(x=>{['BQL','MS','MD','Order','HOTO'].forEach(m=>{totV[m]+=x.v[m]||0;totPV[m]+=x.pv[m]||0;});});
+      const totBqlMsC=pN(totV.MS,totV.BQL),totPBqlMsC=pN(totPV.MS,totPV.BQL);
+      const totBqlMsD=(totBqlMsC-totPBqlMsC).toFixed(1);
+      const totMmdC=pN(totV.MD,totV.MS),totPMmdC=pN(totPV.MD,totPV.MS);
+      const totMmdD=(totMmdC-totPMmdC).toFixed(1);
+      const totMdoC=pN(totV.Order,totV.MD),totPMdoC=pN(totPV.Order,totPV.MD);
+      const totMdoD=(totMdoC-totPMdoC).toFixed(1);
+      const totOrdDelta=totV.Order-totPV.Order;
+      return`<tr style="font-weight:700;background:#f3f4f6;border-bottom:2px solid #d1d5db">
+        <td style="font-weight:700">Overall</td>
+        <td>${cv(totV.BQL,totPV.BQL)}</td><td><span style="font-size:10px;font-weight:700">100%</span></td>
+        <td class="mono">${f(totV.MS)}</td><td class="mono">${f(totV.MD)}</td>
+        <td>${cv(totV.Order,totPV.Order)}</td>
+        <td>${mb(totV.Order,totPV.Order)}</td>
+        <td class="${totOrdDelta>=0?'green':'red'}" style="font-weight:700;font-size:11px">${totOrdDelta>=0?'+':''}${f(totOrdDelta)}</td>
+        <td>${cv(totV.HOTO,totPV.HOTO)}</td><td>${mb(totV.HOTO,totPV.HOTO)}</td>
+        <td title="Overall BQL->MS: ${totBqlMsC.toFixed(1)}% | LMTD: ${totPBqlMsC.toFixed(1)}%">
+          <span>${totBqlMsC.toFixed(1)}%</span>
+          <span class="${parseFloat(totBqlMsD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(totBqlMsD)>=0?'+':''}${totBqlMsD}pp)</span>
+        </td>
+        <td title="Overall MS->MD: ${totMmdC.toFixed(1)}% | LMTD: ${totPMmdC.toFixed(1)}%">
+          <span>${totMmdC.toFixed(1)}%</span>
+          <span class="${parseFloat(totMmdD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(totMmdD)>=0?'+':''}${totMmdD}pp)</span>
+        </td>
+        <td title="Overall MD->Ord: ${totMdoC.toFixed(1)}% | LMTD: ${totPMdoC.toFixed(1)}%">
+          <span>${totMdoC.toFixed(1)}%</span>
+          <span class="${parseFloat(totMdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(totMdoD)>=0?'+':''}${totMdoD}pp)</span>
+        </td>
+      </tr>`;
+    })()}
     ${scd.map(x=>{
       const bmsC=pN(x.v.MS,x.v.BQL),pbmsC=pN(x.pv.MS,x.pv.BQL);
       const mdoC=pN(x.v.Order,x.v.MD),pmdoC=pN(x.pv.Order,x.pv.MD);
@@ -3951,7 +3988,132 @@ function renderDoDFunnel(){
 // ================================================================
 // BQL COHORT ANALYSIS (MoM Cohort View)
 // ================================================================
-function bCohort(){
+// ??????????????????????????????????????
+// CITY MOM TRENDS
+// ??????????????????????????????????????
+function bCityMoM(){
+  document.getElementById('p-citymom').innerHTML=`
+<div class="ptitle">City MoM Trends</div>
+<div class="psub">Month-on-month performance for every city and India row . Each metric shown as a separate table . Last 6 months + current . Green = increase from last month, Red = decrease</div>
+<div class="fbar">
+  <span id="citymom-city-mc-wrap"></span>
+  <select id="citymom-sc" onchange="renderCityMoM()">
+    <option value="">All Sub-Channels</option>
+    ${SCS.map(s=>`<option>${s}</option>`).join('')}
+  </select>
+</div>
+<div id="citymom-body"></div>`;
+
+  const mcWrap=document.getElementById('citymom-city-mc-wrap');
+  if(mcWrap&&!mcWrap.dataset.init){
+    mcWrap.dataset.init='1';
+    const w=buildMultiCity('citymom',()=>renderCityMoM());
+    mcWrap.appendChild(w);
+  }
+  renderCityMoM();
+}
+
+function renderCityMoM(){
+  const months=C.months;
+  const sf=document.getElementById('citymom-sc')?.value||'';
+  const selCities=getMCVal('citymom');
+  const cityList=selCities.length>0?selCities:CITIES;
+  const mtdDay=C.yd.getDate();
+
+  // Helper: get full month agg for a city (or null=India) and sub-channel
+  function aggMo(city,mo,sc){
+    const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    ED.forEach(x=>{
+      if(x.year!==mo.y||x.month!==mo.m)return;
+      if(city&&x.city!==city)return;
+      if(sc&&x.sc!==sc)return;
+      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+    });
+    return r;
+  }
+
+  // Precompute data: [city][month] = agg
+  const allRows=[{label:'India',key:null},...cityList.map(c=>({label:c,key:c}))];
+  const data=allRows.map(row=>({
+    ...row,
+    mos:months.map(mo=>aggMo(row.key,mo,sf))
+  }));
+
+  // Color helper: green if cur>prev, red if cur<prev, neutral if equal or no prev
+  const numChg=(cur,prev,isCur)=>{
+    if(!isCur||prev==null)return`<td class="mono" style="text-align:right">${f(cur)}</td>`;
+    if(cur>prev)return`<td class="mono" style="text-align:right;color:#166534;font-weight:600">${f(cur)}</td>`;
+    if(cur<prev)return`<td class="mono" style="text-align:right;color:#991b1b;font-weight:600">${f(cur)}</td>`;
+    return`<td class="mono" style="text-align:right;color:var(--t2)">${f(cur)}</td>`;
+  };
+  const pctChg=(cur,prev,isCur)=>{
+    const s=cur.toFixed(1)+'%';
+    if(!isCur||prev==null)return`<td style="text-align:right">${s}</td>`;
+    if(cur>prev)return`<td style="text-align:right;color:#166534;font-weight:600">${s}</td>`;
+    if(cur<prev)return`<td style="text-align:right;color:#991b1b;font-weight:600">${s}</td>`;
+    return`<td style="text-align:right;color:var(--t2)">${s}</td>`;
+  };
+
+  // Build a table for a given metric (key = BQL/MS/MD/Order/HOTO) or funnel key
+  function buildMetricTable(title,accessor){
+    const lastIdx=months.length-1;
+    const head=`<tr><th style="min-width:110px">City</th>${months.map((m,i)=>`<th style="text-align:right${i===lastIdx?';background:#e8f4fd;font-weight:700':''}">${m.lbl}${i===lastIdx?` <span class="badge bb" style="font-size:8px">MTD</span>`:''}</th>`).join('')}</tr>`;
+    const bodyRows=data.map((row,ri)=>{
+      const isIndia=!row.key;
+      const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"':'';
+      const cells=row.mos.map((mo,i)=>{
+        const val=accessor(mo,row.mos[i-1]||null);
+        const prev=i>0?accessor(row.mos[i-1],null):null;
+        const isCur=i===lastIdx;
+        if(typeof val==='number'){
+          if(title.includes('%')||title.includes('→')||title.includes('->')){
+            return pctChg(val,prev,isCur);
+          }
+          return numChg(val,prev,isCur);
+        }
+        return`<td style="text-align:right">${val}</td>`;
+      });
+      const tierTag=!isIndia?`<span class="ctag">${TIERS[row.label]||''}</span>`:`<span class="ctag" style="background:#1a56db;color:#fff">All</span>`;
+      return`<tr ${rowStyle}><td style="font-weight:${isIndia?'700':'600'};white-space:nowrap">${row.label}${tierTag}</td>${cells.join('')}</tr>`;
+    });
+    return`
+<div class="stitle">${title}</div>
+<div class="tw"><table>
+<thead>${head}</thead>
+<tbody>${bodyRows.join('')}</tbody>
+</table></div>`;
+  }
+
+  const body=document.getElementById('citymom-body');
+  if(!body)return;
+
+  // Absolute metrics
+  const absHtml=
+    buildMetricTable('BQL — Bill Qualified Leads (Monthly)',mo=>mo.BQL)+
+    buildMetricTable('MS — Meetings Scheduled (Monthly)',mo=>mo.MS)+
+    buildMetricTable('MD — Meetings Done (Monthly)',mo=>mo.MD)+
+    buildMetricTable('Order — Orders Booked (Monthly)',mo=>mo.Order)+
+    buildMetricTable('HOTO — Handover-Takeover Completed (Monthly)',mo=>mo.HOTO);
+
+  // Funnel metrics
+  const funnelHtml=
+    buildMetricTable('BQL→MS% Conversion',mo=>mo.BQL>0?(mo.MS/mo.BQL*100):0)+
+    buildMetricTable('MS→MD% Conversion',mo=>mo.MS>0?(mo.MD/mo.MS*100):0)+
+    buildMetricTable('MD→Order% Conversion',mo=>mo.MD>0?(mo.Order/mo.MD*100):0)+
+    buildMetricTable('BQL→MD% Conversion',mo=>mo.BQL>0?(mo.MD/mo.BQL*100):0)+
+    buildMetricTable('BQL→Order% Conversion',mo=>mo.BQL>0?(mo.Order/mo.BQL*100):0);
+
+  body.innerHTML=`
+<div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:var(--r);padding:8px 12px;font-size:11px;color:#374151;margin-bottom:10px">
+  <strong>Color logic:</strong> Numbers in the current month column are colored green if higher than the previous month, red if lower. All past months are shown in neutral to indicate historical trend only.
+</div>
+${absHtml}
+${funnelHtml}`;
+
+  setTimeout(()=>autoSort(document.getElementById('citymom-body')?.querySelectorAll('table').forEach?.(t=>makeSortable(t))),80);
+}
+
+
   document.getElementById('p-cohort').innerHTML=`<div class="ptitle">MoM Cohort Analysis</div>
 <div class="psub">Same-month cohort — leads created in Month X tracked across M0 (same month), M1 (next month), M2… for stage conversions</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:10px">
