@@ -1069,7 +1069,7 @@ ${(()=>{
     return`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:${c.bg};border:1px solid ${c.bd};border-left:3px solid ${c.dk};border-radius:6px;margin-bottom:5px">
       <span style="flex-shrink:0;margin-top:1px">${iBadge(chip.lv,true)}</span>
       <span style="font-size:11px;line-height:1.5;color:var(--t1)">${chip.line}</span>
-    </div>
+    </div>`;
   }).join('');
 })()}`;
 }
@@ -1111,7 +1111,7 @@ function bMop(){
     const ordPctCell=`<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>`;
 
     return`<tr ${rowStyle}>
-      <td style="font-weight:600;white-space:nowrap">${isIndia?'<>India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
+      <td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
       ${cells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}
       ${cells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}
       ${(()=>{const baseCells=cells.filter(c=>c.m!=='HOTO');const hotoCell=cells.find(c=>c.m==='HOTO');return baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')+ordCell+(hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):'');})()}
@@ -1136,7 +1136,7 @@ function bMop(){
   <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600">Green = surplus</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 8px;border-radius:6px">Hover cells for detail</span>
 </div>
-<div class="fbar"><select id="mop-tier" onchange="filterMopTable()"> onchange="filterMopTable()">${tierOpts()}</select><span id="mop-city-mc-wrap"></span></div>
+<div class="fbar"><select id="mop-tier" onchange="filterMopTable()">${tierOpts()}</select><span id="mop-city-mc-wrap"></span></div>
 <div class="tw" id="mop-tbl"><table>
   <thead>
     <tr>
@@ -4177,6 +4177,7 @@ ${funnelHtml}`;
 }
 
 
+function bCohort(){
   document.getElementById('p-cohort').innerHTML=`<div class="ptitle">MoM Cohort Analysis</div>
 <div class="psub">Same-month cohort — leads created in Month X tracked across M0 (same month), M1 (next month), M2… for stage conversions</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:10px">
@@ -4188,7 +4189,7 @@ ${funnelHtml}`;
   <select id="cohort-sc" onchange="renderCohort()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
   <span id="cohort-city-mc-wrap"></span>
 </div>
-<div id="cohort-body"></div>
+<div id="cohort-body"></div>`;
 
   const mcWrap=document.getElementById('cohort-city-mc-wrap');
   if(mcWrap&&!mcWrap.dataset.init){
@@ -4663,7 +4664,7 @@ function bCompare(){
       <td style="font-weight:${isCur?700:500}">${mo.lbl}${isCur?` <span class="badge bb">MTD</span>`:''}</td>
       ${cells.join('')}
       ${fCellsHtml}
-    </tr>
+    </tr>`;
   }).join('');
 
   // Summary KPI cards: current month growth vs last month, for each metric
