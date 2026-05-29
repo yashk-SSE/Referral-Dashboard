@@ -622,7 +622,7 @@ function buildMultiCity(id,onchange){
            <button class="mc-apply" id="mc-apl-${id}">Apply ✓</button>
          </div>
        </div>
-     </div>`;
+     </div>
 
   const btn  = wrap.querySelector('#mc-btn-'+id);
   const dd   = wrap.querySelector('#mc-dd-'+id);
@@ -905,7 +905,7 @@ async function init(){
         <li>Did the App Script trigger run? (Check script logs)</li>
         <li>Is GitHub Pages enabled for this repo?</li>
       </ul>
-    </div>`;
+    </div>
   }
 }
 
@@ -929,7 +929,7 @@ function bExec(){
       <div class="mc-mop">MOP MTD: ${f(mop)} . <span style="color:${achColor};font-weight:600">${ach}% achieved</span></div>
       <div class="pbar"><div class="pbar-f" style="width:${Math.min(ach,100)}%;background:${cols[m]}"></div></div>
       <div class="mc-foot">${mb(v,pv)} <span style="font-size:10px;color:var(--t3)">vs ${f(pv)} last mo</span></div>
-    </div>`;
+    </div>
   }).join('');
   // Fix 4: Sort by % MOP achievement not absolute
   const cityPerf=CITIES.map(c=>({
@@ -1069,7 +1069,7 @@ ${(()=>{
     return`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:${c.bg};border:1px solid ${c.bd};border-left:3px solid ${c.dk};border-radius:6px;margin-bottom:5px">
       <span style="flex-shrink:0;margin-top:1px">${iBadge(chip.lv,true)}</span>
       <span style="font-size:11px;line-height:1.5;color:var(--t1)">${chip.line}</span>
-    </div>`;
+    </div>
   }).join('');
 })()}`;
 }
@@ -1117,7 +1117,7 @@ function bMop(){
       ${(()=>{const baseCells=cells.filter(c=>c.m!=='HOTO');const hotoCell=cells.find(c=>c.m==='HOTO');return baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')+ordCell+(hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):'');})()}
       ${cells.filter(c=>c.m!=='HOTO').map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')}${ordPctCell}${(()=>{const hc=cells.find(c=>c.m==='HOTO');if(!hc)return'';const hm=mopHotoMtd;const hd=hc.actual-hm;const hp=hm?Math.round(hd/hm*100):0;const hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`})()}
       ${cells.filter(c=>c.m!=='HOTO').map((c,i)=>`<td style="${i===0?'border-left:2px solid #6b7280':''}"><span class="mono">${mb(c.actual,c.prevActual)}</span></td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td>${(()=>{const hc=cells.find(c=>c.m==='HOTO');return hc?`<td>${mb(hc.actual,hc.prevActual)}</td>`:''})()}
-    </tr>`;
+    </tr>
   }
 
   const tableRows=[
@@ -1156,7 +1156,7 @@ function bMop(){
     </tr>
   </thead>
   <tbody>${tableRows}</tbody>
-</table></div>`;
+</table></div>
 }
 function filterMop(cf,tf){
   const yd=C.yd,doneD=yd.getDate();
@@ -1190,7 +1190,7 @@ function bIndia(){
   const p=document.getElementById('p-india');
   p.innerHTML=`<div class="ptitle">India Summary</div><div class="psub">All cities . Referral Channel</div>
 <div class="fbar"><select id="i-tier" onchange="rebuildIndia()">${tierOpts()}</select><select id="i-city" onchange="rebuildIndia()">${cityOpts()}</select><select id="i-sc" onchange="rebuildIndia()">${scOpts()}</select></div>
-<div id="i-body"></div>`;
+<div id="i-body"></div>
   renderIndia('','');
 }
 function rebuildIndia(){const t=document.getElementById('i-tier')?.value||'';const cities=t?CITIES.filter(c=>TIERS[c]===t):null;renderIndia(document.getElementById('i-city')?.value||'',document.getElementById('i-sc')?.value||'',cities);}
@@ -1287,10 +1287,10 @@ ${(()=>{
       <td>${mb(r.sv.Order,r.spv.Order)}</td>
       <td><span class="mono">${f(r.sv.HOTO)}</span><span style="font-size:9px;color:var(--t3)"> / ${f(r.spv.HOTO)}</span></td>
       <td><span>${mdhC.toFixed(1)}%</span>${ppBadge(mdhD)}</td>
-    </tr>`;
+    </tr>
   }).join('');
 })()}
-</table></div>`;
+</table></div>
 }
 
 // ??????????????????????????????????????
@@ -1343,7 +1343,7 @@ function bCity(){
     <td>${funnelPct(indV.MD,indV.MS,indPV.MD,indPV.MS)}</td>
     <td>${funnelPct(indV.Order,indV.MD,indPV.Order,indPV.MD)}</td>
     <td>${funnelPct(indV.HOTO,indV.MD,indPV.HOTO,indPV.MD)}</td>
-  </tr>`;
+  </tr>
   const tbl=indRow+rows.map(r=>`<tr>
     <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
     <td>${vsMop(r.v.BQL,r.mB,r.pv.BQL)}</td>
@@ -1408,7 +1408,7 @@ function bCity(){
           <span>${totMdoC.toFixed(1)}%</span>
           <span class="${parseFloat(totMdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(totMdoD)>=0?'+':''}${totMdoD}pp)</span>
         </td>
-      </tr>`;
+      </tr>
     })()}
     ${scd.map(x=>{
       const bmsC=pN(x.v.MS,x.v.BQL),pbmsC=pN(x.pv.MS,x.pv.BQL);
@@ -1437,9 +1437,9 @@ function bCity(){
           <span>${mdoC.toFixed(1)}%</span>
           <span class="${parseFloat(mdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(mdoD)>=0?'+':''}${mdoD}pp)</span>
         </td>
-      </tr>`;
+      </tr>
     }).join('')}
-    </tbody></table></div></div></div>`;
+    </tbody></table></div></div></div>
   }).join('');
   document.getElementById('p-city').innerHTML=`<div class="ptitle">City Summary</div><div class="psub">India row at top . Cities sorted by Order drop vs LMTD (worst first) . MTD vs MOP &amp; LMTD</div>
 <div class="fbar"><select id="city-tier" onchange="filterCityTable()">${tierOpts()}</select><span id="city-city-mc-wrap"></span><select id="city-sc-f" onchange="filterCityTable()">${scOpts()}</select></div>
@@ -1562,7 +1562,7 @@ function buildSCFunnelMoM(cf){
     const cls=pv2!==null?(cv2>=pv2?'green':'red'):'';
     const delta=pv2!==null?((cv2-pv2)>=0?'+':'')+((cv2-pv2).toFixed(1))+'pp':'';
     return`<td title="${cur} vs prior ${prv||'-'} (${delta})"><span class="${cls}" style="font-size:10px;font-weight:500">${cur}</span>${delta?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${delta})</span>`:''}
-    </td>`;
+    </td>
   }
   const metrics=[
     {k:'bms',label:'BQL→MS%',fn:(r)=>fPct(r.MS,r.BQL)},
@@ -1580,7 +1580,7 @@ function buildSCFunnelMoM(cf){
       <th>Sub-Channel</th><th>Metric</th>
       ${months.map((m,i)=>`<th style="text-align:center;border-left:1px solid var(--bd2);${i===months.length-1?'background:#eff6ff':''}">${m.lbl}${i===months.length-1?' <span class="badge bb" style="font-size:8px">MTD</span>':''}</th>`).join('')}
       <th title="Change vs prior month">MoM Δ</th>
-    </tr></thead>`;
+    </tr></thead>
     const rows=moData.map(({s,cols})=>{
       return metrics.map((mt2,mi)=>{
         const vals=cols.map(r=>mt2.fn(r));
@@ -1593,7 +1593,7 @@ function buildSCFunnelMoM(cf){
           <td style="font-size:10px;color:var(--t2);white-space:nowrap">${mt2.label}</td>
           ${vals.map((v,i)=>fCell(v,i>0?vals[i-1]:'-')).join('')}
           <td class="${momCls}" style="font-weight:600;font-size:10px">${momDelta}</td>
-        </tr>`;
+        </tr>
       }).join('');
     }).join('');
     return`<div class="tw" style="overflow-x:auto"><table>${th}<tbody>${rows}</tbody></table></div>`;
@@ -1640,7 +1640,7 @@ ${SCS.map(s=>{
   const curr=cols[cols.length-1],prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};
   return`<tr><td style="font-weight:600">${s}</td>${cols.map((c,i)=>{const p=i>0?cols[i-1]:null;const isLast=i===cols.length-1;return`<td style="border-left:2px solid var(--bd2)">${isLast?`<span class="mono" style="color:#1f2937;font-weight:600">${f(c.BQL)}</span>`:(p?cv(c.BQL,p.BQL):`<span class="mono">${f(c.BQL)}</span>`)}</td><td>${isLast?`<span class="mono" style="color:#1f2937;font-weight:600">${f(c.Order)}</span>`:(p?cv(c.Order,p.Order):`<span class="mono">${f(c.Order)}</span>`)}</td><td>${isLast?`<span class="mono" style="color:#1f2937;font-weight:600">${f(c.HOTO)}</span>`:(p?cv(c.HOTO,p.HOTO):`<span class="mono">${f(c.HOTO)}</span>`)}</td>`;}).join('')}${pctDelta(curr.BQL,prev.BQL,'BQL')}${pctDelta(curr.Order,prev.Order,'Order')}${pctDelta(curr.HOTO,prev.HOTO,'HOTO')}</tr>`;
 }).join('')}
-</tbody></table></div>`;
+</tbody></table></div>
 
   // NEW: MTD apple-to-apple table (each month till same day)
   const mtdTrendHtml=`<div class="tw"><table>
@@ -1667,7 +1667,7 @@ ${SCS.map(s=>{
   const curr=mtdCols[mtdCols.length-1],prev=mtdCols[mtdCols.length-2]||{BQL:0,HOTO:0,Order:0};
   return`<tr><td style="font-weight:600">${s}</td>${mtdCols.map((c,i)=>{const p=i>0?mtdCols[i-1]:null;return`<td style="border-left:2px solid var(--bd2)">${p?cv(c.BQL,p.BQL):`<span class="mono">${f(c.BQL)}</span>`}</td><td>${p?cv(c.Order,p.Order):`<span class="mono">${f(c.Order)}</span>`}</td><td>${p?cv(c.HOTO,p.HOTO):`<span class="mono">${f(c.HOTO)}</span>`}</td>`;}).join('')}${pctDelta(curr.BQL,prev.BQL,'BQL MTD')}${pctDelta(curr.Order,prev.Order,'Order MTD')}${pctDelta(curr.HOTO,prev.HOTO,'HOTO MTD')}</tr>`;
 }).join('')}
-</tbody></table></div>`;
+</tbody></table></div>
 
   const funnelRows=SCS.map(s=>({s,v:C.scMTD[s],pv:C.scLMTD[s]})).filter(r=>r.v.BQL>0||r.v.HOTO>0);
   const cityDrills=SCS.map(s=>{
@@ -1708,7 +1708,7 @@ ${SCS.map(s=>{
         <span>${indMdoC.toFixed(1)}%</span>
         <span class="${parseFloat(indMdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(indMdoD)>=0?'+':''}${indMdoD}pp)</span>
       </td>
-    </tr>`;
+    </tr>
     return`<div class="coll-wrap"><div class="coll-hd" onclick="tog(this)"><div><strong>${s}</strong><span style="font-size:11px;color:var(--t2);margin-left:8px">HOTO: ${f(cd.reduce((a,x)=>a+x.v.HOTO,0))} . ${cd.length} cities . sorted by Order drop</span></div><span style="color:var(--t3)">v</span></div>
     <div class="coll-body"><div class="tw"><table>
     <thead><tr>
@@ -1745,9 +1745,9 @@ ${SCS.map(s=>{
           <span>${mdoC.toFixed(1)}%</span>
           <span class="${parseFloat(mdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(mdoD)>=0?'+':''}${mdoD}pp)</span>
         </td>
-      </tr>`;
+      </tr>
     }).join('')}
-    </tbody></table></div></div></div>`;
+    </tbody></table></div></div></div>
   }).join('');
 
   document.getElementById('p-sc').innerHTML=`<div class="ptitle">Sub-Channel Analysis</div><div class="psub">MoM trend . Growing vs declining . City breakdown</div>
@@ -1781,7 +1781,7 @@ ${(()=>{
       <td>${cv(r.v.HOTO,r.pv.HOTO)}</td>
       <td>${mb(r.v.HOTO,r.pv.HOTO)}</td>
       <td>${pct(r.v.Order,r.v.MD)}</td>
-    </tr>`;
+    </tr>
   }).join('');
 })()}
 </table></div>
@@ -1789,7 +1789,7 @@ ${(()=>{
 <div class="stitle" style="margin-top:18px">MoM Funnel - Full Month <span style="font-weight:400;font-size:10px;color:var(--t3)">(BQL→MS%, MS→MD%, MD→Order%, BQL→Order% per sub-channel per month)</span></div>
 <div id="sc-funnel-mom-full"></div>
 <div class="stitle">MoM Funnel - MTD (apple-to-apple, each month till Day ${mtdDay}) <span style="font-weight:400;font-size:10px;color:var(--t3)">(same calendar day cutoff across all months)</span></div>
-<div id="sc-funnel-mom-mtd"></div>`;
+<div id="sc-funnel-mom-mtd"></div>
   // Populate trend tables (city-aware)
   // Init multi-city widget for SC tab
   const scMCW=document.getElementById('sc-city-mc-wrap');
@@ -1818,7 +1818,7 @@ function filterSC(cf,tf){
       <td style="font-size:10px;font-weight:600">${ordSh2}</td>
       <td>${cv(r.v.HOTO,r.pv.HOTO)}</td><td>${mb(r.v.HOTO,r.pv.HOTO)}</td>
       <td>${pct(r.v.Order,r.v.MD)}</td>
-    </tr>`;
+    </tr>
   }).join('');
   tb.appendChild(nb);
 }
@@ -1850,7 +1850,7 @@ function bFunnel(){
 <div class="tw" id="fn-mo-tbl"></div>
 <div class="stitle">Effort Funnel - MTD Table (apple-to-apple) <span style="font-weight:400;font-size:10px;color:var(--t3)">(each month till day ${mtdDay} . compared with LMTD)</span></div>
 <div class="tw" id="fn-mo-mtd-tbl"></div>
-<div class="stitle">City Funnel - Effort MTD <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with LMTD)</span></div><div id="fn-city-tbl"></div>`;
+<div class="stitle">City Funnel - Effort MTD <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with LMTD)</span></div><div id="fn-city-tbl"></div>
   // Init multi-city widget for Funnel tab
   const fnMCW=document.getElementById('fn-city-mc-wrap');
   if(fnMCW&&!fnMCW.dataset.init){fnMCW.dataset.init='1';const mc=buildMultiCity('fn-city',()=>reFilterFunnel());fnMCW.appendChild(mc);}
@@ -2030,7 +2030,7 @@ function bM0Funnel(){
 <div class="stitle">M0 MTD Funnel - Apple-to-Apple <span style="font-weight:400;font-size:10px;color:var(--t3)">(each month: BQL created 1->${mtdDay}, actions also 1->${mtdDay} of same month . current month 1->yesterday)</span></div>
 <div class="tw" id="m0-mtd-tbl"></div>
 <div class="stitle">M0 City Funnel - Current Month MTD <span style="font-weight:400;font-size:10px;color:var(--t3)">(BQL created 1->yesterday . MS/MD/Ord 1->yesterday . vs LMTD M0)</span></div>
-<div id="m0-city-tbl"></div>`;
+<div id="m0-city-tbl"></div>
   // Init multi-city widget for M0 tab
   const m0MCW=document.getElementById('m0-city-mc-wrap');
   if(m0MCW&&!m0MCW.dataset.init){m0MCW.dataset.init='1';const mc=buildMultiCity('m0-city',()=>reFilterM0());m0MCW.appendChild(mc);}
@@ -2183,7 +2183,7 @@ function renderFunnelCityTbl(cf,sf,cityArr,tf){
   <td>${fP(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td>
   <td>${fP(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td>
   <td style="font-weight:600">${fP(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td>
-</tr>`).join('')}</tbody></table></div>`;
+</tr>`).join('')}</tbody></table></div>
 }
 
 // ??????????????????????????????????????
@@ -2225,7 +2225,7 @@ ${scRows.map(r=>`<tr><td style="font-weight:600">${r.s}</td><td>${velC(r.cur.b75
 <div class="tw"><table><tr><th>City</th><th colspan="2">BQL->MS P75</th><th colspan="2">MS->MD P75</th><th colspan="2">MD->Ord P75</th><th>Leads</th></tr>
 <tr><th></th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th></th></tr>
 ${cityRows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${velC(r.cur.b75,r.prv.b75)}</td><td>${dSafe(r.prv.b75)}</td><td>${velC(r.cur.m75,r.prv.m75)}</td><td>${dSafe(r.prv.m75)}</td><td>${velC(r.cur.o75,r.prv.o75)}</td><td>${dSafe(r.prv.o75)}</td><td style="color:var(--t3)">${r.cur.n}</td></tr>`).join('')}
-</table></div>`;
+</table></div>
 }
 
 
@@ -2266,7 +2266,7 @@ ${scRows2.map(r=>`<tr><td style="font-weight:600">${r.s}</td><td>${velC(r.cur.b7
 <div class="tw"><table><tr><th>City</th><th colspan="2">BQL->MS P75</th><th colspan="2">MS->MD P75</th><th colspan="2">MD->Ord P75</th><th>Leads</th></tr>
 <tr><th></th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th></th></tr>
 ${cityRows2.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${velC(r.cur.b75,r.prv.b75)}</td><td>${d2(r.prv.b75)}</td><td>${velC(r.cur.m75,r.prv.m75)}</td><td>${d2(r.prv.m75)}</td><td>${velC(r.cur.o75,r.prv.o75)}</td><td>${d2(r.prv.o75)}</td><td style="color:var(--t3)">${r.cur.n}</td></tr>`).join('')}
-</table></div>`;
+</table></div>
 }
 function initMopMC(){
   const w=document.getElementById('mop-city-mc-wrap');
@@ -2435,7 +2435,7 @@ function renderWoWCumm(){
         return`<td style="text-align:center;padding:4px 3px;border:1px solid rgba(0,0,0,.05)">
           <div style="font-weight:700;color:${color};font-size:11px">${pct.toFixed(1)}%</div>
           <div style="font-size:9px;color:var(--t3)">cumul</div>
-        </td>`;
+        </td>
       }).join('');
       const lastCs=row.cumSlots.filter(Boolean).slice(-1)[0];
       const totPct=lastCs?(denomFn(lastCs,row)>0?(numFn(lastCs,row)/denomFn(lastCs,row)*100).toFixed(1)+'%':'-'):'-';
@@ -2444,7 +2444,7 @@ function renderWoWCumm(){
         <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--bl);font-size:11px;padding:4px 10px 4px 4px">${f(row.bql)}</td>
         ${cells}
         <td style="text-align:center;font-weight:700;color:${color};font-size:12px;padding:4px 8px;background:${color}18">${totPct}</td>
-      </tr>`;
+      </tr>
     }).join('');
     return`<div class="stitle" style="color:${color};margin-top:18px">${title} <span style="font-size:10px;font-weight:400;color:var(--t3)">(cumulative % of cohort converted by end of each action month)</span></div>
 <div style="overflow-x:auto;margin-bottom:4px"><table style="width:100%;border-collapse:collapse">
@@ -2632,7 +2632,7 @@ function renderCohortTable(rows, weeks, containerId, rowLabel){
     </th>`).join('')}
     <th rowspan="2" style="background:#f3f4f6;color:#374151;min-width:64px;text-align:center;border-left:2px solid #6b7280">TOTAL<br><span style="font-size:8px;font-weight:400">cumul.</span></th>
     <th rowspan="2" style="min-width:72px;text-align:center;color:var(--t3);font-size:9px">vs Prior<br>Same Wk/Mo</th>
-  </tr>`;
+  </tr>
 
   // Sub-header: mosum th (no col-wk class = always visible) + week ths (col-wk class = collapsible)
   const h2=`<tr>${colSpec.map((col,i)=>{
@@ -2687,7 +2687,7 @@ function renderCohortTable(rows, weeks, containerId, rowLabel){
         ${cells}
         <td ${tTip} style="color:${tS.fg};font-weight:700;text-align:center;font-family:'DM Mono',monospace;font-size:11px;padding:5px 3px;border-top:3px solid #3b82f6">${r.total>0?r.total.toFixed(1)+'%':'-'}</td>
         <td style="text-align:center;padding:5px 4px;border-top:3px solid #3b82f6">${badge}</td>
-      </tr>`;
+      </tr>
     } else {
       const sk=r.moLbl.replace(/'/g,'_');
       return`<tr class="mo-wk mo-wk-${tId}-${sk}" style="display:none">
@@ -2696,7 +2696,7 @@ function renderCohortTable(rows, weeks, containerId, rowLabel){
         ${cells}
         <td ${tTip} style="color:${tS.fg};font-weight:${tS.fw};text-align:center;font-family:'DM Mono',monospace;font-size:11px;padding:5px 3px">${r.total>0?r.total.toFixed(1)+'%':'-'}</td>
         <td style="text-align:center;padding:5px 4px">${badge}</td>
-      </tr>`;
+      </tr>
     }
   }).join('');
 
@@ -2706,7 +2706,7 @@ function renderCohortTable(rows, weeks, containerId, rowLabel){
     <span style="color:#dc2626;font-weight:700;padding:2px 7px;border:1px solid #dc2626;border-radius:4px">▼ Red — deficit</span>
     <span style="background:#f3f4f6;color:#374151;padding:2px 7px;border-radius:4px;font-weight:600">Grey col = month total (sum of weeks)</span>
     <span style="background:#e8edf5;color:#374151;padding:2px 7px;border-radius:4px">▶ Row = expand weeks · ↕ Month header = collapse week cols</span>
-  </div>`;
+  </div>
   el.innerHTML=`${leg}<div class="tw"><table id="${tId}" style="min-width:max-content;border-collapse:collapse"><thead>${h1}${h2}</thead><tbody>${body}</tbody></table></div>`;
 }
 
@@ -3037,7 +3037,7 @@ async function callInsightAPI(prompt, apiKey, targetEl){
   targetEl.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:20px;color:var(--t2);font-size:12px">
     <div style="width:20px;height:20px;border:2px solid var(--bl);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;flex-shrink:0"></div>
     Calling Anthropic Claude to generate insights... this takes 15-30 seconds
-  </div>`;
+  </div>
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -3049,7 +3049,7 @@ async function callInsightAPI(prompt, apiKey, targetEl){
       targetEl.innerHTML=`<div style="padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:12px">
         <strong>API Error ${res.status}:</strong> ${err.slice(0,300)}
         <br><br>Common fixes: Check your API key, ensure it has permissions, check network.
-      </div>`;
+      </div>
       return;
     }
     const data=await res.json();
@@ -3060,7 +3060,7 @@ async function callInsightAPI(prompt, apiKey, targetEl){
     targetEl.innerHTML=`<div style="padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:12px">
       <strong>Network Error:</strong> ${e.message}<br>
       Make sure you're connected and the API key is valid. CORS issues can occur if not using the right headers.
-    </div>`;
+    </div>
   }
 }
 
@@ -3120,7 +3120,7 @@ function renderInsAlertTable(d){
         <div style="font-size:9px;color:var(--t3)">${f(x.mop)} ${m==='Order'?'HOTO MOP':m+' MOP'}</div>
         <div style="font-size:8px;color:${c.dk};font-weight:700">${defPct>=0?'+':''}${defPct.toFixed(0)}%</div>
         ${iBadge(x.alert,true)}
-      </td>`;
+      </td>
     }).join('');
     const fnCells=funKeys.map((k,i)=>{
       const x=d.india.funnel[k];const c=IAC[x.alert];
@@ -3129,12 +3129,12 @@ function renderInsAlertTable(d){
         <div style="font-size:9px;color:var(--t3)">${x.lmtd.toFixed(1)}% LMTD</div>
         <div style="font-size:8px;color:${c.dk};font-weight:700">${(x.cur-x.lmtd)>=0?'+':''}${(x.cur-x.lmtd).toFixed(1)}pp</div>
         ${iBadge(x.alert,true)}
-      </td>`;
+      </td>
     }).join('');
     return`<tr style="background:#e8edf5;font-weight:700">
       <td style="padding:5px 8px;font-weight:700;white-space:nowrap;position:sticky;left:0;z-index:1;background:#e8edf5">🇮🇳 India</td>
       ${absCells}${fnCells}
-    </tr>`;
+    </tr>
   }
 
   // City rows sorted by worst alert
@@ -3152,7 +3152,7 @@ function renderInsAlertTable(d){
         <div style="font-weight:600;font-size:11px;font-family:'DM Mono',monospace;color:${c.tx}">${f(x.cur)}</div>
         <div style="font-size:8px;color:var(--t3)">${x.mop?f(x.mop)+' MOP':''}</div>
         ${x.mop?iBadge(x.alert,true):''}
-      </td>`;
+      </td>
     }).join('');
     const fnCells=funKeys.map((k,i)=>{
       const x=cd.funnel[k];const c=IAC[x.alert];
@@ -3160,7 +3160,7 @@ function renderInsAlertTable(d){
         <div style="font-weight:600;font-size:11px;font-family:'DM Mono',monospace;color:${c.tx}">${x.cur.toFixed(1)}%</div>
         <div style="font-size:8px;color:var(--t3)">${x.lmtd.toFixed(1)}% L</div>
         ${iBadge(x.alert,true)}
-      </td>`;
+      </td>
     }).join('');
     const tier=cd.tier?`<span style="font-size:8px;padding:1px 4px;border-radius:4px;background:var(--s2);color:var(--t3);margin-left:4px">${cd.tier}</span>`:'';
     return`<tr style="border-bottom:1px solid var(--bd)">
@@ -3169,7 +3169,7 @@ function renderInsAlertTable(d){
         <div style="margin-top:2px">${iBadge(wa,true)}</div>
       </td>
       ${absCells}${fnCells}
-    </tr>`;
+    </tr>
   }).join('');
 
   const thStyle='padding:5px 6px;font-size:9px;text-align:center;font-weight:700;white-space:nowrap;';
@@ -3187,7 +3187,7 @@ function renderInsAlertTable(d){
     <tr>${absHdrs}${fnHdrs}</tr>
   </thead>
   <tbody>${indRow()}${cityRows}</tbody>
-  </table></div>`;
+  </table></div>
 }
 
 // ── Alert summary banner ────────────────────────────────
@@ -3203,12 +3203,12 @@ function renderAlertBanner(d){
     <div style="font-size:11px;color:#7f1d1d;margin-bottom:4px"><strong>India Metrics:</strong> ${critMetrics.length?critMetrics.join(', '):'None'}</div>
     <div style="font-size:11px;color:#7f1d1d;margin-bottom:4px"><strong>India Funnel:</strong> ${critFunnel.length?critFunnel.map(k=>({'bqlMs':'BQL→MS','msMd':'MS→MD','mdOrd':'MD→Ord','mdHoto':'MD→HOTO'}[k])).join(', '):'None'}</div>
     <div style="font-size:11px;color:#7f1d1d"><strong>Cities (${critCities.length}):</strong> ${critCities.length?critCities.join(', '):'None'}</div>
-  </div>`;
+  </div>
   html+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px">
     <div style="font-size:10px;font-weight:700;color:#f59e0b;letter-spacing:.5px;margin-bottom:6px">⚠️ WARNING ALERTS</div>
     <div style="font-size:11px;color:#78350f;margin-bottom:4px"><strong>Days elapsed:</strong> ${d.doneD} of ${d.doneD+d.dl} (${d.dl} remaining)</div>
     <div style="font-size:11px;color:#78350f"><strong>Cities (${warnCities.length}):</strong> ${warnCities.length?warnCities.slice(0,6).join(', ')+(warnCities.length>6?` +${warnCities.length-6} more`:''):'None'}</div>
-  </div>`;
+  </div>
   html+=`</div>`;
   return html;
 }
@@ -3239,7 +3239,7 @@ function insCard(lv, title, lines, tags){
     </div>
     <div>${linesHtml}</div>
     ${tagHtml}
-  </div>`;
+  </div>
 }
 
 function insMetricSection(d, metric){
@@ -3329,7 +3329,7 @@ function insMetricSection(d, metric){
         <span style="font-size:11px;font-family:'DM Mono',monospace">${f(x.cur)}<span style="color:var(--t3);font-size:9px">/${f(x.mop)}</span></span>
         <span style="font-size:10px;color:#f59e0b;font-weight:700">${def.toFixed(1)}% deficit</span>
         <span style="font-size:10px;color:var(--t3)">${x.lmtd?(x.cur-x.lmtd>=0?'+':'')+((x.cur-x.lmtd)/x.lmtd*100).toFixed(1)+'% MoM':'-'}</span>
-      </div>`;
+      </div>
     }).join('');
     html+=`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;overflow:hidden;margin-bottom:8px">${warnRows}</div>`;
   }
@@ -3351,7 +3351,7 @@ function insFunnelSection(d){
   const FMAP={bqlMs:{lbl:'BQL → Meeting Scheduled',ic:'📥→📅',cause:{bad:'LRMs not reaching leads fast enough, or lead quality is poor — check call response time, lead disposition split, BQL source quality.',ok:'Good LRM activity and lead quality.'},action:'Pull BQL-pending list by age. Flag leads >2 days not called. Assign LRM daily targets.'},msMd:{lbl:'MS → Meeting Done',ic:'📅→✅',cause:{bad:'Scheduled meetings are not happening — high customer reschedule/no-show rate, or SC not confirming meetings.',ok:'Meetings are sticking — good SC discipline.'},action:'Check MS-to-MD aging. Call customers booked >2 days ago to reconfirm. Track SC-wise no-show rate.'},mdOrd:{lbl:'MD → Order',ic:'✅→📝',cause:{bad:'SCs are meeting customers but not closing. Check: pricing objection handling, competitor comparison, follow-up within 24h of meeting.',ok:'SC conversion is strong.'},action:'Pull all MDs done in last 7 days without order. Assign SC to follow up same day. Share top objection list.'},mdHoto:{lbl:'MD → HOTO',ic:'📝→🔑',cause:{bad:'Orders not converting to handover — likely documentation gap, site survey delay, or customer backing out post-order.',ok:'Order-to-HOTO pipeline is healthy.'},action:'Check orders pending HOTO by age. Identify stuck cases. Assign ops team to clear documentation backlog.'}};
 
   let html=`<div style="background:var(--sur);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:12px;border-bottom:1px solid var(--bd);padding-bottom:8px">⚗️ L2: Funnel Conversion Analysis — All stages vs LMTD</div>`;
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;border-bottom:1px solid var(--bd);padding-bottom:8px">⚗️ L2: Funnel Conversion Analysis — All stages vs LMTD</div>
 
   Object.keys(FMAP).forEach(key=>{
     const fm=FMAP[key];
@@ -3404,11 +3404,11 @@ function insFunnelSection(d){
       </div>
       <div style="font-size:11px;color:#1a56db;padding:6px 10px;background:#dbeafe;border-radius:6px;margin-bottom:8px">
         <strong>Action:</strong> ${fm.action}
-      </div>`;
+      </div>
 
     if(critC.length||warnC.length){
       html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
-        <tr style="background:var(--s2)"><th style="padding:4px 8px;text-align:left">City</th><th style="padding:4px 8px;text-align:left">Tier</th><th style="padding:4px;text-align:center">MTD%</th><th style="padding:4px;text-align:center">LMTD%</th><th style="padding:4px;text-align:center">Δpp</th><th style="padding:4px;text-align:center">Alert</th><th style="padding:4px;text-align:left">Worst SC</th></tr>`;
+        <tr style="background:var(--s2)"><th style="padding:4px 8px;text-align:left">City</th><th style="padding:4px 8px;text-align:left">Tier</th><th style="padding:4px;text-align:center">MTD%</th><th style="padding:4px;text-align:center">LMTD%</th><th style="padding:4px;text-align:center">Δpp</th><th style="padding:4px;text-align:center">Alert</th><th style="padding:4px;text-align:left">Worst SC</th></tr>
       [...critC,...warnC].forEach(cd=>{
         const cf=cd.funnel[key];const cc=IAC[cf.alert];
         const cSCF=Object.entries(cd.sc)
@@ -3423,7 +3423,7 @@ function insFunnelSection(d){
           <td style="padding:4px;text-align:center;color:${(cf.cur-cf.lmtd)>=0?'#16a34a':'#dc2626'};font-weight:700">${(cf.cur-cf.lmtd)>=0?'+':''}${(cf.cur-cf.lmtd).toFixed(1)}pp</td>
           <td style="padding:4px;text-align:center">${iBadge(cf.alert,true)}</td>
           <td style="padding:4px;font-size:10px;color:${cSCF?'#dc2626':'var(--t3)'}">${cSCF?cSCF.s+' ('+cSCF.pp.toFixed(1)+'pp)':'-'}</td>
-        </tr>`;
+        </tr>
       });
       html+=`</table></div>`;
     }
@@ -3437,7 +3437,7 @@ function insFunnelSection(d){
     const moOld=C.aging.mo?.filter(l=>l.age>=5)||[];
     if(bmsOld.length>0||mmdOld.length>0||moOld.length>0){
       html+=`<div style="background:#fef2f2;border:1px solid #fecaca;border-left:4px solid #ef4444;border-radius:8px;padding:12px;margin-top:10px">
-        <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:8px">🔍 Lead Reachout & Follow-up Gaps (from Aging Data)</div>`;
+        <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:8px">🔍 Lead Reachout & Follow-up Gaps (from Aging Data)</div>
       if(bmsOld.length>0) html+=`<div style="font-size:11px;margin-bottom:5px;color:var(--t1)">• <strong>${f(bmsOld.length)} BQL leads</strong> waiting 3+ days without meeting scheduled — potential LRM reach-out gap. Action: Blitz call campaign today.</div>`;
       if(mmdOld.length>0) html+=`<div style="font-size:11px;margin-bottom:5px;color:var(--t1)">• <strong>${f(mmdOld.length)} scheduled meetings</strong> not done in 2+ days — likely reschedule / no-show issue. Action: LRM to reconfirm/reschedule all today.</div>`;
       if(moOld.length>0) html+=`<div style="font-size:11px;color:var(--t1)">• <strong>${f(moOld.length)} completed MDs</strong> without order in 5+ days — SC follow-up missing. Action: SC team to call all these leads today.</div>`;
@@ -3507,7 +3507,7 @@ function insPriorityActions(d){
       <div style="font-size:11px;color:var(--t2);margin-bottom:4px"><strong>Why:</strong> ${a.why}</div>
       <div style="font-size:11px;color:#1a56db;padding:5px 8px;background:#dbeafe;border-radius:5px"><strong>What to do:</strong> ${a.what}</div>
     </div>`).join('')}
-  </div>`;
+  </div>
 }
 
 function renderLocalInsights(d){
@@ -3519,7 +3519,7 @@ function renderLocalInsights(d){
     <div style="font-size:13px;font-weight:700;color:var(--bl);border-bottom:2px solid var(--bl);padding-bottom:6px;margin:16px 0 12px">⚗️ L2: Funnel Conversion Analysis</div>
     <div style="font-size:10px;color:var(--t3);margin-bottom:12px">All conversion stages vs LMTD · Root cause per stage · City-level gaps · Lead aging flags</div>
     ${insFunnelSection(d)}
-  </div>`;
+  </div>
 }
 
 function bIns(){
@@ -3638,7 +3638,7 @@ function bDoD(){
     <option value="HOTO">HOTO only</option>
   </select>
 </div>
-<div id="dod-body"></div>`;
+<div id="dod-body"></div>
 
   // Build multi-city widget for dod
   const mcWrap=document.getElementById('dod-city-mc-wrap');
@@ -3747,7 +3747,7 @@ function renderDoD(){
   <th style="font-size:8px;border-left:2px solid var(--bd2)">Conv%</th><th style="font-size:8px">vs LM</th><th style="font-size:8px">MOP%</th>
 </tr>
 </thead>
-<tbody>`;
+<tbody>
 
   dayData.forEach(row=>{
     if(row.isFuture&&row.cur.BQL===0&&row.cur.Order===0){
@@ -3757,7 +3757,7 @@ function renderDoD(){
         <td style="font-size:9px">${dayNames[row.dt.getDay()]}</td>
         ${showMetrics.map(()=>`<td colspan="3" style="border-left:2px solid var(--bd2);text-align:center;color:var(--bd2)">—</td>`).join('')}
         <td colspan="3" style="border-left:2px solid var(--bd2)"></td>
-      </tr>`;
+      </tr>
       return;
     }
     const rowBg=row.isToday?'background:#f0f9ff;font-weight:600':row.isFuture?'color:var(--t3)':'';
@@ -3783,7 +3783,7 @@ function renderDoD(){
       <td style="border-left:2px solid var(--bd2);font-size:10px;font-weight:500">${cumConvPct}</td>
       <td style="font-size:10px;color:var(--t2)">${lmCumConvPct}</td>
       <td style="font-size:10px;color:var(--t2)">${mopConvPct}</td>
-    </tr>`;
+    </tr>
   });
 
   // Totals row
@@ -3798,7 +3798,7 @@ function renderDoD(){
       return`<td style="border-left:2px solid var(--bd2)">${cv(totCur[m],totLm[m])}</td><td>${f(totCur[m])}</td><td>${ach!==null?`<span class="${cls}">${ach}%</span>/${f(totMop[m])}`:'–'}</td>`;
     }).join('')}
     <td colspan="3" style="border-left:2px solid var(--bd2);font-size:10px">${totCur.BQL>0?(totCur.Order/totCur.BQL*100).toFixed(1)+'%':'-'}</td>
-  </tr>`;
+  </tr>
   summaryHtml+='</tbody></table></div>';
 
   const el=document.getElementById('dod-body');
@@ -3824,7 +3824,7 @@ function bDoDFunnel(){
   <select id="dodf-city" onchange="renderDoDFunnel()"><option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}</select>
   <select id="dodf-sc" onchange="renderDoDFunnel()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
 </div>
-<div id="dodf-body"></div>`;
+<div id="dodf-body"></div>
   renderDoDFunnel();
 }
 
@@ -3944,7 +3944,7 @@ function renderDoDFunnel(){
         <td style="text-align:center;font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;border-left:2px solid #f59e0b">${d3v!=null?d3v.toFixed(1)+'%':'·'}</td>
         <td style="text-align:center;font-size:10px;font-weight:600;color:#92400e;background:#fef9e7;border-left:1px solid #f59e0b">${d7v!=null?d7v.toFixed(1)+'%':'·'}</td>
         ${cells}
-      </tr>`;
+      </tr>
     }).filter(Boolean).join('');
 
     // Column total row
@@ -3965,7 +3965,7 @@ function renderDoDFunnel(){
       <td style="text-align:center;font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;border-left:2px solid #f59e0b">${grandD3.toFixed(1)}%</td>
       <td style="text-align:center;font-size:10px;font-weight:700;color:#92400e;background:#fef9e7;border-left:1px solid #f59e0b">${grandD7.toFixed(1)}%</td>
       ${colTotPct.map(v=>v>0?`<td style="text-align:center;color:${col};font-size:9px;border:1px solid rgba(0,0,0,.05)">${v.toFixed(1)}%</td>`:`<td style="text-align:center;color:#d0d0c8;font-size:9px">·</td>`).join('')}
-    </tr>`;
+    </tr>
 
     return`<div style="font-size:14px;font-weight:800;color:${col};margin-top:22px;margin-bottom:4px;border-left:4px solid ${col};padding-left:10px">${stg.title}
       <span style="font-weight:400;font-size:10px;color:var(--t3);margin-left:6px">${stg.subtitle}</span>
@@ -3979,7 +3979,7 @@ function renderDoDFunnel(){
     <table style="border-collapse:collapse;min-width:max-content">
     <thead><tr>${colHdrs}</tr></thead>
     <tbody>${rowsHtml}${totRow}</tbody>
-    </table></div>`;
+    </table></div>
   }
 
   el.innerHTML=stages.map(matrixTable).join('');
@@ -4002,7 +4002,7 @@ function bCityMoM(){
     ${SCS.map(s=>`<option>${s}</option>`).join('')}
   </select>
 </div>
-<div id="citymom-body"></div>`;
+<div id="citymom-body"></div>
 
   const mcWrap=document.getElementById('citymom-city-mc-wrap');
   if(mcWrap&&!mcWrap.dataset.init){
@@ -4081,7 +4081,7 @@ function renderCityMoM(){
 <div class="tw"><table>
 <thead>${head}</thead>
 <tbody>${bodyRows.join('')}</tbody>
-</table></div>`;
+</table></div>
   }
 
   const body=document.getElementById('citymom-body');
@@ -4257,7 +4257,7 @@ function renderCohort(){
         <td style="font-weight:600;white-space:nowrap;font-size:11px">${row.lbl}</td>
         <td style="text-align:right;font-family:'DM Mono',monospace;color:#374151;font-size:11px;padding-right:10px">${f(row.bql)}</td>
         ${cells}${totalTd}
-      </tr>`;
+      </tr>
     }).join('');
     return`<div style="font-size:12px;font-weight:800;color:#1f2937;margin-top:16px;margin-bottom:4px;border-left:4px solid ${color};padding-left:8px">${title}</div>
 <div style="overflow-x:auto;margin-bottom:4px">
@@ -4269,7 +4269,7 @@ function renderCohort(){
   <th style="text-align:center;background:#f3f4f6;color:#374151;min-width:58px;font-size:10px;border:1px solid #e5e7eb">TOTAL</th>
 </tr></thead>
 <tbody>${rows}</tbody>
-</table></div>`;
+</table></div>
   }
 
   const el=document.getElementById('cohort-body');
@@ -4312,7 +4312,7 @@ function bDigitalExec(){
       <div class="mc-mop">vs LMTD: ${f(pv)} <span style="color:${chgColor};font-weight:600">${chg>=0?'+':''}${chg}%</span></div>
       <div class="pbar"><div class="pbar-f" style="width:${bar}%;background:${chg>=0?'var(--gn)':'var(--rd)'}"></div></div>
       <div class="mc-foot">${mb(v,pv)} <span style="font-size:10px;color:var(--t3)">vs ${f(pv)} last mo</span></div>
-    </div>`;
+    </div>
   }).join('');
   const cityPerf=CITIES.map(c=>({c,h:DC.cMTD[c].HOTO,ph:DC.cLMTD[c].HOTO,o:DC.cMTD[c].Order,po:DC.cLMTD[c].Order,hChg:DC.cLMTD[c].HOTO>0?(DC.cMTD[c].HOTO-DC.cLMTD[c].HOTO)/DC.cLMTD[c].HOTO:DC.cMTD[c].HOTO>0?1:0,oChg:DC.cLMTD[c].Order>0?(DC.cMTD[c].Order-DC.cLMTD[c].Order)/DC.cLMTD[c].Order:DC.cMTD[c].Order>0?1:0})).filter(x=>x.h>0||x.ph>0);
   const topC=cityPerf.sort((a,b)=>b.hChg-a.hChg).slice(0,5);
@@ -4356,7 +4356,7 @@ function bDigitalExec(){
     <div style="font-size:11px;color:var(--t2)">LMTD: <strong>${pMdHotoPct}%</strong> ${parseFloat(mdHotoPct)>=parseFloat(pMdHotoPct)?'<span class="up">^ Improving</span>':'<span class="dn">v Declining</span>'}</div>
     <div style="font-size:11px;color:var(--t2);margin-top:4px">${f(ind.MD)} MDs → ${f(ind.HOTO)} HOTOs</div>
   </div>
-</div>`;
+</div>
 }
 
 // ================================================================
@@ -4412,7 +4412,7 @@ function bDigitalCity(){
       <td>${fP(v.MS,v.BQL,pv.MS,pv.BQL)}</td>
       <td>${fP(v.MD,v.MS,pv.MD,pv.MS)}</td>
       <td>${fP(v.Order,v.MD,pv.Order,pv.MD)}</td>
-    </tr>`;
+    </tr>
   }).filter(Boolean).join('');
   document.getElementById('p-dcity').innerHTML=`
 <div class="ptitle">Digital — City Summary</div>
@@ -4600,7 +4600,7 @@ function bCompare(){
       <td style="font-weight:${isCur?700:500}">${mo.lbl}${isCur?` <span class="badge bb">MTD</span>`:''}</td>
       ${cells.join('')}
       ${fCellsHtml}
-    </tr>`;
+    </tr>
   }).join('');
 
   // Summary KPI cards: current month growth vs last month, for each metric
@@ -4629,7 +4629,7 @@ function bCompare(){
         </div>
         <div style="align-self:center;margin-left:auto">${winner}</div>
       </div>
-    </div>`;
+    </div>
   }).join('');
 
   // Funnel growth cards
@@ -4661,7 +4661,7 @@ function bCompare(){
         </div>
         <div style="align-self:center;margin-left:auto">${winner}</div>
       </div>
-    </div>`;
+    </div>
   }).join('');
 
   // Channel insights — growth narrative
