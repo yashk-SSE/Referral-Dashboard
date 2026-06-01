@@ -335,7 +335,7 @@ let DED=[],DLD=[],DC={},ACTIVE_CH='referral',dataLoaded=false;
 const D0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
 const YD=()=>{const d=D0();d.setDate(d.getDate()-1);return d;};
 const MS0=d=>new Date(d.getFullYear(),d.getMonth(),1);
-const dim=()=>new Date(D0().getFullYear(),D0().getMonth()+1,0).getDate();
+const dim=(d)=>{const t=d||YD();return new Date(t.getFullYear(),t.getMonth()+1,0).getDate();};
 const sameMonth=d=>{const t=D0();return d&&d.getFullYear()===t.getFullYear()&&d.getMonth()===t.getMonth();};
 function pd(s){if(!s)return null;const p=s.split(' ')[0].split('/');if(p.length===3)return new Date(+p[2],+p[1]-1,+p[0]);const d=new Date(s);return isNaN(d)?null:d;}
 function get6M(){const r=[],t=D0();for(let i=5;i>=0;i--){const d=new Date(t.getFullYear(),t.getMonth()-i,1);r.push({y:d.getFullYear(),m:d.getMonth()+1,lbl:d.toLocaleString('default',{month:'short'})+"'"+String(d.getFullYear()).slice(2)});}return r;}
@@ -404,7 +404,7 @@ function precompute(){
   C.india=agg(edCur);
   C.indiaL=agg(edLm);
   C.ytdHoto=ED.filter(r=>r.date>=new Date(2026,3,1)&&r.date<=yd).reduce((s,r)=>s+r.HOTO,0);
-  C.mopMTD=(city,m)=>{const mp=MOP[city||'India'];if(!mp)return 0;return Math.round((mp[m]||0)*yd.getDate()/dim());};
+  C.mopMTD=(city,m)=>{const mp=MOP[city||'India'];if(!mp)return 0;return Math.round((mp[m]||0)*yd.getDate()/dim(yd));};
 
   // Monthly india
   C.indMo=months.map(mo=>agg(ED.filter(r=>r.year===mo.y&&r.month===mo.m)));
@@ -1078,7 +1078,7 @@ ${(()=>{
 // MOP VS MTD TABLE
 // ??????????????????????????????????????
 function bMop(){
-  const yd=C.yd,doneD=yd.getDate(),daysLeft=dim()-doneD;
+  const yd=C.yd,doneD=yd.getDate(),daysLeft=dim(yd)-doneD;
   const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'HOTO',HOTO:'HOTO'};
   const metrics=['BQL','MS','MD','HOTO'];
 
@@ -1093,14 +1093,14 @@ function bMop(){
 
     const cells=metrics.map(m=>{
       const mopFull=mFull[m]||0;
-      const mopMtd=Math.round(mopFull*doneD/dim());
+      const mopMtd=Math.round(mopFull*doneD/dim(yd));
       const actual=v[m]||0;
       const prevActual=pv[m]||0;
       return{m,mopFull,mopMtd,actual,prevActual};
     });
 
     // Order actual - colour formatted same as defCellAbs (background + text colour)
-    const mopHotoMtd=Math.round((mFull.HOTO||0)*doneD/dim());
+    const mopHotoMtd=Math.round((mFull.HOTO||0)*doneD/dim(yd));
     const actOrder=v.Order||0;
     const lmtdOrder=pv.Order||0;
     const ordRatio=mopHotoMtd?actOrder/mopHotoMtd:1;
@@ -1111,7 +1111,7 @@ function bMop(){
     const ordPctCell=`<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>`;
 
     return`<tr ${rowStyle}>
-      <td style="font-weight:600;white-space:nowrap">${isIndia?'<>India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
+      <td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
       ${cells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}
       ${cells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}
       ${(()=>{const baseCells=cells.filter(c=>c.m!=='HOTO');const hotoCell=cells.find(c=>c.m==='HOTO');return baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')+ordCell+(hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):'');})()}
@@ -1129,14 +1129,14 @@ function bMop(){
 
   document.getElementById('p-mop').innerHTML=`
 <div class="ptitle">MOP vs Actual MTD</div>
-<div class="psub">May '26 . Full month MOP . MOP till today (Day ${doneD}/${dim()}) . Actual MTD . % deficit / surplus vs MOP MTD . MoM comparison</div>
+<div class="psub">May '26 . Full month MOP . MOP till yesterday (Day ${doneD}/${dim(yd)}) . Actual MTD . % deficit / surplus vs MOP MTD . MoM comparison</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;align-items:center">
   <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-weight:600">Red ≥20% deficit</span>
   <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:600">Amber 0–20% deficit</span>
   <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600">Green = surplus</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 8px;border-radius:6px">Hover cells for detail</span>
 </div>
-<div class="fbar"><select id="mop-tier" onchange="filterMopTable()"> onchange="filterMopTable()">${tierOpts()}</select><span id="mop-city-mc-wrap"></span></div>
+<div class="fbar"><select id="mop-tier" onchange="filterMopTable()">${tierOpts()}</select><span id="mop-city-mc-wrap"></span></div>
 <div class="tw" id="mop-tbl"><table>
   <thead>
     <tr>
@@ -1168,8 +1168,8 @@ function filterMop(cf,tf){
     const pv=isIndia?C.indiaL:C.cLMTD[city];
     const tier=isIndia?'India':TIERS[city]||'';
     const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-top:2px solid var(--bl)"':'';
-    const cells=metrics.map(m=>({m,mopFull:mFull[m]||0,mopMtd:Math.round((mFull[m]||0)*doneD/dim()),actual:v[m]||0,prevActual:pv[m]||0}));
-    const mopHotoMtd=Math.round((mFull.HOTO||0)*doneD/dim());
+    const cells=metrics.map(m=>({m,mopFull:mFull[m]||0,mopMtd:Math.round((mFull[m]||0)*doneD/dim(yd)),actual:v[m]||0,prevActual:pv[m]||0}));
+    const mopHotoMtd=Math.round((mFull.HOTO||0)*doneD/dim(yd));
     const actOrder=v.Order||0,lmtdOrder=pv.Order||0;
     const ordDiff=actOrder-mopHotoMtd,ordPctV=mopHotoMtd?Math.round(ordDiff/mopHotoMtd*100):0;
     const ordBgCls=ordDiff<0?(Math.abs(ordPctV)>=20?'def-hi':'def-md'):'sur-hi';
@@ -1204,7 +1204,7 @@ function renderIndia(cf,sf,tierCities){
   const metrics=['BQL','MS','MD','Order','HOTO'];
   const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'HOTO',HOTO:'HOTO'};
   const mopRows=metrics.map(m=>{
-    const mv=v[m],mpv=pv[m],mopFull=mop?.[mK[m]]||0,mopMTD=Math.round(mopFull*yd.getDate()/dim());
+    const mv=v[m],mpv=pv[m],mopFull=mop?.[mK[m]]||0,mopMTD=Math.round(mopFull*yd.getDate()/dim(yd));
     const ach=mopMTD?Math.min(Math.round(mv/mopMTD*100),150):0;
     return`<tr><td style="font-weight:600">${m}</td><td class="mono" style="text-align:center">${f(mopFull)}</td><td class="mono" style="text-align:center">${f(mopMTD)}</td><td style="text-align:center">${cv(mv,mpv)}</td><td style="text-align:center">${mb(mv,mpv)}</td><td style="text-align:center">${sb(mv,mopMTD)}</td><td><div class="prog" style="min-width:60px"><div class="prog-f" style="width:${Math.min(ach,100)}%;background:#374151"></div></div><span style="font-size:10px"> ${ach}%</span></td></tr>`;
   }).join('');
@@ -1408,7 +1408,7 @@ function bCity(){
           <span>${totMdoC.toFixed(1)}%</span>
           <span class="${parseFloat(totMdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(totMdoD)>=0?'+':''}${totMdoD}pp)</span>
         </td>
-      </tr>`;
+      </tr>`
     })()}
     ${scd.map(x=>{
       const bmsC=pN(x.v.MS,x.v.BQL),pbmsC=pN(x.pv.MS,x.pv.BQL);
@@ -1437,7 +1437,7 @@ function bCity(){
           <span>${mdoC.toFixed(1)}%</span>
           <span class="${parseFloat(mdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(mdoD)>=0?'+':''}${mdoD}pp)</span>
         </td>
-      </tr>`;
+      </tr>`
     }).join('')}
     </tbody></table></div></div></div>`;
   }).join('');
@@ -1526,8 +1526,71 @@ function filterCityTable(){
 function buildSCTrendHtml(cf){
   const months=C.months,yd=C.yd,mtdDay=yd.getDate();
   const pD=(curr,prev,label)=>{if(!prev)return`<td>-</td>`;const d=curr-prev,p=Math.round(d/prev*100);const cls=d>=0?'green':'red';const tip='title="'+label+': '+(d>=0?'+':'')+f(d)+' ('+(d>=0?'+':'')+p+'% vs prior month)"';return`<td class="${cls}" style="font-weight:600" ${tip}>${d>=0?'+':'-'}${Math.abs(p)}%</td>`;};
-  const trendHtml='<div class="tw"><table><thead><tr><th>Sub-Channel</th>'+months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'+m.lbl+(i===months.length-1?' <span class="badge bb" style="font-size:8px">Current MTD</span>':'')+'</th>').join('')+'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr><tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')+'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead><tbody>'+SCS.map(s=>{const cols=months.map(mo=>{let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});const curr=cols[cols.length-1],prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};return`<tr><td style="font-weight:600">${s}</td>`+cols.map((c,i)=>{const p=i>0?cols[i-1]:null;const isLast=i===cols.length-1;return'<td style="border-left:2px solid var(--bd2)">'+(isLast?'<span class="mono" style="color:#1f2937;font-weight:600">'+f(c.BQL)+'</span>':(p?cv(c.BQL,p.BQL):'<span class="mono">'+f(c.BQL)+'</span>'))+'</td><td>'+(isLast?'<span class="mono" style="color:#1f2937;font-weight:600">'+f(c.Order)+'</span>':(p?cv(c.Order,p.Order):'<span class="mono">'+f(c.Order)+'</span>'))+'</td><td>'+(isLast?'<span class="mono" style="color:#1f2937;font-weight:600">'+f(c.HOTO)+'</span>':(p?cv(c.HOTO,p.HOTO):'<span class="mono">'+f(c.HOTO)+'</span>'))+'</td>';}).join('')+pD(curr.BQL,prev.BQL,'BQL')+pD(curr.Order,prev.Order,'Order')+pD(curr.HOTO,prev.HOTO,'HOTO')+'</tr>';}).join('')+'</tbody></table></div>';
-  const mtdTrendHtml='<div class="tw"><table><thead><tr><th>Sub-Channel</th>'+months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'+m.lbl+' <span style="font-size:8px;color:var(--t3)">till '+mtdDay+'</span>'+(i===months.length-1?' <span class="badge bb" style="font-size:8px">Current</span>':'')+'</th>').join('')+'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr><tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')+'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead><tbody>'+SCS.map(s=>{const mtdCols=months.map(mo=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});const curr=mtdCols[mtdCols.length-1],prev=mtdCols[mtdCols.length-2]||{BQL:0,HOTO:0,Order:0};return`<tr><td style="font-weight:600">${s}</td>`+mtdCols.map((c,i)=>{const p=i>0?mtdCols[i-1]:null;return'<td style="border-left:2px solid var(--bd2)">'+(p?cv(c.BQL,p.BQL):'<span class="mono">'+f(c.BQL)+'</span>')+'</td><td>'+(p?cv(c.Order,p.Order):'<span class="mono">'+f(c.Order)+'</span>')+'</td><td>'+(p?cv(c.HOTO,p.HOTO):'<span class="mono">'+f(c.HOTO)+'</span>')+'</td>';}).join('')+pD(curr.BQL,prev.BQL,'BQL MTD')+pD(curr.Order,prev.Order,'Order MTD')+pD(curr.HOTO,prev.HOTO,'HOTO MTD')+'</tr>';}).join('')+'</tbody></table></div>';
+  // ── aggregate all SCs for a month (full or MTD) ──
+  function aggAllSCMo(mo, tillDay){
+    let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    ED.forEach(x=>{
+      if(x.year!==mo.y||x.month!==mo.m)return;
+      if(cf&&x.city!==cf)return;
+      if(tillDay){const me=new Date(mo.y,mo.m-1,tillDay);const ms=new Date(mo.y,mo.m-1,1);if(x.date<ms||x.date>me)return;}
+      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+    });
+    return r;
+  }
+  // ── build one table row ──
+  function scTrendRow(label, cols, isIndia){
+    const curr=cols[cols.length-1], prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};
+    const rowStyle=isIndia?'style="font-weight:700;background:#eff6ff;border-top:2px solid #1a56db;border-bottom:2px solid #1a56db"':'';
+    const labelTd=isIndia
+      ?`<td style="font-weight:700"><span style="color:#1a56db;margin-right:4px">⊕</span>${label}<span class="ctag" style="background:#1a56db;color:#fff;margin-left:4px">All SCs</span></td>`
+      :`<td style="font-weight:600">${label}</td>`;
+    const cells=cols.map((c,i)=>{
+      const p=i>0?cols[i-1]:null;
+      const isLast=i===cols.length-1;
+      const colBQL=isLast?`<span class="mono" style="color:${isIndia?'#1a56db':'#1f2937'};font-weight:700">${f(c.BQL)}</span>`:(p?cv(c.BQL,p.BQL):`<span class="mono">${f(c.BQL)}</span>`);
+      const colOrd=isLast?`<span class="mono" style="color:${isIndia?'#1a56db':'#1f2937'};font-weight:700">${f(c.Order)}</span>`:(p?cv(c.Order,p.Order):`<span class="mono">${f(c.Order)}</span>`);
+      const colHoto=isLast?`<span class="mono" style="color:${isIndia?'#1a56db':'#1f2937'};font-weight:700">${f(c.HOTO)}</span>`:(p?cv(c.HOTO,p.HOTO):`<span class="mono">${f(c.HOTO)}</span>`);
+      return`<td style="border-left:2px solid var(--bd2)">${colBQL}</td><td>${colOrd}</td><td>${colHoto}</td>`;
+    }).join('');
+    return`<tr ${rowStyle}>${labelTd}${cells}${pD(curr.BQL,prev.BQL,label+' BQL')}${pD(curr.Order,prev.Order,label+' Ord')}${pD(curr.HOTO,prev.HOTO,label+' HOTO')}</tr>`;
+  }
+  function scMtdRow(label, cols, isIndia){
+    const curr=cols[cols.length-1], prev=cols[cols.length-2]||{BQL:0,HOTO:0,Order:0};
+    const rowStyle=isIndia?'style="font-weight:700;background:#eff6ff;border-top:2px solid #1a56db;border-bottom:2px solid #1a56db"':'';
+    const labelTd=isIndia
+      ?`<td style="font-weight:700"><span style="color:#1a56db;margin-right:4px">⊕</span>${label}<span class="ctag" style="background:#1a56db;color:#fff;margin-left:4px">All SCs</span></td>`
+      :`<td style="font-weight:600">${label}</td>`;
+    const cells=cols.map((c,i)=>{
+      const p=i>0?cols[i-1]:null;
+      const colBQL=p?cv(c.BQL,p.BQL):`<span class="mono">${f(c.BQL)}</span>`;
+      const colOrd=p?cv(c.Order,p.Order):`<span class="mono">${f(c.Order)}</span>`;
+      const colHoto=p?cv(c.HOTO,p.HOTO):`<span class="mono">${f(c.HOTO)}</span>`;
+      return`<td style="border-left:2px solid var(--bd2)">${colBQL}</td><td>${colOrd}</td><td>${colHoto}</td>`;
+    }).join('');
+    return`<tr ${rowStyle}>${labelTd}${cells}${pD(curr.BQL,prev.BQL,label+' BQL')}${pD(curr.Order,prev.Order,label+' Ord')}${pD(curr.HOTO,prev.HOTO,label+' HOTO')}</tr>`;
+  }
+  const tableHeader=(isFullMonth)=>'<div class="tw"><table><thead><tr><th>Sub-Channel</th>'
+    +months.map((m,i)=>'<th colspan="3" style="text-align:center;border-left:2px solid var(--bd2)">'
+      +m.lbl+(isFullMonth?'':(` <span style="font-size:8px;color:var(--t3)">till ${mtdDay}</span>`))
+      +(i===months.length-1?(isFullMonth?' <span class="badge bb" style="font-size:8px">Current MTD</span>':' <span class="badge bb" style="font-size:8px">Current</span>'):'')
+      +'</th>').join('')
+    +'<th colspan="3" style="text-align:center;background:#fef3c7;color:#92400e;font-size:9px;padding:3px">vs LMTD</th></tr>'
+    +'<tr><th></th>'+months.map(()=>'<th style="font-size:8px;border-left:2px solid var(--bd2)">BQL</th><th style="font-size:8px">Ord</th><th style="font-size:8px">HOTO</th>').join('')
+    +'<th style="font-size:8px;background:#fef3c7;color:#92400e">BQL%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">ORD%</th><th style="font-size:8px;background:#fef3c7;color:#92400e">HOTO%</th></tr></thead><tbody>';
+  // ── Full Month table ──
+  const fullIndiaCols=months.map(mo=>aggAllSCMo(mo,null));
+  const fullSCRows=SCS.map(s=>{
+    const cols=months.map(mo=>{let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});
+    return scTrendRow(s,cols,false);
+  }).join('');
+  const trendHtml=tableHeader(true)+scTrendRow('India Overall',fullIndiaCols,true)+fullSCRows+'</tbody></table></div>';
+  // ── MTD table ──
+  const mtdIndiaCols=months.map(mo=>aggAllSCMo(mo,mtdDay));
+  const mtdSCRows=SCS.map(s=>{
+    const mtdCols=months.map(mo=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});
+    return scMtdRow(s,mtdCols,false);
+  }).join('');
+  const mtdTrendHtml=tableHeader(false)+scMtdRow('India Overall',mtdIndiaCols,true)+mtdSCRows+'</tbody></table></div>';
   return{trendHtml,mtdTrendHtml};
 }
 function refreshSCTrendTables(cf){
@@ -1745,7 +1808,7 @@ ${SCS.map(s=>{
           <span>${mdoC.toFixed(1)}%</span>
           <span class="${parseFloat(mdoD)>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${parseFloat(mdoD)>=0?'+':''}${mdoD}pp)</span>
         </td>
-      </tr>`;
+      </tr>`
     }).join('')}
     </tbody></table></div></div></div>`;
   }).join('');
@@ -1781,7 +1844,7 @@ ${(()=>{
       <td>${cv(r.v.HOTO,r.pv.HOTO)}</td>
       <td>${mb(r.v.HOTO,r.pv.HOTO)}</td>
       <td>${pct(r.v.Order,r.v.MD)}</td>
-    </tr>`;
+    </tr>`
   }).join('');
 })()}
 </table></div>
@@ -2869,7 +2932,7 @@ function buildInsData(){
   const ind=C.india,indL=C.indiaL;
   const METS=['BQL','MS','MD','Order','HOTO'];
   const doneD=C.yd.getDate();
-  const dl=dim()-doneD;
+  const dl=dim(C.yd)-doneD;
 
   function funnelBlock(v,pv){
     return{
@@ -3077,21 +3140,21 @@ function renderAIText(text){
       html+=`<div style="font-size:12px;font-weight:600;color:var(--t2);margin:10px 0 4px">${line.slice(5)}</div>`;
     } else if(line.match(/^[-*] /)){
       const content=line.slice(2)
-        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*\*(.*?)\*\*/g,'<strong><script></strong>')
         .replace(/CRITICAL/g,'<span style="color:#ef4444;font-weight:700">🚨 CRITICAL</span>')
         .replace(/WARNING/g,'<span style="color:#f59e0b;font-weight:700">⚠️ WARNING</span>')
         .replace(/POSITIVE/g,'<span style="color:#22c55e;font-weight:700">✅ POSITIVE</span>')
         .replace(/APPRECIATIVE/g,'<span style="color:#eab308;font-weight:700">🌟 APPRECIATIVE</span>');
       html+=`<div style="display:flex;gap:6px;margin:3px 0;padding-left:8px"><span style="color:var(--bl);flex-shrink:0">•</span><span>${content}</span></div>`;
     } else if(line.match(/^\d+\. /)){
-      const content=line.replace(/^\d+\. /,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      const content=line.replace(/^\d+\. /,'').replace(/\*\*(.*?)\*\*/g,'<strong><script></strong>');
       const num=line.match(/^(\d+)\./)[1];
       html+=`<div style="display:flex;gap:8px;margin:4px 0;padding-left:8px"><span style="color:var(--bl);font-weight:700;flex-shrink:0;min-width:16px">${num}.</span><span>${content}</span></div>`;
     } else if(line.trim()===''){
       html+='<div style="height:4px"></div>';
     } else {
       const content=line
-        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*\*(.*?)\*\*/g,'<strong><script></strong>')
         .replace(/CRITICAL/g,'<span style="color:#ef4444;font-weight:700">🚨 CRITICAL</span>')
         .replace(/WARNING/g,'<span style="color:#f59e0b;font-weight:700">⚠️ WARNING</span>')
         .replace(/POSITIVE/g,'<span style="color:#22c55e;font-weight:700">✅ POSITIVE</span>')
@@ -3542,7 +3605,7 @@ window.insGenAI=function(){
 // ACTIONS
 // ??????????????????????????????????????
 function bAct(){
-  const dl=dim()-C.yd.getDate(),doneToday=C.yd.getDate();
+  const dl=dim(C.yd)-C.yd.getDate(),doneToday=C.yd.getDate();
   const ind=C.india,mopFull=MOP.India.HOTO,mopH=C.mopMTD(null,'HOTO');
   const acts=[];
   const aC=(p,pl,own,title,body)=>({p,pl,own,title,body});
@@ -4114,6 +4177,7 @@ ${funnelHtml}`;
 }
 
 
+function bCohort(){
   document.getElementById('p-cohort').innerHTML=`<div class="ptitle">MoM Cohort Analysis</div>
 <div class="psub">Same-month cohort — leads created in Month X tracked across M0 (same month), M1 (next month), M2… for stage conversions</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:10px">
@@ -4257,7 +4321,7 @@ function renderCohort(){
         <td style="font-weight:600;white-space:nowrap;font-size:11px">${row.lbl}</td>
         <td style="text-align:right;font-family:'DM Mono',monospace;color:#374151;font-size:11px;padding-right:10px">${f(row.bql)}</td>
         ${cells}${totalTd}
-      </tr>`;
+      </tr>`
     }).join('');
     return`<div style="font-size:12px;font-weight:800;color:#1f2937;margin-top:16px;margin-bottom:4px;border-left:4px solid ${color};padding-left:8px">${title}</div>
 <div style="overflow-x:auto;margin-bottom:4px">
@@ -4269,7 +4333,7 @@ function renderCohort(){
   <th style="text-align:center;background:#f3f4f6;color:#374151;min-width:58px;font-size:10px;border:1px solid #e5e7eb">TOTAL</th>
 </tr></thead>
 <tbody>${rows}</tbody>
-</table></div>`;
+</table></div>`
   }
 
   const el=document.getElementById('cohort-body');
@@ -4312,7 +4376,7 @@ function bDigitalExec(){
       <div class="mc-mop">vs LMTD: ${f(pv)} <span style="color:${chgColor};font-weight:600">${chg>=0?'+':''}${chg}%</span></div>
       <div class="pbar"><div class="pbar-f" style="width:${bar}%;background:${chg>=0?'var(--gn)':'var(--rd)'}"></div></div>
       <div class="mc-foot">${mb(v,pv)} <span style="font-size:10px;color:var(--t3)">vs ${f(pv)} last mo</span></div>
-    </div>`;
+    </div>`
   }).join('');
   const cityPerf=CITIES.map(c=>({c,h:DC.cMTD[c].HOTO,ph:DC.cLMTD[c].HOTO,o:DC.cMTD[c].Order,po:DC.cLMTD[c].Order,hChg:DC.cLMTD[c].HOTO>0?(DC.cMTD[c].HOTO-DC.cLMTD[c].HOTO)/DC.cLMTD[c].HOTO:DC.cMTD[c].HOTO>0?1:0,oChg:DC.cLMTD[c].Order>0?(DC.cMTD[c].Order-DC.cLMTD[c].Order)/DC.cLMTD[c].Order:DC.cMTD[c].Order>0?1:0})).filter(x=>x.h>0||x.ph>0);
   const topC=cityPerf.sort((a,b)=>b.hChg-a.hChg).slice(0,5);
@@ -4356,7 +4420,7 @@ function bDigitalExec(){
     <div style="font-size:11px;color:var(--t2)">LMTD: <strong>${pMdHotoPct}%</strong> ${parseFloat(mdHotoPct)>=parseFloat(pMdHotoPct)?'<span class="up">^ Improving</span>':'<span class="dn">v Declining</span>'}</div>
     <div style="font-size:11px;color:var(--t2);margin-top:4px">${f(ind.MD)} MDs → ${f(ind.HOTO)} HOTOs</div>
   </div>
-</div>`;
+</div>`
 }
 
 // ================================================================
@@ -4412,7 +4476,7 @@ function bDigitalCity(){
       <td>${fP(v.MS,v.BQL,pv.MS,pv.BQL)}</td>
       <td>${fP(v.MD,v.MS,pv.MD,pv.MS)}</td>
       <td>${fP(v.Order,v.MD,pv.Order,pv.MD)}</td>
-    </tr>`;
+    </tr>`
   }).filter(Boolean).join('');
   document.getElementById('p-dcity').innerHTML=`
 <div class="ptitle">Digital — City Summary</div>
