@@ -1,26 +1,170 @@
 [
-  {"city":"India","BQL":4880,"MS":3906,"MD":3515,"HOTO":1831},
-  {"city":"Ahmedabad","BQL":80,"MS":71,"MD":64,"HOTO":36},
-  {"city":"Surat","BQL":0,"MS":0,"MD":0,"HOTO":0},
-  {"city":"Nagpur","BQL":814,"MS":738,"MD":664,"HOTO":361},
-  {"city":"Amravati","BQL":110,"MS":92,"MD":83,"HOTO":44},
-  {"city":"Aurangabad","BQL":91,"MS":86,"MD":77,"HOTO":47},
-  {"city":"Nashik","BQL":150,"MS":141,"MD":127,"HOTO":68},
-  {"city":"Pune","BQL":699,"MS":628,"MD":565,"HOTO":315},
-  {"city":"Kolhapur","BQL":69,"MS":64,"MD":58,"HOTO":33},
-  {"city":"Bhopal","BQL":367,"MS":263,"MD":237,"HOTO":119},
-  {"city":"Gwalior","BQL":447,"MS":212,"MD":191,"HOTO":70},
-  {"city":"Indore","BQL":289,"MS":223,"MD":201,"HOTO":79},
-  {"city":"Jabalpur","BQL":403,"MS":247,"MD":222,"HOTO":126},
-  {"city":"Jaipur","BQL":102,"MS":68,"MD":61,"HOTO":32},
-  {"city":"Delhi","BQL":105,"MS":82,"MD":74,"HOTO":36},
-  {"city":"Gurgaon","BQL":37,"MS":31,"MD":28,"HOTO":15},
-  {"city":"Ghaziabad","BQL":63,"MS":50,"MD":45,"HOTO":22},
-  {"city":"Noida","BQL":25,"MS":18,"MD":16,"HOTO":8},
-  {"city":"Kanpur","BQL":200,"MS":183,"MD":165,"HOTO":94},
-  {"city":"Lucknow","BQL":406,"MS":323,"MD":291,"HOTO":146},
-  {"city":"Varanasi","BQL":38,"MS":36,"MD":32,"HOTO":20},
-  {"city":"Hyderabad","BQL":145,"MS":132,"MD":119,"HOTO":71},
-  {"city":"Bangalore","BQL":131,"MS":94,"MD":85,"HOTO":36},
-  {"city":"Chennai","BQL":142,"MS":122,"MD":110,"HOTO":50}
+  {
+    "city": "India",
+    "BQL": 5688,
+    "MS": 4136,
+    "MD": 3824,
+    "HOTO": 1954
+  },
+  {
+    "city": "Ahmedabad",
+    "BQL": 79,
+    "MS": 70,
+    "MD": 70,
+    "HOTO": 35
+  },
+  {
+    "city": "Nagpur",
+    "BQL": 871,
+    "MS": 667,
+    "MD": 629,
+    "HOTO": 325
+  },
+  {
+    "city": "Amravati",
+    "BQL": 108,
+    "MS": 81,
+    "MD": 67,
+    "HOTO": 29
+  },
+  {
+    "city": "Aurangabad",
+    "BQL": 110,
+    "MS": 78,
+    "MD": 80,
+    "HOTO": 47
+  },
+  {
+    "city": "Nashik",
+    "BQL": 119,
+    "MS": 109,
+    "MD": 102,
+    "HOTO": 63
+  },
+  {
+    "city": "Pune",
+    "BQL": 780,
+    "MS": 655,
+    "MD": 602,
+    "HOTO": 342
+  },
+  {
+    "city": "Kolhapur",
+    "BQL": 61,
+    "MS": 56,
+    "MD": 50,
+    "HOTO": 32
+  },
+  {
+    "city": "Bhopal",
+    "BQL": 509,
+    "MS": 327,
+    "MD": 305,
+    "HOTO": 152
+  },
+  {
+    "city": "Gwalior",
+    "BQL": 398,
+    "MS": 178,
+    "MD": 170,
+    "HOTO": 62
+  },
+  {
+    "city": "Indore",
+    "BQL": 374,
+    "MS": 279,
+    "MD": 250,
+    "HOTO": 100
+  },
+  {
+    "city": "Jabalpur",
+    "BQL": 424,
+    "MS": 206,
+    "MD": 193,
+    "HOTO": 114
+  },
+  {
+    "city": "Jaipur",
+    "BQL": 203,
+    "MS": 145,
+    "MD": 133,
+    "HOTO": 69
+  },
+  {
+    "city": "Delhi",
+    "BQL": 139,
+    "MS": 122,
+    "MD": 113,
+    "HOTO": 59
+  },
+  {
+    "city": "Gurgaon",
+    "BQL": 67,
+    "MS": 48,
+    "MD": 46,
+    "HOTO": 23
+  },
+  {
+    "city": "Ghaziabad",
+    "BQL": 85,
+    "MS": 76,
+    "MD": 68,
+    "HOTO": 34
+  },
+  {
+    "city": "Noida",
+    "BQL": 42,
+    "MS": 36,
+    "MD": 33,
+    "HOTO": 16
+  },
+  {
+    "city": "Kanpur",
+    "BQL": 194,
+    "MS": 172,
+    "MD": 165,
+    "HOTO": 105
+  },
+  {
+    "city": "Lucknow",
+    "BQL": 432,
+    "MS": 349,
+    "MD": 284,
+    "HOTO": 138
+  },
+  {
+    "city": "Varanasi",
+    "BQL": 51,
+    "MS": 46,
+    "MD": 47,
+    "HOTO": 26
+  },
+  {
+    "city": "Hyderabad",
+    "BQL": 236,
+    "MS": 166,
+    "MD": 163,
+    "HOTO": 73
+  },
+  {
+    "city": "Bangalore",
+    "BQL": 213,
+    "MS": 142,
+    "MD": 135,
+    "HOTO": 56
+  },
+  {
+    "city": "Chennai",
+    "BQL": 163,
+    "MS": 112,
+    "MD": 105,
+    "HOTO": 48
+  },
+  {
+    "city": "Coimbatore",
+    "BQL": 30,
+    "MS": 18,
+    "MD": 14,
+    "HOTO": 6
+  }
 ]
