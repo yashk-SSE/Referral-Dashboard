@@ -248,6 +248,62 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 .win-r{background:#dbeafe;color:#1a56db}
 .win-d{background:#dcfce7;color:#166534}
 .win-tie{background:var(--s2);color:var(--t2)}
+/* ── City Deep Dive styles ──────────────────── */
+.cdd-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.cdd-city-sel{padding:5px 12px;border:1.5px solid var(--bl);border-radius:8px;font-size:12px;font-weight:600;background:var(--bll);color:var(--bl);cursor:pointer}
+.cdd-scope-sw{display:flex;gap:3px;background:var(--s2);border-radius:7px;padding:2px}
+.cdd-scope-btn{padding:3px 10px;border:none;background:transparent;border-radius:5px;font-size:11px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s}
+.cdd-scope-btn.active{background:var(--sur);color:var(--bl);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.cdd-period-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:var(--s2);border-radius:8px;margin-bottom:12px;font-size:11px}
+.cdd-period-pill{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .12s}
+.cdd-period-pill.primary{background:#1a56db;color:#fff;border-color:#1a56db}
+.cdd-period-pill.cmp1{background:#059669;color:#fff;border-color:#059669}
+.cdd-period-pill.cmp2{background:#d97706;color:#fff;border-color:#d97706}
+.cdd-period-pill.inactive{background:var(--sur);color:var(--t2);border-color:var(--bd2)}
+.cdd-mo-sel{padding:3px 8px;border:1px solid var(--bd2);border-radius:6px;font-size:11px;background:var(--sur);color:var(--tx);cursor:pointer}
+.cdd-date-grp{display:flex;align-items:center;gap:4px}
+.cdd-date-input{padding:2px 6px;border:1px solid var(--bd2);border-radius:5px;font-size:10px;font-family:inherit;background:var(--sur);color:var(--tx)}
+.cdd-apply-btn{padding:3px 10px;background:var(--bl);color:#fff;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer}
+.cdd-remove-btn{padding:2px 7px;background:transparent;color:var(--rd);border:1px solid var(--rd);border-radius:5px;font-size:10px;cursor:pointer}
+.cdd-add-cmp-btn{padding:3px 10px;background:transparent;color:var(--bl);border:1.5px dashed var(--bl);border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;transition:all .12s}
+.cdd-add-cmp-btn:hover{background:var(--bll)}
+.cdd-summary-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.cdd-kpi{background:var(--sur);border:0.5px solid var(--bd);border-radius:9px;padding:10px;text-align:center}
+.cdd-kpi-label{font-size:9px;font-weight:600;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.cdd-kpi-val{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--tx)}
+.cdd-kpi-cmp{font-size:10px;margin-top:3px;display:flex;flex-direction:column;gap:2px}
+.cdd-kpi-cmp-row{display:flex;align-items:center;justify-content:center;gap:4px}
+.cdd-cmp-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cdd-dot-1{background:#059669}
+.cdd-dot-2{background:#d97706}
+.cdd-section-title{font-size:11px;font-weight:700;color:var(--t1);letter-spacing:.3px;padding:8px 0 4px;border-bottom:1.5px solid var(--bd);margin-bottom:8px}
+.cdd-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cdd-table-card{background:var(--sur);border:0.5px solid var(--bd);border-radius:9px;overflow:hidden}
+.cdd-table-card table{width:100%;border-collapse:collapse;font-size:11px}
+.cdd-table-card thead th{background:var(--s2);padding:5px 8px;text-align:left;font-weight:600;color:var(--t2);font-size:10px}
+.cdd-table-card thead th.right{text-align:right}
+.cdd-table-card tbody td{padding:5px 8px;border-top:0.5px solid var(--bd2);color:var(--tx)}
+.cdd-table-card tbody td.right{text-align:right;font-family:'DM Mono',monospace}
+.cdd-table-card tbody tr:hover{background:var(--s2)}
+.cdd-funnel-bar-wrap{height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin-top:2px}
+.cdd-funnel-bar{height:100%;background:var(--bl);border-radius:4px;transition:width .3s}
+.cdd-badge-up{color:#059669;font-size:9px;font-weight:700}
+.cdd-badge-dn{color:#dc2626;font-size:9px;font-weight:700}
+.cdd-badge-nc{color:var(--t3);font-size:9px}
+.cdd-cmp-tbl th.cmp1-col{color:#059669}
+.cdd-cmp-tbl th.cmp2-col{color:#d97706}
+.cdd-eff-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--bd2)}
+.cdd-eff-row:last-child{border:none}
+.cdd-eff-label{font-size:11px;color:var(--t2);font-weight:500}
+.cdd-eff-vals{display:flex;gap:8px;align-items:center}
+.cdd-month-badge{padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700}
+.cdd-m-primary{background:#dbeafe;color:#1a56db}
+.cdd-m-cmp1{background:#d1fae5;color:#059669}
+.cdd-m-cmp2{background:#fef3c7;color:#d97706}
+.cdd-date-mode-sw{display:flex;gap:3px;background:var(--s2);border-radius:6px;padding:2px}
+.cdd-date-mode-btn{padding:2px 8px;border:none;background:transparent;border-radius:4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--t2);transition:all .12s}
+.cdd-date-mode-btn.active{background:var(--sur);color:var(--bl);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.cdd-range-hint{font-size:9px;color:var(--t3);font-style:italic}
 </style>
 </head>
 <body>
@@ -280,6 +336,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <span class="mob-tab" onclick="sw('dodfunnel',this)">DoD Funnel</span>
   <span class="mob-tab" onclick="sw('cohort',this)">MoM Cohort</span>
   <span class="mob-tab" onclick="sw('citymom',this)">City MoM</span>
+  <span class="mob-tab" onclick="sw('citydeep',this)">City Deep Dive</span>
 </div>
 <div class="layout">
 <nav class="sidebar">
@@ -303,6 +360,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="ni" data-ch="referral" onclick="sw('dodfunnel',this)">⊞ DoD Funnel</div>
   <div class="ni" data-ch="referral" onclick="sw('cohort',this)">⬡ MoM Cohort</div>
   <div class="ni" data-ch="referral" onclick="sw('citymom',this)">⬡ City MoM</div>
+  <div class="ni" data-ch="referral" onclick="sw('citydeep',this)">⊕ City Deep Dive</div>
   <!-- DIGITAL CHANNEL -->
   <div class="sh sh-d" data-ch="digital" style="display:none">Digital Channel</div>
   <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dexec',this)">⬡ Executive</div>
@@ -377,6 +435,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-dodfunnel" class="panel"></div>
   <div id="p-cohort" class="panel"></div>
   <div id="p-citymom" class="panel"></div>
+  <div id="p-citydeep" class="panel"></div>
   <!-- Digital panels -->
   <div id="p-dexec" class="panel"></div>
   <div id="p-dindia" class="panel"></div>
@@ -565,7 +624,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
+  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -580,7 +639,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -623,7 +682,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
+  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -4903,7 +4962,7 @@ const TF = {
 };
 
 // Referral tabs that show the view mode switcher
-const REFERRAL_TABS = ['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom'];
+const REFERRAL_TABS = ['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep'];
 const TF_CAPABLE_TABS = ['exec','india','city','sc','funnel','m0funnel','vel','wow','act','dod','dodfunnel']; // tabs that re-render in TF mode
 
 function setViewMode(mode) {
@@ -5543,6 +5602,640 @@ function updateViewModeSwitcherVisibility(tab) {
   if(!sw2) return;
   const isReferralTab = REFERRAL_TABS.includes(tab);
   sw2.style.display = isReferralTab ? 'flex' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// CITY DEEP DIVE — full single-city analysis view
+// Primary month + up to 2 optional comparison periods
+// Supports: month picker, custom date range, same-days adj
+// ═══════════════════════════════════════════════════════
+
+const CDD = {
+  city: '',           // '' = India/All
+  scope: '',          // '' = all sub-channels
+  dateMode: 'month',  // 'month' | 'range'
+  primary: { month: null, from: null, to: null },
+  cmp1: { active: false, month: null, from: null, to: null },
+  cmp2: { active: false, month: null, from: null, to: null },
+  sameDays: false,
+  _init: false,
+};
+
+function cddInit() {
+  if (CDD._init) return;
+  CDD._init = true;
+  const months = C.months;
+  // Default: current month as primary (last in array), prev month as cmp1
+  CDD.primary.month = months[months.length - 1];
+  CDD.cmp1.month = months[months.length - 2] || months[months.length - 1];
+  CDD.cmp2.month = months[months.length - 3] || months[months.length - 2] || months[0];
+}
+
+function bCityDeep() {
+  cddInit();
+  const yd = C.yd;
+  const months = C.months;
+
+  const panel = document.getElementById('p-citydeep');
+  panel.innerHTML = `
+<div class="ptitle">City Deep Dive</div>
+<div class="psub">Single-city (or All-India) analysis across up to 3 periods simultaneously — primary + 2 optional comparisons. Choose months or custom date ranges.</div>
+
+<div style="background:var(--sur);border:0.5px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;font-weight:600;color:var(--t2)">City:</span>
+      <select id="cdd-city" class="cdd-city-sel" onchange="cddSetCity(this.value)">
+        <option value="">🇮🇳 All India</option>
+        ${CITIES.map(c => `<option value="${c}" ${CDD.city === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;font-weight:600;color:var(--t2)">Sub-Channel:</span>
+      <select id="cdd-scope" class="cdd-mo-sel" onchange="cddSetScope(this.value)">
+        <option value="">All</option>
+        ${SCS.map(s => `<option value="${s}" ${CDD.scope === s ? 'selected' : ''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;font-weight:600;color:var(--t2)">Date mode:</span>
+      <div class="cdd-date-mode-sw">
+        <button class="cdd-date-mode-btn ${CDD.dateMode === 'month' ? 'active' : ''}" onclick="cddSetDateMode('month')">Month</button>
+        <button class="cdd-date-mode-btn ${CDD.dateMode === 'range' ? 'active' : ''}" onclick="cddSetDateMode('range')">Custom Range</button>
+      </div>
+    </div>
+  </div>
+  <div id="cdd-period-rows"></div>
+</div>
+
+<!-- KPI Summary table -->
+<div class="cdd-section-title">Performance Summary</div>
+<div id="cdd-kpi-table" style="margin-bottom:14px"></div>
+
+<!-- SC breakdown -->
+<div class="cdd-section-title">Sub-Channel Breakdown</div>
+<div id="cdd-sc-breakdown" style="overflow-x:auto;margin-bottom:14px"></div>
+
+<!-- Funnel -->
+<div class="cdd-section-title">Conversion Funnel</div>
+<div id="cdd-funnel-wrap" style="margin-bottom:14px"></div>
+
+<!-- MoM Trend -->
+<div class="cdd-section-title">6-Month Trend</div>
+<div id="cdd-trend-wrap" style="overflow-x:auto;margin-bottom:14px"></div>
+`;
+
+  cddRenderPeriodRows();
+  cddRenderAll();
+}
+
+function cddSetCity(v) { CDD.city = v; cddRenderAll(); }
+function cddSetScope(v) { CDD.scope = v; cddRenderAll(); }
+function cddSetDateMode(m) {
+  CDD.dateMode = m;
+  if (m === 'month') {
+    const months = C.months;
+    CDD.primary = { month: months[months.length - 1], from: null, to: null };
+    CDD.cmp1 = { active: CDD.cmp1.active, month: months[months.length - 2] || months[0], from: null, to: null };
+    CDD.cmp2 = { active: CDD.cmp2.active, month: months[months.length - 3] || months[0], from: null, to: null };
+  } else {
+    const yd = C.yd;
+    CDD.primary = { month: null, from: new Date(yd.getFullYear(), yd.getMonth() - 1, 1), to: new Date(yd.getFullYear(), yd.getMonth(), 0) };
+    CDD.cmp1 = { active: CDD.cmp1.active, month: null, from: new Date(yd.getFullYear(), yd.getMonth() - 2, 1), to: new Date(yd.getFullYear(), yd.getMonth() - 1, 0) };
+    CDD.cmp2 = { active: CDD.cmp2.active, month: null, from: new Date(yd.getFullYear(), yd.getMonth() - 3, 1), to: new Date(yd.getFullYear(), yd.getMonth() - 2, 0) };
+  }
+  document.querySelectorAll('.cdd-date-mode-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase().includes(m.slice(0, 4))));
+  cddRenderPeriodRows();
+  cddRenderAll();
+}
+
+function cddMonthOpts(selMo) {
+  return C.months.map((m, i) => `<option value="${i}" ${selMo && selMo.y === m.y && selMo.m === m.m ? 'selected' : ''}>${m.lbl}</option>`).join('');
+}
+
+function cddRenderPeriodRows() {
+  const el = document.getElementById('cdd-period-rows');
+  if (!el) return;
+
+  if (CDD.dateMode === 'month') {
+    const fmtD = d => d ? d.toISOString().split('T')[0] : '';
+    el.innerHTML = `
+<div style="display:flex;flex-direction:column;gap:6px">
+  <!-- Primary -->
+  <div class="cdd-period-row">
+    <span class="cdd-month-badge cdd-m-primary">Primary</span>
+    <select class="cdd-mo-sel" onchange="cddSetPrimaryMonth(this.value)">
+      ${cddMonthOpts(CDD.primary.month)}
+    </select>
+    <span class="cdd-range-hint">${cddMonthRange(CDD.primary.month)}</span>
+  </div>
+  <!-- Cmp1 -->
+  ${CDD.cmp1.active ? `
+  <div class="cdd-period-row">
+    <span class="cdd-month-badge cdd-m-cmp1">Compare 1</span>
+    <select class="cdd-mo-sel" onchange="cddSetCmp1Month(this.value)">
+      ${cddMonthOpts(CDD.cmp1.month)}
+    </select>
+    <span class="cdd-range-hint">${cddMonthRange(CDD.cmp1.month)}</span>
+    <button class="cdd-remove-btn" onclick="cddRemoveCmp(1)">✕ Remove</button>
+    ${!CDD.cmp2.active ? `<button class="cdd-add-cmp-btn" onclick="cddAddCmp(2)">+ Add 2nd Compare</button>` : ''}
+  </div>` : `
+  <div style="display:flex;gap:6px;align-items:center">
+    <button class="cdd-add-cmp-btn" onclick="cddAddCmp(1)">+ Add Comparison Month</button>
+  </div>`}
+  <!-- Cmp2 -->
+  ${CDD.cmp2.active ? `
+  <div class="cdd-period-row">
+    <span class="cdd-month-badge cdd-m-cmp2">Compare 2</span>
+    <select class="cdd-mo-sel" onchange="cddSetCmp2Month(this.value)">
+      ${cddMonthOpts(CDD.cmp2.month)}
+    </select>
+    <span class="cdd-range-hint">${cddMonthRange(CDD.cmp2.month)}</span>
+    <button class="cdd-remove-btn" onclick="cddRemoveCmp(2)">✕ Remove</button>
+  </div>` : ''}
+</div>`;
+  } else {
+    // Custom range mode
+    const fmtD = d => d ? d.toISOString().split('T')[0] : '';
+    el.innerHTML = `
+<div style="display:flex;flex-direction:column;gap:6px">
+  <!-- Primary range -->
+  <div class="cdd-period-row">
+    <span class="cdd-month-badge cdd-m-primary">Primary</span>
+    <div class="cdd-date-grp">
+      <input type="date" class="cdd-date-input" id="cdd-p-from" value="${fmtD(CDD.primary.from)}">
+      <span style="color:var(--t2);font-size:10px">→</span>
+      <input type="date" class="cdd-date-input" id="cdd-p-to" value="${fmtD(CDD.primary.to)}">
+      <button class="cdd-apply-btn" onclick="cddApplyRange('primary')">Apply</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2);cursor:pointer">
+      <input type="checkbox" ${CDD.sameDays ? 'checked' : ''} onchange="cddToggleSameDays(this.checked)" style="cursor:pointer">
+      Same-day trim comparisons
+    </label>
+  </div>
+  <!-- Cmp1 range -->
+  ${CDD.cmp1.active ? `
+  <div class="cdd-period-row">
+    <span class="cdd-month-badge cdd-m-cmp1">Compare 1</span>
+    <div class="cdd-date-grp">
+      <input type="date" class="cdd-date-input" id="cdd-c1-from" value="${fmtD(CDD.cmp1.from)}">
+      <span style="color:var(--t2);font-size:10px">→</span>
+      <input type="date" class="cdd-date-input" id="cdd-c1-to" value="${fmtD(CDD.cmp1.to)}">
+      <button class="cdd-apply-btn" onclick="cddApplyRange('cmp1')">Apply</button>
+    </div>
+    <button class="cdd-remove-btn" onclick="cddRemoveCmp(1)">✕</button>
+    ${!CDD.cmp2.active ? `<button class="cdd-add-cmp-btn" onclick="cddAddCmp(2)">+ Add 2nd</button>` : ''}
+  </div>` : `
+  <div><button class="cdd-add-cmp-btn" onclick="cddAddCmp(1)">+ Add Comparison Period</button></div>`}
+  <!-- Cmp2 range -->
+  ${CDD.cmp2.active ? `
+  <div class="cdd-period-row">
+    <span class="cdd-month-badge cdd-m-cmp2">Compare 2</span>
+    <div class="cdd-date-grp">
+      <input type="date" class="cdd-date-input" id="cdd-c2-from" value="${fmtD(CDD.cmp2.from)}">
+      <span style="color:var(--t2);font-size:10px">→</span>
+      <input type="date" class="cdd-date-input" id="cdd-c2-to" value="${fmtD(CDD.cmp2.to)}">
+      <button class="cdd-apply-btn" onclick="cddApplyRange('cmp2')">Apply</button>
+    </div>
+    <button class="cdd-remove-btn" onclick="cddRemoveCmp(2)">✕</button>
+  </div>` : ''}
+</div>`;
+  }
+}
+
+function cddMonthRange(mo) {
+  if (!mo) return '';
+  const yd = C.yd;
+  const isCur = mo.y === yd.getFullYear() && mo.m === yd.getMonth() + 1;
+  const start = `1 ${new Date(mo.y, mo.m - 1, 1).toLocaleString('default', { month: 'short' })}`;
+  const end = isCur ? `${yd.getDate()} ${yd.toLocaleString('default', { month: 'short' })} (MTD)` : `${new Date(mo.y, mo.m, 0).getDate()} ${new Date(mo.y, mo.m - 1, 1).toLocaleString('default', { month: 'short' })}`;
+  return `${start} – ${end}`;
+}
+
+function cddSetPrimaryMonth(idx) {
+  CDD.primary.month = C.months[parseInt(idx)];
+  cddRenderAll();
+}
+function cddSetCmp1Month(idx) {
+  CDD.cmp1.month = C.months[parseInt(idx)];
+  cddRenderAll();
+}
+function cddSetCmp2Month(idx) {
+  CDD.cmp2.month = C.months[parseInt(idx)];
+  cddRenderAll();
+}
+function cddAddCmp(n) {
+  const months = C.months;
+  if (n === 1) {
+    CDD.cmp1.active = true;
+    if (!CDD.cmp1.month) CDD.cmp1.month = months[months.length - 2] || months[0];
+    if (!CDD.cmp1.from && CDD.dateMode === 'range') {
+      const yd = C.yd;
+      CDD.cmp1.from = new Date(yd.getFullYear(), yd.getMonth() - 2, 1);
+      CDD.cmp1.to = new Date(yd.getFullYear(), yd.getMonth() - 1, 0);
+    }
+  } else {
+    CDD.cmp2.active = true;
+    if (!CDD.cmp2.month) CDD.cmp2.month = months[months.length - 3] || months[0];
+    if (!CDD.cmp2.from && CDD.dateMode === 'range') {
+      const yd = C.yd;
+      CDD.cmp2.from = new Date(yd.getFullYear(), yd.getMonth() - 3, 1);
+      CDD.cmp2.to = new Date(yd.getFullYear(), yd.getMonth() - 2, 0);
+    }
+  }
+  cddRenderPeriodRows();
+  cddRenderAll();
+}
+function cddRemoveCmp(n) {
+  if (n === 1) { CDD.cmp1.active = false; }
+  else { CDD.cmp2.active = false; }
+  cddRenderPeriodRows();
+  cddRenderAll();
+}
+function cddApplyRange(which) {
+  const pfx = which === 'primary' ? 'p' : which === 'cmp1' ? 'c1' : 'c2';
+  const fromEl = document.getElementById(`cdd-${pfx}-from`);
+  const toEl = document.getElementById(`cdd-${pfx}-to`);
+  if (!fromEl || !toEl) return;
+  const from = fromEl.value ? new Date(fromEl.value + 'T00:00:00') : null;
+  const to = toEl.value ? new Date(toEl.value + 'T00:00:00') : null;
+  if (!from || !to) return;
+  if (which === 'primary') { CDD.primary.from = from; CDD.primary.to = to; }
+  else if (which === 'cmp1') { CDD.cmp1.from = from; CDD.cmp1.to = to; }
+  else { CDD.cmp2.from = from; CDD.cmp2.to = to; }
+  cddRenderAll();
+}
+function cddToggleSameDays(v) { CDD.sameDays = v; cddRenderAll(); }
+
+// Aggregate data for a given period (month or date range)
+function cddAgg(period, trimDays) {
+  const yd = C.yd;
+  let from, to;
+  if (CDD.dateMode === 'month' && period.month) {
+    const mo = period.month;
+    from = new Date(mo.y, mo.m - 1, 1);
+    const isCur = mo.y === yd.getFullYear() && mo.m === yd.getMonth() + 1;
+    to = isCur ? yd : new Date(mo.y, mo.m, 0);
+  } else if (period.from && period.to) {
+    from = period.from;
+    to = period.to;
+  } else return null;
+
+  // Apply same-day trimming if needed
+  if (trimDays && CDD.sameDays) {
+    const primaryDays = trimDays;
+    const thisDays = Math.round((to - from) / 86400000) + 1;
+    if (thisDays > primaryDays) {
+      to = new Date(from.getTime() + (primaryDays - 1) * 86400000);
+    }
+  }
+
+  const rows = ED.filter(r => {
+    if (r.date < from || r.date > to) return false;
+    if (CDD.city && r.city !== CDD.city) return false;
+    if (CDD.scope && r.sc !== CDD.scope) return false;
+    return true;
+  });
+  const tot = { BQL: 0, MS: 0, MD: 0, Order: 0, HOTO: 0 };
+  rows.forEach(r => { tot.BQL += r.BQL; tot.MS += r.MS; tot.MD += r.MD; tot.Order += r.Order; tot.HOTO += r.HOTO; });
+  tot._from = from; tot._to = to;
+  tot._days = Math.round((to - from) / 86400000) + 1;
+  return tot;
+}
+
+// Aggregate per sub-channel
+function cddAggBySC(period) {
+  const yd = C.yd;
+  let from, to;
+  if (CDD.dateMode === 'month' && period.month) {
+    const mo = period.month;
+    from = new Date(mo.y, mo.m - 1, 1);
+    const isCur = mo.y === yd.getFullYear() && mo.m === yd.getMonth() + 1;
+    to = isCur ? yd : new Date(mo.y, mo.m, 0);
+  } else if (period.from && period.to) {
+    from = period.from; to = period.to;
+  } else return {};
+
+  const result = {};
+  SCS.forEach(sc => {
+    const rows = ED.filter(r => r.date >= from && r.date <= to && (!CDD.city || r.city === CDD.city) && r.sc === sc);
+    const tot = { BQL: 0, MS: 0, MD: 0, Order: 0, HOTO: 0 };
+    rows.forEach(r => { tot.BQL += r.BQL; tot.MS += r.MS; tot.MD += r.MD; tot.Order += r.Order; tot.HOTO += r.HOTO; });
+    result[sc] = tot;
+  });
+  return result;
+}
+
+function cddPeriodLabel(period) {
+  if (CDD.dateMode === 'month' && period.month) {
+    return period.month.lbl;
+  } else if (period.from && period.to) {
+    const fmt = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return `${fmt(period.from)}–${fmt(period.to)}`;
+  }
+  return '—';
+}
+
+function cddRenderAll() {
+  if (!document.getElementById('cdd-kpi-table')) return;
+
+  const primaryAgg = cddAgg(CDD.primary, 0);
+  if (!primaryAgg) return;
+
+  const primaryDays = primaryAgg._days;
+  const cmp1Agg = CDD.cmp1.active ? cddAgg(CDD.cmp1, primaryDays) : null;
+  const cmp2Agg = CDD.cmp2.active ? cddAgg(CDD.cmp2, primaryDays) : null;
+
+  const pl = cddPeriodLabel(CDD.primary);
+  const c1l = CDD.cmp1.active ? cddPeriodLabel(CDD.cmp1) : '';
+  const c2l = CDD.cmp2.active ? cddPeriodLabel(CDD.cmp2) : '';
+
+  // ── KPI Table (replaces cramped cards) ──────────────────
+  const kpiEl = document.getElementById('cdd-kpi-table');
+  const metrics = [
+    { key: 'BQL', label: 'BQL', icon: '⬡' },
+    { key: 'MS', label: 'Mtgs Scheduled', icon: '📅' },
+    { key: 'MD', label: 'Mtgs Done', icon: '✅' },
+    { key: 'Order', label: 'Orders', icon: '📦' },
+    { key: 'HOTO', label: 'HOTO', icon: '🏠' },
+  ];
+
+  const hasCmp = cmp1Agg || cmp2Agg;
+
+  // Top mini-cards row (always visible, clean)
+  const miniCards = metrics.map(mt => {
+    const pv = primaryAgg[mt.key];
+    return `<div style="background:var(--sur);border:0.5px solid var(--bd);border-radius:9px;padding:12px 10px;text-align:center;flex:1;min-width:80px">
+  <div style="font-size:9px;font-weight:700;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">${mt.label}</div>
+  <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--tx)">${f(pv)}</div>
+  <div style="font-size:9px;color:var(--t3);margin-top:2px">${pl}</div>
+</div>`;
+  }).join('');
+
+  // Comparison table rows (only when comparisons active)
+  const cmpTableHead = hasCmp ? (() => {
+    const c1th = cmp1Agg ? `<th style="text-align:right;padding:7px 10px;font-size:10px;color:#059669;font-weight:700">${c1l}</th><th style="text-align:right;padding:7px 10px;font-size:10px;color:#059669">vs ${pl}</th>` : '';
+    const c2th = cmp2Agg ? `<th style="text-align:right;padding:7px 10px;font-size:10px;color:#d97706;font-weight:700">${c2l}</th><th style="text-align:right;padding:7px 10px;font-size:10px;color:#d97706">vs ${pl}</th>` : '';
+    return `<thead><tr style="background:var(--s2)"><th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:700;color:var(--t2)">Metric</th><th style="text-align:right;padding:7px 10px;font-size:10px;color:#1a56db;font-weight:700">${pl} ▸ Primary</th>${c1th}${c2th}</tr></thead>`;
+  })() : '';
+
+  const cmpTableBody = hasCmp ? metrics.map(mt => {
+    const pv = primaryAgg[mt.key];
+    const pvCell = `<td style="text-align:right;padding:7px 10px;font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:#1a56db">${f(pv)}</td>`;
+
+    const c1v = cmp1Agg ? cmp1Agg[mt.key] : null;
+    const c1Cells = c1v !== null ? (() => {
+      const d = pv - c1v, pp = c1v ? (d / c1v * 100) : 0;
+      const col = d > 0 ? '#059669' : d < 0 ? '#dc2626' : 'var(--t2)';
+      const arr = d > 0 ? '▲' : d < 0 ? '▼' : '—';
+      return `<td style="text-align:right;padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--t2)">${f(c1v)}</td>
+<td style="text-align:right;padding:7px 10px;font-size:11px;font-weight:700;color:${col}">${arr} ${c1v ? Math.abs(pp).toFixed(1) + '%' : '—'}<br><span style="font-size:9px;font-weight:400;color:var(--t2)">${d >= 0 ? '+' : ''}${f(d)}</span></td>`;
+    })() : '';
+
+    const c2v = cmp2Agg ? cmp2Agg[mt.key] : null;
+    const c2Cells = c2v !== null ? (() => {
+      const d = pv - c2v, pp = c2v ? (d / c2v * 100) : 0;
+      const col = d > 0 ? '#059669' : d < 0 ? '#dc2626' : 'var(--t2)';
+      const arr = d > 0 ? '▲' : d < 0 ? '▼' : '—';
+      return `<td style="text-align:right;padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--t2)">${f(c2v)}</td>
+<td style="text-align:right;padding:7px 10px;font-size:11px;font-weight:700;color:${col}">${arr} ${c2v ? Math.abs(pp).toFixed(1) + '%' : '—'}<br><span style="font-size:9px;font-weight:400;color:var(--t2)">${d >= 0 ? '+' : ''}${f(d)}</span></td>`;
+    })() : '';
+
+    return `<tr style="border-top:0.5px solid var(--bd2)">
+<td style="padding:7px 10px;font-size:11px;font-weight:600;color:var(--tx)">${mt.icon} ${mt.label}</td>
+${pvCell}${c1Cells}${c2Cells}
+</tr>`;
+  }).join('') : '';
+
+  const cmpTable = hasCmp ? `<div style="overflow-x:auto;margin-top:10px">
+<table style="width:100%;border-collapse:collapse;background:var(--sur);border:0.5px solid var(--bd);border-radius:9px;overflow:hidden">
+${cmpTableHead}<tbody>${cmpTableBody}</tbody>
+</table></div>` : '';
+
+  kpiEl.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">${miniCards}</div>${cmpTable}`;
+
+  // ── Sub-channel breakdown (single unified table with Total row) ──
+  const primarySC = cddAggBySC(CDD.primary);
+  const cmp1SC = cmp1Agg ? cddAggBySC(CDD.cmp1) : null;
+  const cmp2SC = cmp2Agg ? cddAggBySC(CDD.cmp2) : null;
+
+  const scEl = document.getElementById('cdd-sc-breakdown');
+  const allMetricKeys = ['BQL', 'MS', 'MD', 'Order', 'HOTO'];
+
+  // Sort SCs by primary BQL desc
+  const sortedSCs = SCS.slice().sort((a, b) => (primarySC[b]?.BQL || 0) - (primarySC[a]?.BQL || 0));
+
+  // Compute totals
+  const totalRow = { BQL: 0, MS: 0, MD: 0, Order: 0, HOTO: 0 };
+  SCS.forEach(sc => { allMetricKeys.forEach(mk => { totalRow[mk] += primarySC[sc]?.[mk] || 0; }); });
+  const c1Total = cmp1SC ? (() => { const t = { BQL: 0, MS: 0, MD: 0, Order: 0, HOTO: 0 }; SCS.forEach(sc => allMetricKeys.forEach(mk => { t[mk] += cmp1SC[sc]?.[mk] || 0; })); return t; })() : null;
+  const c2Total = cmp2SC ? (() => { const t = { BQL: 0, MS: 0, MD: 0, Order: 0, HOTO: 0 }; SCS.forEach(sc => allMetricKeys.forEach(mk => { t[mk] += cmp2SC[sc]?.[mk] || 0; })); return t; })() : null;
+
+  const scDeltaCell = (pv, cv) => {
+    if (cv === undefined || cv === null) return '';
+    const d = pv - cv, pp = cv ? (d / cv * 100) : 0;
+    const col = d > 0 ? '#059669' : d < 0 ? '#dc2626' : 'var(--t3)';
+    return `<span style="font-size:9px;color:${col};font-weight:700">${d > 0 ? '▲' : d < 0 ? '▼' : ''}${cv ? Math.abs(pp).toFixed(0) + '%' : '—'}</span>`;
+  };
+
+  // Build multi-metric columns
+  const mkThs = allMetricKeys.map(mk => {
+    const c1th = cmp1SC ? `<th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:600;color:#059669;white-space:nowrap">${mk}<br><span style="color:var(--t3)">vs ${c1l}</span></th>` : '';
+    const c2th = cmp2SC ? `<th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:600;color:#d97706;white-space:nowrap">${mk}<br><span style="color:var(--t3)">vs ${c2l}</span></th>` : '';
+    return `<th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:700;color:#1a56db;border-left:1px solid var(--bd2)">${mk}</th>${c1th}${c2th}`;
+  }).join('');
+
+  const mkCells = (scData, c1Data, c2Data, bold) => allMetricKeys.map(mk => {
+    const pv = scData?.[mk] || 0;
+    const c1v = c1Data?.[mk];
+    const c2v = c2Data?.[mk];
+    const fw = bold ? 'font-weight:700' : '';
+    const c1Cell = cmp1SC ? `<td style="text-align:right;padding:6px 8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--t2)">${f(c1v || 0)} ${scDeltaCell(pv, c1v || 0)}</td>` : '';
+    const c2Cell = cmp2SC ? `<td style="text-align:right;padding:6px 8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--t2)">${f(c2v || 0)} ${scDeltaCell(pv, c2v || 0)}</td>` : '';
+    return `<td style="text-align:right;padding:6px 8px;font-size:12px;font-family:'DM Mono',monospace;${fw};border-left:1px solid var(--bd2)">${f(pv)}</td>${c1Cell}${c2Cell}`;
+  }).join('');
+
+  const maxBQL = Math.max(...sortedSCs.map(s => primarySC[s]?.BQL || 0), 1);
+  const scRows = sortedSCs.map(sc => {
+    const pv = primarySC[sc]?.BQL || 0;
+    const barW = Math.round(pv / maxBQL * 60); // max 60px
+    return `<tr style="border-top:0.5px solid var(--bd2)">
+<td style="padding:6px 8px;font-size:11px;font-weight:500;white-space:nowrap">
+  ${sc}
+  <div style="height:3px;background:var(--bl);border-radius:2px;width:${barW}px;margin-top:2px;opacity:.5"></div>
+</td>
+${mkCells(primarySC[sc], cmp1SC?.[sc], cmp2SC?.[sc], false)}
+</tr>`;
+  }).join('');
+
+  const totalTr = `<tr style="border-top:2px solid var(--bl);background:var(--bll)">
+<td style="padding:7px 8px;font-size:11px;font-weight:700;color:var(--bl)">🔢 Total</td>
+${mkCells(totalRow, c1Total, c2Total, true)}
+</tr>`;
+
+  scEl.innerHTML = `<div class="cdd-table-card" style="overflow:visible">
+<div style="padding:8px 10px;font-size:11px;font-weight:700;border-bottom:0.5px solid var(--bd);display:flex;align-items:center;gap:6px">
+  Sub-Channel Breakdown — All Metrics
+  <span style="font-size:9px;font-weight:400;color:var(--t3)">${CDD.city || 'All India'}${CDD.scope ? ' · ' + CDD.scope : ''}</span>
+</div>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+<thead><tr style="background:var(--s2)">
+<th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap">Sub-Channel</th>
+${mkThs}
+</tr></thead>
+<tbody>${scRows}${totalTr}</tbody>
+</table></div></div>`;
+
+  // ── Funnel — overall + per sub-channel ──────────────────
+  const funnelEl = document.getElementById('cdd-funnel-wrap');
+
+  const funnelStages = [
+    { key: 'BQL→MS',    label: 'BQL→MS',    num: 'MS',    den: 'BQL'   },
+    { key: 'MS→MD',     label: 'MS→MD',     num: 'MD',    den: 'MS'    },
+    { key: 'MD→Order',  label: 'MD→Order',  num: 'Order', den: 'MD'    },
+    { key: 'Order→HOTO',label: 'Order→HOTO',num: 'HOTO',  den: 'Order' },
+    { key: 'BQL→HOTO',  label: 'BQL→HOTO',  num: 'HOTO',  den: 'BQL'   },
+  ];
+
+  // Compute pct safely
+  const safePct = (agg, num, den) => agg && agg[den] ? (agg[num] / agg[den] * 100) : 0;
+
+  // Delta formatter (pp)
+  const fmtDelta = (pv, cv) => {
+    const d = pv - cv;
+    const col = d > 0 ? '#059669' : d < 0 ? '#dc2626' : 'var(--t2)';
+    return `<span style="font-size:10px;font-weight:700;color:${col}">${d >= 0 ? '+' : ''}${d.toFixed(1)}pp</span>`;
+  };
+
+  // Pct cell with inline mini bar
+  const pctValCell = (pct, isTotal) => {
+    const barW = Math.min(Math.round(pct), 100);
+    const fw = isTotal ? 'font-weight:700' : 'font-weight:500';
+    const col = isTotal ? 'color:#1a56db' : 'color:var(--tx)';
+    return `<td style="text-align:right;padding:5px 8px;white-space:nowrap">
+<div style="display:inline-flex;align-items:center;gap:5px">
+  <div style="width:50px;height:5px;background:var(--s2);border-radius:3px;overflow:hidden;flex-shrink:0">
+    <div style="height:100%;width:${barW}%;background:${isTotal?'#1a56db':'#6b7280'};border-radius:3px"></div>
+  </div>
+  <span style="font-size:11px;font-family:'DM Mono',monospace;${fw};${col};min-width:38px;text-align:right">${pct.toFixed(1)}%</span>
+</div>
+</td>`;
+  };
+
+  const cmpDeltaCell = (pPct, cPct) =>
+    `<td style="text-align:right;padding:5px 8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--t2)">${cPct.toFixed(1)}%</td>
+<td style="text-align:right;padding:5px 8px">${fmtDelta(pPct, cPct)}</td>`;
+
+  // Header columns
+  const fStageHeaders = funnelStages.map(st =>
+    `<th colspan="${1 + (cmp1Agg?2:0) + (cmp2Agg?2:0)}" style="text-align:center;padding:5px 8px;font-size:10px;font-weight:700;color:#1a56db;border-left:1.5px solid var(--bd);white-space:nowrap;background:var(--bll)">${st.label}</th>`
+  ).join('');
+
+  const fSubHeaders = funnelStages.map(st => {
+    const primTh = `<th style="text-align:right;padding:5px 8px;font-size:9px;color:#1a56db;font-weight:600;white-space:nowrap;border-left:1.5px solid var(--bd)">${pl}</th>`;
+    const c1Ths = cmp1Agg ? `<th style="text-align:right;padding:5px 8px;font-size:9px;color:#059669;white-space:nowrap">${c1l}</th><th style="text-align:right;padding:5px 8px;font-size:9px;color:#059669">Δ pp</th>` : '';
+    const c2Ths = cmp2Agg ? `<th style="text-align:right;padding:5px 8px;font-size:9px;color:#d97706;white-space:nowrap">${c2l}</th><th style="text-align:right;padding:5px 8px;font-size:9px;color:#d97706">Δ pp</th>` : '';
+    return primTh + c1Ths + c2Ths;
+  }).join('');
+
+  // Build one row per sub-channel + overall total
+  const buildFunnelRow = (label, scAgg, scCmp1, scCmp2, isTotal) => {
+    const bgStyle = isTotal ? 'background:var(--bll);border-top:2px solid var(--bl)' : 'border-top:0.5px solid var(--bd2)';
+    const labelStyle = isTotal
+      ? 'font-size:11px;font-weight:700;color:var(--bl);padding:6px 8px;white-space:nowrap'
+      : 'font-size:11px;font-weight:500;color:var(--tx);padding:5px 8px;white-space:nowrap';
+
+    const stageCells = funnelStages.map(st => {
+      const pPct = safePct(scAgg, st.num, st.den);
+      const c1Pct = scCmp1 ? safePct(scCmp1, st.num, st.den) : null;
+      const c2Pct = scCmp2 ? safePct(scCmp2, st.num, st.den) : null;
+      const borderL = 'border-left:1.5px solid var(--bd)';
+      const primCell = `<td style="text-align:right;padding:5px 8px;white-space:nowrap;${borderL}">
+  <span style="font-size:12px;font-family:'DM Mono',monospace;${isTotal?'font-weight:700;color:#1a56db':'font-weight:500;color:var(--tx)'}">${pPct.toFixed(1)}%</span>
+</td>`;
+      const c1Cells = cmp1Agg
+        ? `<td style="text-align:right;padding:5px 8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--t2)">${c1Pct!==null?c1Pct.toFixed(1)+'%':'—'}</td><td style="text-align:right;padding:5px 8px">${c1Pct!==null?fmtDelta(pPct,c1Pct):'—'}</td>`
+        : '';
+      const c2Cells = cmp2Agg
+        ? `<td style="text-align:right;padding:5px 8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--t2)">${c2Pct!==null?c2Pct.toFixed(1)+'%':'—'}</td><td style="text-align:right;padding:5px 8px">${c2Pct!==null?fmtDelta(pPct,c2Pct):'—'}</td>`
+        : '';
+      return primCell + c1Cells + c2Cells;
+    }).join('');
+
+    const prefix = isTotal ? '🔢 ' : '';
+    return `<tr style="${bgStyle}">
+<td style="${labelStyle}">${prefix}${label}</td>
+${stageCells}
+</tr>`;
+  };
+
+  // Sort SCs by primary BQL desc (same order as SC table)
+  const funnelSCsSorted = SCS.slice().sort((a,b) => (primarySC[b]?.BQL||0) - (primarySC[a]?.BQL||0));
+
+  const scFunnelRows = funnelSCsSorted.map(sc =>
+    buildFunnelRow(sc, primarySC[sc], cmp1SC?.[sc]||null, cmp2SC?.[sc]||null, false)
+  ).join('');
+
+  const totalFunnelRow = buildFunnelRow('Overall', primaryAgg, cmp1Agg, cmp2Agg, true);
+
+  funnelEl.innerHTML = `<div class="cdd-table-card">
+<div style="padding:8px 10px;font-size:11px;font-weight:700;border-bottom:0.5px solid var(--bd);display:flex;align-items:center;gap:8px">
+  Conversion Funnel — by Sub-Channel
+  <span style="font-size:9px;font-weight:400;color:var(--t3)">${CDD.city||'All India'}${CDD.scope?' · '+CDD.scope:''} · Δ in percentage points</span>
+</div>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+<thead>
+<tr style="background:var(--s2)">
+  <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--t2);white-space:nowrap" rowspan="2">Sub-Channel</th>
+  ${fStageHeaders}
+</tr>
+<tr style="background:var(--s2);border-top:0.5px solid var(--bd2)">
+  ${fSubHeaders}
+</tr>
+</thead>
+<tbody>
+${scFunnelRows}
+${totalFunnelRow}
+</tbody>
+</table></div></div>`;
+
+  // ── 6-Month trend table ──────────────────────────────────
+  const trendEl = document.getElementById('cdd-trend-wrap');
+  const months = C.months;
+  const yd = C.yd;
+  const trendData = months.map(mo => {
+    const from = new Date(mo.y, mo.m - 1, 1);
+    const isCur = mo.y === yd.getFullYear() && mo.m === yd.getMonth() + 1;
+    const to = isCur ? yd : new Date(mo.y, mo.m, 0);
+    const rows = ED.filter(r => r.date >= from && r.date <= to && (!CDD.city || r.city === CDD.city) && (!CDD.scope || r.sc === CDD.scope));
+    const tot = { BQL: 0, MS: 0, MD: 0, Order: 0, HOTO: 0 };
+    rows.forEach(r => { tot.BQL += r.BQL; tot.MS += r.MS; tot.MD += r.MD; tot.Order += r.Order; tot.HOTO += r.HOTO; });
+    return { mo, ...tot, isCur };
+  });
+
+  const numChg = (cur, prev) => {
+    if (prev === undefined) return `<td style="text-align:right;padding:5px 10px;font-family:'DM Mono',monospace;font-size:12px">${f(cur)}</td>`;
+    const d = cur - prev;
+    const col = d > 0 ? 'color:#166534;font-weight:600' : d < 0 ? 'color:#991b1b;font-weight:600' : 'color:var(--t2)';
+    const bg = d > 0 ? 'background:rgba(22,101,52,.04)' : d < 0 ? 'background:rgba(153,27,27,.04)' : '';
+    return `<td style="text-align:right;padding:5px 10px;font-family:'DM Mono',monospace;font-size:12px;${col};${bg}">${f(cur)}</td>`;
+  };
+  const trendRows = ['BQL', 'MS', 'MD', 'Order', 'HOTO'].map(mk => {
+    const cells = trendData.map((td, i) => numChg(td[mk], i > 0 ? trendData[i - 1][mk] : undefined)).join('');
+    return `<tr style="border-top:0.5px solid var(--bd2)"><td style="font-weight:600;font-size:11px;white-space:nowrap;padding:6px 10px">${mk}</td>${cells}</tr>`;
+  }).join('');
+
+  const ths = trendData.map(td => `<th style="text-align:right;padding:7px 10px;font-size:10px;${td.isCur ? 'background:#e8f4fd;font-weight:700;color:#1a56db' : 'color:var(--t2)'};white-space:nowrap">${td.mo.lbl}${td.isCur ? '<br><span style="font-size:8px;background:#1d4ed8;color:#fff;padding:1px 4px;border-radius:3px">MTD</span>' : ''}</th>`).join('');
+
+  trendEl.innerHTML = `<div class="cdd-table-card">
+<div style="padding:8px 10px;font-size:11px;font-weight:700;border-bottom:0.5px solid var(--bd);display:flex;align-items:center;gap:8px">
+  Last 6 Months — ${CDD.city || 'All India'}${CDD.scope ? ' · ' + CDD.scope : ''}
+  <span style="font-size:9px;font-weight:400;color:var(--t2)">🟢 Green = higher than prev · 🔴 Red = lower</span>
+</div>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+<thead><tr style="background:var(--s2)"><th style="text-align:left;padding:7px 10px;font-size:10px;font-weight:600;color:var(--t2)">Metric</th>${ths}</tr></thead>
+<tbody>${trendRows}</tbody>
+</table></div></div>`;
 }
 
 init();
