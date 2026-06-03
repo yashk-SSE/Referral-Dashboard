@@ -188,6 +188,34 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 
 /* MOP table outer border */
 #mop-tbl{border:1px solid var(--bd);}
+
+/* ── Date Range Filter Bar ─────────────────────────────────────── */
+#tf-bar{display:none;align-items:center;gap:8px;flex-wrap:wrap;background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:7px 16px;font-size:11px}
+#tf-bar.visible{display:flex}
+.tf-preset-dd{position:relative;display:inline-block}
+.tf-preset-btn{padding:4px 12px;border:1px solid var(--bd2);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--sur);color:var(--t2);display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .12s}
+.tf-preset-btn.has-active{border-color:var(--bl);color:var(--bl);background:var(--bll)}
+.tf-preset-dd-menu{display:none;position:absolute;top:calc(100%+4px);left:0;min-width:160px;background:var(--sur);border:1px solid var(--bd2);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.13);z-index:400;padding:4px 0;overflow:hidden}
+.tf-preset-dd-menu.open{display:block}
+.tf-preset-opt{padding:7px 14px;font-size:11px;cursor:pointer;color:var(--t2);transition:background .1s;font-weight:500}
+.tf-preset-opt:hover{background:var(--s2)}
+.tf-preset-opt.active{background:var(--bll);color:var(--bl);font-weight:700}
+.tf-custom-range{display:flex;align-items:center;gap:4px;font-size:11px}
+.tf-custom-range input[type=date]{padding:3px 7px;border:1px solid var(--bd2);border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;background:var(--sur);color:var(--tx);cursor:pointer}
+.tf-apply-btn{padding:4px 14px;background:var(--bl);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:opacity .12s;white-space:nowrap}
+.tf-apply-btn:hover{opacity:.85}
+.tf-reset-btn{padding:4px 10px;background:transparent;color:var(--t2);border:1px solid var(--bd2);border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;transition:all .12s}
+.tf-reset-btn:hover{background:var(--rdl);color:var(--rd);border-color:var(--rd)}
+.tf-cmp-group{display:flex;align-items:center;gap:4px;padding-left:8px;border-left:1px solid #93c5fd}
+.tf-cmp-lbl{font-size:10px;color:#3b82f6;font-weight:700}
+.tf-cmp-btn{padding:3px 8px;border:1px solid #93c5fd;border-radius:5px;font-size:10px;cursor:pointer;background:var(--sur);color:#3b82f6;font-weight:500;transition:all .12s}
+.tf-cmp-btn.active{background:var(--bl);color:#fff;border-color:var(--bl)}
+.tf-status-chip{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:#1d4ed8;color:#fff;white-space:nowrap;margin-left:auto}
+.tf-no-data-banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:5px 10px;font-size:10px;font-weight:600;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.tf-mop-banner{background:#e0f2fe;border:1px solid #7dd3fc;border-radius:6px;padding:8px 12px;font-size:11px;color:#0369a1;font-weight:500;margin-bottom:12px}
+.sticky-view-mode-sw{display:flex;background:rgba(255,255,255,.8);border:1px solid var(--bd2);border-radius:8px;padding:2px;gap:2px}
+.sticky-vm-btn{padding:3px 12px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--t2);transition:all .15s;white-space:nowrap}
+.sticky-vm-btn.active{background:var(--bl);color:#fff}
 /* Channel switcher */
 .ch-sw{display:flex;gap:4px;background:var(--s2);border-radius:8px;padding:3px}
 .ch-btn{padding:4px 14px;border:none;background:transparent;border-radius:6px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -289,7 +317,49 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 <main class="main" id="main">
   <div id="sticky-hdr" style="position:sticky;top:0;z-index:200;background:var(--sur);border-bottom:1px solid var(--bd);padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <span class="sticky-tab-name" style="font-size:13px;font-weight:600;color:var(--tx)">Executive Summary</span>
-    <div id="sticky-filters-placeholder" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1"></div>
+    <div id="sticky-filters-placeholder" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1">
+      <!-- View mode switcher (Referral only) -->
+      <div id="ref-vm-sw" class="sticky-view-mode-sw" style="display:none">
+        <button class="sticky-vm-btn active" onclick="setViewMode('current_month')">📅 Current Month</button>
+        <button class="sticky-vm-btn" onclick="setViewMode('timeframe')">📊 Timeframe View</button>
+      </div>
+    </div>
+  </div>
+  <!-- Timeframe date range bar (shown only in timeframe mode) -->
+  <div id="tf-bar">
+    <!-- Preset dropdown -->
+    <div class="tf-preset-dd" id="tf-dd-wrap">
+      <button class="tf-preset-btn has-active" id="tf-preset-btn" onclick="toggleTFDropdown(event)">
+        <span id="tf-preset-label">Prev Month</span> ▾
+      </button>
+      <div class="tf-preset-dd-menu" id="tf-dd-menu">
+        <div class="tf-preset-opt active" data-preset="prev_month" onclick="selectPreset('prev_month')">Previous Month</div>
+        <div class="tf-preset-opt" data-preset="current_month" onclick="selectPreset('current_month')">Current Month</div>
+        <div class="tf-preset-opt" data-preset="today" onclick="selectPreset('today')">Today</div>
+        <div class="tf-preset-opt" data-preset="this_week" onclick="selectPreset('this_week')">This Week</div>
+        <div class="tf-preset-opt" data-preset="prev_week" onclick="selectPreset('prev_week')">Previous Week</div>
+        <div class="tf-preset-opt" data-preset="last_3m" onclick="selectPreset('last_3m')">Last 3 Months</div>
+        <div class="tf-preset-opt" data-preset="last_6m" onclick="selectPreset('last_6m')">Last 6 Months</div>
+        <div class="tf-preset-opt" data-preset="all_time" onclick="selectPreset('all_time')">All Time</div>
+      </div>
+    </div>
+    <!-- Custom range -->
+    <div class="tf-custom-range">
+      <span style="color:#3b82f6;font-weight:600;font-size:10px">Custom:</span>
+      <input type="date" id="tf-from" oninput="onCustomDateInput()">
+      <span style="color:var(--t2)">→</span>
+      <input type="date" id="tf-to" oninput="onCustomDateInput()">
+      <button class="tf-apply-btn" id="tf-apply-btn" onclick="applyCustomRange()" style="display:none">Apply</button>
+    </div>
+    <!-- Reset -->
+    <button class="tf-reset-btn" onclick="resetTF()">↺ Reset</button>
+    <!-- Comparison mode -->
+    <div class="tf-cmp-group">
+      <span class="tf-cmp-lbl">vs</span>
+      <button class="tf-cmp-btn active" id="cmp-prior" onclick="setCmpMode('prior')">Prior Period</button>
+      <button class="tf-cmp-btn" id="cmp-lpy" onclick="setCmpMode('last_year')">Same Period LY</button>
+    </div>
+    <div id="tf-status-chip" class="tf-status-chip">–</div>
   </div>
   <div id="p-exec" class="panel active"><div class="loading"><div class="spin"></div><div>Loading data…</div></div></div>
   <div id="p-mop" class="panel"></div>
@@ -379,7 +449,9 @@ function defCellAbs(actual,mopMtd,extraStyle){
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
 async function fetchJSON(filename){
-  const r=await fetch(`data/${filename}`);
+  const isLocal=window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'||window.location.protocol==='file:';
+  const base=isLocal?'https://yashk-sse.github.io/Referral-Dashboard/data/':'data/';
+  const r=await fetch(base+filename);
   if(!r.ok)throw new Error(`Failed to load ${filename}: ${r.status}`);
   return await r.json();
 }
@@ -512,9 +584,45 @@ function sw(tab,el){
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
+  // Show/hide view mode switcher for Referral tabs
+  if(typeof updateViewModeSwitcherVisibility==='function') updateViewModeSwitcherVisibility(tab);
+  // Show/hide TF bar
+  const tfBar=document.getElementById('tf-bar');
+  if(tfBar){
+    const isRef=REFERRAL_TABS&&REFERRAL_TABS.includes(tab);
+    tfBar.classList.toggle('visible', isRef&&TF&&TF.active);
+  }
 }
 
 function buildTab(t){
+  // In timeframe mode, intercept for supported referral tabs
+  if(typeof TF!=='undefined'&&TF.active&&typeof REFERRAL_TABS!=='undefined'&&REFERRAL_TABS.includes(t)){
+    switch(t){
+      case 'exec': bExecTF(); rendered[t]=true; return;
+      case 'india': bIndiaTF(); rendered[t]=true; return;
+      case 'city': bCityTF(); rendered[t]=true; return;
+      case 'sc': bSCTF(); rendered[t]=true; return;
+      case 'funnel': bFunnelTF(); rendered[t]=true; return;
+      case 'dod': bDoDTF(); rendered[t]=true; return;
+      case 'mop':
+        // MOP tab: show message
+        document.getElementById('p-mop').innerHTML=`
+<div class="ptitle">MOP vs MTD</div>
+<div class="tf-mop-banner">ℹ️ MOP comparison is only available for <strong>Current Month</strong> view. Switch to Current Month mode using the toggle above to see MOP targets vs actuals.</div>
+<div style="padding:40px;text-align:center;color:var(--t2)">
+  <div style="font-size:40px;margin-bottom:12px">🎯</div>
+  <div style="font-size:14px;font-weight:600;margin-bottom:6px">MOP data tied to current month</div>
+  <div style="font-size:12px">MOP (Monthly Operating Plan) targets are monthly, so comparison only makes sense for the current month's MTD performance.</div>
+</div>`;
+        rendered[t]=true; return;
+      case 'cohort': case 'citymom':
+        // These are inherently monthly — show a note
+        document.getElementById('p-'+t).innerHTML=`
+<div class="ptitle">${t==='cohort'?'MoM Cohort':'City MoM Trends'}</div>
+<div class="tf-mop-banner">ℹ️ This view shows month-over-month comparisons and is best used in <strong>Current Month</strong> mode. Switching back will show the full MoM analysis.</div>`;
+        rendered[t]=true; return;
+    }
+  }
   const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
   if(m[t])m[t]();
   rendered[t]=true;
@@ -892,10 +1000,8 @@ async function init(){
   }catch(e){
     dataLoaded=false;
     document.body.classList.remove('loading-data');
-    const isLocal=window.location.protocol==='file:';
-    const localMsg=isLocal?`<br><br><strong style="color:#b91c1c">⚠️ You're opening this file locally (file://). Browsers block local JSON fetching for security.</strong>
-    <br><br><strong>Fix:</strong> Run a local server in the same folder:<br>
-    <code>python -m http.server 8000</code><br>Then open: <code>http://localhost:8000</code>`:'';
+    const isLocal=window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'||window.location.protocol==='file:';
+    const localMsg=isLocal?`<br><br><strong style="color:#166534">ℹ️ Running locally — fetching data from GitHub Pages (yashk-sse.github.io/Referral-Dashboard). Check your internet connection if data fails to load.</strong>`:'';
     document.getElementById('p-exec').innerHTML=`<div class="err">
       <strong>Error loading data:</strong> ${e.message}${localMsg}
       <br><br>
@@ -4781,6 +4887,662 @@ function bCompare(){
 <div class="stitle">⚡ Growth Narrative</div>
 ${insHtml}`;
   autoSort(document.getElementById('p-compare'));
+}
+
+// ================================================================
+// TIMEFRAME FILTER SYSTEM
+// ================================================================
+
+// TF = current timeframe state
+const TF = {
+  active: false,        // false = Current Month mode (default)
+  preset: 'prev_month', // current preset key
+  from: null,           // Date object
+  to: null,             // Date object
+  cmpMode: 'prior',     // 'prior' | 'last_year'
+};
+
+// Referral tabs that show the view mode switcher
+const REFERRAL_TABS = ['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom'];
+const TF_CAPABLE_TABS = ['exec','india','city','sc','funnel','m0funnel','vel','wow','act','dod','dodfunnel']; // tabs that re-render in TF mode
+
+function setViewMode(mode) {
+  const isTimeframe = mode === 'timeframe';
+  TF.active = isTimeframe;
+  document.querySelectorAll('.sticky-vm-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(mode));
+  });
+  const bar = document.getElementById('tf-bar');
+  if(bar) bar.classList.toggle('visible', isTimeframe);
+  if(isTimeframe && !TF.from) applyPreset('prev_month');
+  else { invalidateAllTFTabs(); reRenderCurrentTab(); }
+}
+
+// Preset label map
+const PRESET_LABELS = {
+  today:'Today', this_week:'This Week', prev_week:'Prev Week',
+  current_month:'Current Month', prev_month:'Prev Month',
+  last_3m:'Last 3 Months', last_6m:'Last 6 Months', all_time:'All Time', custom:'Custom Range'
+};
+
+function toggleTFDropdown(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('tf-dd-menu');
+  menu.classList.toggle('open');
+  // Close on outside click
+  if(menu.classList.contains('open')) {
+    setTimeout(()=>document.addEventListener('click', closeTFDropdown, {once:true}), 10);
+  }
+}
+function closeTFDropdown() {
+  document.getElementById('tf-dd-menu')?.classList.remove('open');
+}
+function selectPreset(key) {
+  closeTFDropdown();
+  applyPreset(key);
+}
+
+function applyPreset(key) {
+  TF.preset = key;
+  // Update dropdown UI
+  document.querySelectorAll('.tf-preset-opt').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-preset') === key);
+  });
+  const btnEl = document.getElementById('tf-preset-btn');
+  const lblEl = document.getElementById('tf-preset-label');
+  if(lblEl) lblEl.textContent = PRESET_LABELS[key] || key;
+  if(btnEl) btnEl.classList.add('has-active');
+  // Hide apply button (not needed for presets)
+  const applyBtn = document.getElementById('tf-apply-btn');
+  if(applyBtn) applyBtn.style.display = 'none';
+
+  const yd = YD();
+  let from, to;
+  switch(key) {
+    case 'today':
+      from = to = new Date(yd); break;
+    case 'this_week': {
+      const d = new Date(yd); const dow = d.getDay()||7;
+      from = new Date(d); from.setDate(d.getDate()-dow+1);
+      to = new Date(yd); break; }
+    case 'prev_week': {
+      const d = new Date(yd); const dow2 = d.getDay()||7;
+      to = new Date(d); to.setDate(d.getDate()-dow2);
+      from = new Date(to); from.setDate(to.getDate()-6); break; }
+    case 'current_month':
+      from = MS0(yd); to = new Date(yd); break;
+    case 'prev_month': {
+      from = new Date(yd.getFullYear(), yd.getMonth()-1, 1);
+      to = new Date(yd.getFullYear(), yd.getMonth(), 0); break; }
+    case 'last_3m':
+      from = new Date(yd.getFullYear(), yd.getMonth()-2, 1); to = new Date(yd); break;
+    case 'last_6m':
+      from = new Date(yd.getFullYear(), yd.getMonth()-5, 1); to = new Date(yd); break;
+    case 'all_time':
+      from = new Date(2025, 9, 1); to = new Date(yd); break;
+    default:
+      from = MS0(yd); to = new Date(yd);
+  }
+  TF.from = from; TF.to = to;
+  // Sync date inputs
+  const fEl = document.getElementById('tf-from');
+  const tEl = document.getElementById('tf-to');
+  if(fEl) fEl.value = toISO(from);
+  if(tEl) tEl.value = toISO(to);
+  updateStatusChip();
+  invalidateAllTFTabs();
+  reRenderCurrentTab();
+}
+
+function onCustomDateInput() {
+  // Show Apply button when user types in custom dates
+  const applyBtn = document.getElementById('tf-apply-btn');
+  if(applyBtn) applyBtn.style.display = 'inline-block';
+  // Clear preset highlight
+  document.querySelectorAll('.tf-preset-opt').forEach(b=>b.classList.remove('active'));
+  const lblEl = document.getElementById('tf-preset-label');
+  if(lblEl) lblEl.textContent = 'Custom Range';
+}
+
+function applyCustomRange() {
+  const fEl = document.getElementById('tf-from');
+  const tEl = document.getElementById('tf-to');
+  if(!fEl||!tEl) return;
+  const from = fEl.value ? new Date(fEl.value+'T00:00:00') : null;
+  const to = tEl.value ? new Date(tEl.value+'T00:00:00') : null;
+  if(!from||!to||from>to) return;
+  TF.from = from; TF.to = to; TF.preset = 'custom';
+  const applyBtn = document.getElementById('tf-apply-btn');
+  if(applyBtn) applyBtn.style.display = 'none';
+  updateStatusChip();
+  invalidateAllTFTabs();
+  reRenderCurrentTab();
+}
+
+function resetTF() {
+  applyPreset('prev_month');
+}
+
+function setCmpMode(mode) {
+  TF.cmpMode = mode;
+  document.getElementById('cmp-prior')?.classList.toggle('active', mode==='prior');
+  document.getElementById('cmp-lpy')?.classList.toggle('active', mode==='last_year');
+  invalidateAllTFTabs();
+  reRenderCurrentTab();
+}
+
+function toISO(d) {
+  if(!d) return '';
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function updateStatusChip() {
+  const chip = document.getElementById('tf-status-chip');
+  if(!chip||!TF.from||!TF.to) return;
+  const days = Math.round((TF.to - TF.from)/86400000)+1;
+  const fmt = d => d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+  chip.textContent = `${fmt(TF.from)} – ${fmt(TF.to)} (${days}d)`;
+}
+
+function invalidateAllTFTabs() {
+  // When range changes, force re-render of ALL TF-capable referral tabs next time they're visited
+  REFERRAL_TABS.forEach(t => { rendered[t] = false; });
+}
+
+function reRenderCurrentTab() {
+  rendered[curTab] = false;
+  buildTab(curTab);
+  rendered[curTab] = true;
+}
+
+// ── Timeframe data aggregation helpers ───────────────────────────
+function tfAgg(cityFilter, scFilter) {
+  // Main period
+  const rows = ED.filter(r => {
+    if(r.date < TF.from || r.date > TF.to) return false;
+    if(cityFilter && r.city !== cityFilter) return false;
+    if(scFilter && r.sc !== scFilter) return false;
+    return true;
+  });
+  const cur = aggRows(rows);
+
+  // Comparison period
+  let cmpFrom, cmpTo;
+  const days = TF.to - TF.from; // ms
+  if(TF.cmpMode === 'prior') {
+    cmpTo = new Date(TF.from.getTime() - 86400000);
+    cmpFrom = new Date(cmpTo.getTime() - days);
+  } else {
+    cmpFrom = new Date(TF.from); cmpFrom.setFullYear(cmpFrom.getFullYear()-1);
+    cmpTo = new Date(TF.to); cmpTo.setFullYear(cmpTo.getFullYear()-1);
+  }
+  const cmpRows = ED.filter(r => {
+    if(r.date < cmpFrom || r.date > cmpTo) return false;
+    if(cityFilter && r.city !== cityFilter) return false;
+    if(scFilter && r.sc !== scFilter) return false;
+    return true;
+  });
+  const prv = aggRows(cmpRows);
+
+  // Check if comparison data available
+  const dataStart = new Date(2025,9,1); // Oct 2025
+  const cmpAvailable = cmpTo >= dataStart;
+
+  return { cur, prv, cmpFrom, cmpTo, cmpAvailable };
+}
+
+function aggRows(rows) {
+  const r = {BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+  rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});
+  return r;
+}
+
+function tfNoBanner() {
+  const {cmpFrom, cmpTo, cmpAvailable} = tfAgg(null, null);
+  if(cmpAvailable) return '';
+  const fmt = d => d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+  return `<div class="tf-no-data-banner">⚠️ Prior comparison period (${fmt(cmpFrom)}–${fmt(cmpTo)}) is outside available data (from Oct'25). Showing current period only.</div>`;
+}
+
+function tfPeriodLabel() {
+  if(!TF.from||!TF.to) return '';
+  const fmt = d => d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  return `${fmt(TF.from)} – ${fmt(TF.to)}`;
+}
+
+function tfCmpLabel() {
+  const {cmpFrom, cmpTo, cmpAvailable} = tfAgg(null,null);
+  if(!cmpAvailable) return 'No comparison data';
+  const fmt = d => d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+  return `${fmt(cmpFrom)} – ${fmt(cmpTo)} (${TF.cmpMode==='prior'?'prior period':'same period LY'})`;
+}
+
+// ── TF versions of tab renderers ──────────────────────────────────
+
+function bExecTF() {
+  const { cur, prv, cmpAvailable } = tfAgg(null, null);
+  const cols = {BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
+  const cards = ['BQL','MS','MD','Order','HOTO'].map(m=>{
+    const v=cur[m], pv=cmpAvailable?prv[m]:null;
+    return`<div class="mc">
+      <div class="mc-lbl">${m}</div>
+      <div class="mc-val" style="color:${cols[m]}">${f(v)}</div>
+      <div class="mc-mop" style="font-size:10px;color:var(--t3)">Timeframe total</div>
+      <div class="pbar"><div class="pbar-f" style="width:100%;background:${cols[m]}"></div></div>
+      <div class="mc-foot">${pv!=null?mb(v,pv):'<span class="nc">No prior data</span>'} ${pv!=null?`<span style="font-size:10px;color:var(--t3)">vs ${f(pv)} prior</span>`:''}</div>
+    </div>`;
+  }).join('');
+
+  // City performance for timeframe
+  const cityPerf = CITIES.map(c => {
+    const cr = tfAgg(c, null);
+    return {c, cur:cr.cur, prv:cr.prv, cmpAvail:cr.cmpAvailable};
+  }).filter(x=>x.cur.HOTO>0||x.cur.BQL>0);
+  const topC = [...cityPerf].sort((a,b)=>b.cur.HOTO-a.cur.HOTO).slice(0,5);
+  const mdOrdPct = pN(cur.Order,cur.MD).toFixed(1);
+  const mdHotoPct = pN(cur.HOTO,cur.MD).toFixed(1);
+  const pMdOrdPct = cmpAvailable ? pN(prv.Order,prv.MD).toFixed(1) : null;
+  const pMdHotoPct = cmpAvailable ? pN(prv.HOTO,prv.MD).toFixed(1) : null;
+
+  document.getElementById('p-exec').innerHTML=`
+<div class="ptitle">Executive Summary — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Action date based · ${cmpAvailable?'Compared vs '+tfCmpLabel():''}</div>
+${tfNoBanner()}
+<div class="stitle">Key Metrics — ${tfPeriodLabel()}</div>
+<div class="mgrid">${cards}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+  <div class="card"><div class="ctitle">Top Cities by HOTO</div>${topC.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd)"><div><strong>${x.c}</strong><span class="ctag">${TIERS[x.c]||''}</span></div><div style="display:flex;gap:5px;align-items:center"><span class="mono" style="font-weight:600">${f(x.cur.HOTO)}</span>${x.cmpAvail?mb(x.cur.HOTO,x.prv.HOTO):'<span class="nc">-</span>'}</div></div>`).join('')}</div>
+  <div class="card">
+    <div class="ctitle">Funnel Efficiency</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+        <div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:${pMdOrdPct!=null&&parseFloat(mdOrdPct)>=parseFloat(pMdOrdPct)?'var(--gn)':'var(--rd)'}">${mdOrdPct}%</div>
+        <div style="font-size:10px;color:var(--t3)">MD→Order%</div>
+        ${pMdOrdPct!=null?`<div style="font-size:9px;color:var(--t2)">Prior: ${pMdOrdPct}%</div>`:''}
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+        <div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:${pMdHotoPct!=null&&parseFloat(mdHotoPct)>=parseFloat(pMdHotoPct)?'var(--gn)':'var(--rd)'}">${mdHotoPct}%</div>
+        <div style="font-size:10px;color:var(--t3)">MD→HOTO%</div>
+        ${pMdHotoPct!=null?`<div style="font-size:9px;color:var(--t2)">Prior: ${pMdHotoPct}%</div>`:''}
+      </div>
+    </div>
+    <div style="margin-top:10px">
+    ${['BQL→MS','MS→MD','MD→Order','MD→HOTO'].map((lbl,i)=>{
+      const pairs=[['MS','BQL'],['MD','MS'],['Order','MD'],['HOTO','MD']];
+      const [a,b]=pairs[i];
+      const cv=pN(cur[a],cur[b]).toFixed(1);
+      const pv=cmpAvailable?pN(prv[a],prv[b]).toFixed(1):null;
+      const diff=pv!=null?(parseFloat(cv)-parseFloat(pv)).toFixed(1):null;
+      return`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px;color:var(--t2)">${lbl}%</span><span><span style="font-weight:600;font-family:'DM Mono',monospace">${cv}%</span>${diff!=null?`<span class="${parseFloat(diff)>=0?'green':'red'}" style="font-size:9px;margin-left:4px">(${parseFloat(diff)>=0?'+':''}${diff}pp)</span>`:''}</span></div>`;
+    }).join('')}
+    </div>
+  </div>
+</div>`;
+}
+
+function bIndiaTF() {
+  const {cur, prv, cmpAvailable} = tfAgg(null, null);
+  const months = C.months;
+  const inRangeMonths = months.filter(mo=>{
+    const ms=new Date(mo.y,mo.m-1,1), me=new Date(mo.y,mo.m,0);
+    return me>=TF.from && ms<=TF.to;
+  });
+
+  const moRows = inRangeMonths.map(mo=>{
+    const ms=new Date(mo.y,mo.m-1,1), me=new Date(mo.y,mo.m,0);
+    const from2=ms<TF.from?TF.from:ms, to2=me>TF.to?TF.to:me;
+    const r=aggRows(ED.filter(x=>x.date>=from2&&x.date<=to2));
+    const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1);
+    const mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1);
+    const mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1);
+    const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1);
+    return`<tr><td style="font-weight:600">${mo.lbl}</td><td class="mono">${f(r.BQL)}</td><td class="mono">${f(r.MS)}</td><td>${bMs}%</td><td class="mono">${f(r.MD)}</td><td>${mMd}%</td><td class="mono">${f(r.Order)}</td><td>${mO}%</td><td>${mH}%</td></tr>`;
+  }).join('');
+
+  // City × Sub-Channel drill-down (collapsible per city)
+  const cityDrills = CITIES.map(c=>{
+    const {cur:cv} = tfAgg(c, null);
+    if(cv.BQL===0 && cv.HOTO===0) return '';
+    const scRows = SCS.map(s=>{
+      const {cur:sv, prv:spv} = tfAgg(c, s);
+      if(sv.BQL===0&&sv.HOTO===0) return '';
+      const totBQL=cv.BQL||1, totOrd=cv.Order||1;
+      const bqlSh=(sv.BQL/totBQL*100).toFixed(1)+'%';
+      const ordSh=(sv.Order/totOrd*100).toFixed(1)+'%';
+      const bmsC=pN(sv.MS,sv.BQL), mmdC=pN(sv.MD,sv.MS), mdoC=pN(sv.Order,sv.MD), mdhC=pN(sv.HOTO,sv.MD);
+      const pbmsC=cmpAvailable?pN(spv.MS,spv.BQL):null, pmmdC=cmpAvailable?pN(spv.MD,spv.MS):null;
+      const pmdoC=cmpAvailable?pN(spv.Order,spv.MD):null;
+      const ppBadge=(c2,p2)=>p2!=null?`<span class="${(c2-p2)>=0?'green':'red'}" style="font-size:9px">(${(c2-p2)>=0?'+':''}${(c2-p2).toFixed(1)}pp)</span>`:'';
+      return`<tr>
+        <td style="font-weight:600;padding-left:16px">${s}</td>
+        <td class="mono">${f(sv.BQL)}</td><td style="font-size:10px">${bqlSh}</td><td>${mb(sv.BQL,cmpAvailable?spv.BQL:null)}</td>
+        <td class="mono">${f(sv.MS)}</td><td class="mono">${f(sv.MD)}</td>
+        <td class="mono">${f(sv.Order)}</td><td style="font-size:10px">${ordSh}</td><td>${mb(sv.Order,cmpAvailable?spv.Order:null)}</td>
+        <td class="mono">${f(sv.HOTO)}</td>
+        <td>${bmsC.toFixed(1)}%${ppBadge(bmsC,pbmsC)}</td>
+        <td>${mmdC.toFixed(1)}%${ppBadge(mmdC,pmmdC)}</td>
+        <td>${mdoC.toFixed(1)}%${ppBadge(mdoC,pmdoC)}</td>
+        <td>${mdhC.toFixed(1)}%</td>
+      </tr>`;
+    }).join('');
+    return`<div class="coll-wrap"><div class="coll-hd" onclick="tog(this)">
+      <div style="display:flex;align-items:center;gap:8px"><strong>${c}</strong><span class="ctag">${TIERS[c]||''}</span>
+        <span style="font-size:11px;color:var(--t2)">BQL: ${f(cv.BQL)} · HOTO: ${f(cv.HOTO)} · MD→HOTO: ${pN(cv.HOTO,cv.MD).toFixed(1)}%</span>
+      </div><span style="color:var(--t3)">▾</span></div>
+      <div class="coll-body">
+      <div class="tw"><table>
+      <thead><tr><th>Sub-Channel</th><th>BQL</th><th>BQL%</th><th>BQL Δ</th><th>MS</th><th>MD</th><th>Order</th><th>Ord%</th><th>Ord Δ</th><th>HOTO</th><th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>
+      <tbody>${scRows}</tbody></table></div>
+      </div></div>`;
+  }).join('');
+
+  document.getElementById('p-india').innerHTML=`
+<div id="i-body">
+<div class="ptitle">India Summary — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Action date based</div>
+${tfNoBanner()}
+<div class="stitle">Period Totals ${cmpAvailable?`vs Prior (${tfCmpLabel()})`:''}</div>
+<div class="tw"><table><tr><th>Metric</th><th>Current Period</th>${cmpAvailable?'<th>Prior Period</th><th>Change</th>':''}<th>Funnel %</th></tr>
+${['BQL','MS','MD','Order','HOTO'].map(m=>{
+  const funnelBase={BQL:cur.BQL,MS:cur.BQL,MD:cur.MS,Order:cur.MD,HOTO:cur.MD};
+  const fp=pN(cur[m],funnelBase[m]).toFixed(1)+'%';
+  return`<tr><td style="font-weight:700">${m}</td><td class="mono" style="font-weight:700">${f(cur[m])}</td>${cmpAvailable?`<td class="mono">${f(prv[m])}</td><td>${mb(cur[m],prv[m])}</td>`:''}<td style="font-size:11px;color:var(--t2)">${m==='BQL'?'—':fp}</td></tr>`;
+}).join('')}
+</table></div>
+<div class="stitle">Monthly Breakdown (within selected range)</div>
+<div class="tw"><table><tr><th>Month</th><th>BQL</th><th>MS</th><th>BQL→MS%</th><th>MD</th><th>MS→MD%</th><th>Order</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr>${moRows}</table></div>
+<div class="stitle">City × Sub-Channel Breakdown</div>
+${cityDrills}
+</div>`;
+  autoSort(document.getElementById('p-india'));
+}
+
+function bCityTF() {
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const {cmpAvailable} = tfAgg(null,null);
+
+  const rows = CITIES.map(c=>{
+    const {cur,prv} = tfAgg(c,null);
+    return {c, cur, prv, tier:TIERS[c]||''};
+  }).sort((a,b)=>{
+    const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
+    if(tA!==tB)return tA-tB;
+    return b.cur.HOTO-a.cur.HOTO;
+  });
+
+  const indV = tfAgg(null,null).cur;
+  const indPV = tfAgg(null,null).prv;
+
+  const fp=(a,b)=>b>0?(a/b*100).toFixed(1)+'%':'-';
+  const fpc=(a,b,pa,pb)=>{
+    if(!b)return'-';
+    const cur2=(a/b*100).toFixed(1),prev=pb?(pa/pb*100).toFixed(1):null;
+    const pp=prev!=(null)?(parseFloat(cur2)-parseFloat(prev)).toFixed(1):null;
+    const cls=pp!=null?(parseFloat(pp)>=0?'green':'red'):'';
+    return`<span title="${cur2}% vs prior ${prev??'-'}%">${cur2}%${pp!=null?`<span class="${cls}" style="font-size:9px;margin-left:1px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:''}</span>`;
+  };
+
+  const indRow=`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bd2)">
+    <td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td>
+    <td class="mono">${f(indV.BQL)}</td><td class="mono">${f(indV.MS)}</td><td class="mono">${f(indV.MD)}</td>
+    <td class="mono">${f(indV.Order)}</td><td class="mono">${f(indV.HOTO)}</td>
+    <td style="background:#e5e7eb;padding:0"></td>
+    <td>${fpc(indV.MS,indV.BQL,indPV.MS,indPV.BQL)}</td>
+    <td>${fpc(indV.MD,indV.MS,indPV.MD,indPV.MS)}</td>
+    <td>${fpc(indV.Order,indV.MD,indPV.Order,indPV.MD)}</td>
+    <td>${fpc(indV.HOTO,indV.MD,indPV.HOTO,indPV.MD)}</td>
+  </tr>`;
+
+  const tbl = indRow + rows.map(r=>`<tr>
+    <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
+    <td>${cmpAvailable?`<span class="mono ${r.cur.BQL>r.prv.BQL?'green':r.cur.BQL<r.prv.BQL?'red':''}">${f(r.cur.BQL)}</span>`:f(r.cur.BQL)}</td>
+    <td class="mono">${f(r.cur.MS)}</td>
+    <td class="mono">${f(r.cur.MD)}</td>
+    <td class="mono">${f(r.cur.Order)}</td>
+    <td class="mono">${f(r.cur.HOTO)}</td>
+    <td style="background:#e5e7eb;padding:0"></td>
+    <td>${fpc(r.cur.MS,r.cur.BQL,r.prv.MS,r.prv.BQL)}</td>
+    <td>${fpc(r.cur.MD,r.cur.MS,r.prv.MD,r.prv.MS)}</td>
+    <td>${fpc(r.cur.Order,r.cur.MD,r.prv.Order,r.prv.MD)}</td>
+    <td>${fpc(r.cur.HOTO,r.cur.MD,r.prv.HOTO,r.prv.MD)}</td>
+  </tr>`).join('');
+
+  document.getElementById('p-city').innerHTML=`
+<div class="ptitle">City Summary — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Action date based${cmpAvailable?' · '+tfCmpLabel():''}</div>
+${tfNoBanner()}
+<div class="tw"><table>
+<thead><tr>
+  <th>City</th><th>BQL</th><th>MS</th><th>MD</th><th>Order</th><th>HOTO</th>
+  <th style="width:8px;background:#e5e7eb"></th>
+  <th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th>
+</tr></thead>
+<tbody>${tbl}</tbody>
+</table></div>`;
+  autoSort(document.getElementById('p-city'));
+}
+
+function bSCTF() {
+  const {cmpAvailable} = tfAgg(null,null);
+  const rows = SCS.map(s=>{
+    const {cur,prv} = tfAgg(null,s);
+    return {s,cur,prv};
+  }).filter(r=>r.cur.BQL>0||r.cur.HOTO>0);
+
+  const indV=tfAgg(null,null).cur, indPV=tfAgg(null,null).prv;
+  const totBQL=indV.BQL, totOrd=indV.Order;
+
+  const ppBadge=(c2,p2)=>p2!=null?`<span class="${(c2-p2)>=0?'green':'red'}" style="font-size:9px">(${(c2-p2)>=0?'+':''}${(c2-p2).toFixed(1)}pp)</span>`:'';
+
+  const rowsHtml = rows.map(r=>{
+    const bqlSh=(totBQL>0?(r.cur.BQL/totBQL*100).toFixed(1):'0.0')+'%';
+    const ordSh=(totOrd>0?(r.cur.Order/totOrd*100).toFixed(1):'0.0')+'%';
+    const bmsC=pN(r.cur.MS,r.cur.BQL), pbmsC=cmpAvailable?pN(r.prv.MS,r.prv.BQL):null;
+    const mmdC=pN(r.cur.MD,r.cur.MS), pmmdC=cmpAvailable?pN(r.prv.MD,r.prv.MS):null;
+    const mdoC=pN(r.cur.Order,r.cur.MD), pmdoC=cmpAvailable?pN(r.prv.Order,r.prv.MD):null;
+    return`<tr>
+      <td style="font-weight:600">${r.s}</td>
+      <td class="mono">${f(r.cur.BQL)}</td><td style="font-size:10px">${bqlSh}</td><td>${mb(r.cur.BQL,cmpAvailable?r.prv.BQL:null)}</td>
+      <td class="mono">${f(r.cur.MS)}</td><td class="mono">${f(r.cur.MD)}</td>
+      <td class="mono">${f(r.cur.Order)}</td><td style="font-size:10px">${ordSh}</td><td>${mb(r.cur.Order,cmpAvailable?r.prv.Order:null)}</td>
+      <td class="mono">${f(r.cur.HOTO)}</td>
+      <td>${bmsC.toFixed(1)}%${ppBadge(bmsC,pbmsC)}</td>
+      <td>${mmdC.toFixed(1)}%${ppBadge(mmdC,pmmdC)}</td>
+      <td>${mdoC.toFixed(1)}%${ppBadge(mdoC,pmdoC)}</td>
+    </tr>`;
+  }).join('');
+
+  // City × Sub-Channel breakdown (collapsible per city)
+  const cityDrills = CITIES.map(c=>{
+    const {cur:cv} = tfAgg(c,null);
+    if(cv.BQL===0&&cv.HOTO===0) return '';
+    const totCityBQL=cv.BQL||1, totCityOrd=cv.Order||1;
+    const scRows = SCS.map(s=>{
+      const {cur:sv, prv:spv} = tfAgg(c,s);
+      if(sv.BQL===0&&sv.HOTO===0) return '';
+      const bqlSh=(sv.BQL/totCityBQL*100).toFixed(1)+'%';
+      const ordSh=(sv.Order/totCityOrd*100).toFixed(1)+'%';
+      const bmsC=pN(sv.MS,sv.BQL), mmdC=pN(sv.MD,sv.MS), mdoC=pN(sv.Order,sv.MD), mdhC=pN(sv.HOTO,sv.MD);
+      const pbmsC=cmpAvailable?pN(spv.MS,spv.BQL):null;
+      const pmmdC=cmpAvailable?pN(spv.MD,spv.MS):null;
+      const pmdoC=cmpAvailable?pN(spv.Order,spv.MD):null;
+      return`<tr>
+        <td style="font-weight:600;padding-left:16px">${s}</td>
+        <td class="mono">${f(sv.BQL)}</td><td style="font-size:10px">${bqlSh}</td><td>${mb(sv.BQL,cmpAvailable?spv.BQL:null)}</td>
+        <td class="mono">${f(sv.MS)}</td><td class="mono">${f(sv.MD)}</td>
+        <td class="mono">${f(sv.Order)}</td><td style="font-size:10px">${ordSh}</td><td>${mb(sv.Order,cmpAvailable?spv.Order:null)}</td>
+        <td class="mono">${f(sv.HOTO)}</td>
+        <td>${bmsC.toFixed(1)}%${ppBadge(bmsC,pbmsC)}</td>
+        <td>${mmdC.toFixed(1)}%${ppBadge(mmdC,pmmdC)}</td>
+        <td>${mdoC.toFixed(1)}%${ppBadge(mdoC,pmdoC)}</td>
+        <td>${mdhC.toFixed(1)}%</td>
+      </tr>`;
+    }).join('');
+    return`<div class="coll-wrap"><div class="coll-hd" onclick="tog(this)">
+      <div style="display:flex;align-items:center;gap:8px"><strong>${c}</strong><span class="ctag">${TIERS[c]||''}</span>
+        <span style="font-size:11px;color:var(--t2)">BQL: ${f(cv.BQL)} · HOTO: ${f(cv.HOTO)}</span>
+      </div><span style="color:var(--t3)">▾</span></div>
+      <div class="coll-body">
+      <div class="tw"><table>
+      <thead><tr><th>Sub-Channel</th><th>BQL</th><th>BQL%</th><th>BQL Δ</th><th>MS</th><th>MD</th><th>Order</th><th>Ord%</th><th>Ord Δ</th><th>HOTO</th><th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>
+      <tbody>${scRows}</tbody></table></div>
+      </div></div>`;
+  }).join('');
+
+  document.getElementById('p-sc').innerHTML=`
+<div class="ptitle">Sub-Channel — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Action date based${cmpAvailable?' · vs '+tfCmpLabel():''}</div>
+${tfNoBanner()}
+<div class="stitle">India Sub-Channel Summary</div>
+<div class="tw"><table>
+<thead><tr><th>Sub-Channel</th><th>BQL</th><th>BQL Share%</th><th>BQL Δ</th><th>MS</th><th>MD</th><th>Order</th><th>Ord Share%</th><th>Ord Δ</th><th>HOTO</th><th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th></tr></thead>
+<tbody>${rowsHtml}</tbody>
+</table></div>
+<div class="stitle">City × Sub-Channel Breakdown</div>
+${cityDrills}`;
+  autoSort(document.getElementById('p-sc'));
+}
+
+function bFunnelTF() {
+  const {cur,prv,cmpAvailable} = tfAgg(null,null);
+  const stages=[
+    {lbl:'BQL',val:cur.BQL,pval:cmpAvailable?prv.BQL:null},
+    {lbl:'MS',val:cur.MS,pval:cmpAvailable?prv.MS:null},
+    {lbl:'MD',val:cur.MD,pval:cmpAvailable?prv.MD:null},
+    {lbl:'Order',val:cur.Order,pval:cmpAvailable?prv.Order:null},
+    {lbl:'HOTO',val:cur.HOTO,pval:cmpAvailable?prv.HOTO:null},
+  ];
+  const maxV=Math.max(...stages.map(s=>s.val),1);
+  const stagesHtml=stages.map((s,i)=>{
+    const pct=Math.round(s.val/maxV*100);
+    const convPct=i>0?pN(s.val,stages[i-1].val).toFixed(1):null;
+    const pConvPct=i>0&&s.pval!=null&&stages[i-1].pval?pN(s.pval,stages[i-1].pval).toFixed(1):null;
+    const diff=convPct&&pConvPct?(parseFloat(convPct)-parseFloat(pConvPct)).toFixed(1):null;
+    return`<div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:700;width:50px">${s.lbl}</span>
+        <div style="flex:1;background:var(--s2);border-radius:4px;height:28px;position:relative;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:#1a56db;border-radius:4px;opacity:.85"></div>
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:#fff;font-family:'DM Mono',monospace">${f(s.val)}</span>
+        </div>
+        ${s.pval!=null?`<span style="font-size:10px;color:var(--t2);min-width:60px">${mb(s.val,s.pval)}</span>`:''}
+      </div>
+      ${convPct!=null?`<div style="margin-left:58px;font-size:10px;color:var(--t3)">→ ${convPct}% conversion${diff!=null?` <span class="${parseFloat(diff)>=0?'green':'red'}">(${parseFloat(diff)>=0?'+':''}${diff}pp vs prior)</span>`:''}</div>`:''}
+    </div>`;
+  }).join('');
+
+  // City-wise funnel with SC sub-breakdown (collapsible)
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const cityFunnels = CITIES
+    .map(c=>({c, tier:TIERS[c]||'', ...tfAgg(c,null)}))
+    .filter(x=>x.cur.BQL>0||x.cur.HOTO>0)
+    .sort((a,b)=>{
+      const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
+      if(tA!==tB)return tA-tB;
+      return b.cur.HOTO-a.cur.HOTO;
+    })
+    .map(({c,tier,cur:cv,prv:pv,cmpAvailable:ca})=>{
+      const bmsC=pN(cv.MS,cv.BQL), mmdC=pN(cv.MD,cv.MS), mdoC=pN(cv.Order,cv.MD), mdhC=pN(cv.HOTO,cv.MD);
+      const pbmsC=ca?pN(pv.MS,pv.BQL):null, pmdoC=ca?pN(pv.Order,pv.MD):null;
+      const ppBadge=(c2,p2)=>p2!=null?`<span class="${(c2-p2)>=0?'green':'red'}" style="font-size:9px">(${(c2-p2)>=0?'+':''}${(c2-p2).toFixed(1)}pp)</span>`:'';
+      // SC breakdown within this city
+      const scRows=SCS.map(s=>{
+        const {cur:sv,prv:spv}=tfAgg(c,s);
+        if(sv.BQL===0&&sv.HOTO===0) return '';
+        const sbmsC=pN(sv.MS,sv.BQL), smmdC=pN(sv.MD,sv.MS), smdoC=pN(sv.Order,sv.MD), smdhC=pN(sv.HOTO,sv.MD);
+        const spbmsC=ca?pN(spv.MS,spv.BQL):null, spmdoC=ca?pN(spv.Order,spv.MD):null;
+        return`<tr style="background:var(--s2)">
+          <td style="padding-left:20px;font-size:11px;color:var(--t2)">${s}</td>
+          <td class="mono" style="font-size:11px">${f(sv.BQL)}</td>
+          <td class="mono" style="font-size:11px">${f(sv.MS)}</td>
+          <td class="mono" style="font-size:11px">${f(sv.MD)}</td>
+          <td class="mono" style="font-size:11px">${f(sv.Order)}</td>
+          <td class="mono" style="font-size:11px">${f(sv.HOTO)}</td>
+          <td style="font-size:11px">${sbmsC.toFixed(1)}%${ppBadge(sbmsC,spbmsC)}</td>
+          <td style="font-size:11px">${smmdC.toFixed(1)}%</td>
+          <td style="font-size:11px">${smdoC.toFixed(1)}%${ppBadge(smdoC,spmdoC)}</td>
+          <td style="font-size:11px">${smdhC.toFixed(1)}%</td>
+        </tr>`;
+      }).join('');
+      return`<div class="coll-wrap"><div class="coll-hd" onclick="tog(this)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <strong>${c}</strong><span class="ctag">${tier}</span>
+          <span style="font-size:11px;color:var(--t2)">BQL: ${f(cv.BQL)} · HOTO: ${f(cv.HOTO)} · MD→HOTO: ${mdhC.toFixed(1)}% · MD→Ord: ${mdoC.toFixed(1)}%</span>
+          ${ca?mb(cv.HOTO,pv.HOTO):''}
+        </div><span style="color:var(--t3)">▾</span></div>
+        <div class="coll-body">
+        <div class="tw"><table>
+        <thead><tr><th>Segment</th><th>BQL</th><th>MS</th><th>MD</th><th>Order</th><th>HOTO</th><th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>
+        <tbody>
+        <tr style="font-weight:700;background:#f0f9ff">
+          <td>${c} Overall</td>
+          <td class="mono">${f(cv.BQL)}</td><td class="mono">${f(cv.MS)}</td><td class="mono">${f(cv.MD)}</td>
+          <td class="mono">${f(cv.Order)}</td><td class="mono">${f(cv.HOTO)}</td>
+          <td>${bmsC.toFixed(1)}%${ppBadge(bmsC,pbmsC)}</td>
+          <td>${mmdC.toFixed(1)}%</td>
+          <td>${mdoC.toFixed(1)}%${ppBadge(mdoC,pmdoC)}</td>
+          <td>${mdhC.toFixed(1)}%</td>
+        </tr>
+        ${scRows}
+        </tbody></table></div>
+        </div></div>`;
+    }).join('');
+
+  document.getElementById('p-funnel').innerHTML=`
+<div class="ptitle">Funnel Analysis — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Action date based${cmpAvailable?' · vs '+tfCmpLabel():''}</div>
+${tfNoBanner()}
+<div class="card"><div class="ctitle">India Overall Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
+<div class="stitle">City-wise Funnel with Sub-Channel Breakdown <span style="font-size:10px;font-weight:400;color:var(--t3)">(click city to expand SC breakdown)</span></div>
+${cityFunnels}`;
+  autoSort(document.getElementById('p-funnel'));
+}
+
+function bDoDTF() {
+  // Day-on-Day in timeframe mode: show each date in range
+  const rows=[];
+  let d=new Date(TF.from);
+  while(d<=TF.to){
+    const dc=new Date(d);
+    const dayRows=ED.filter(r=>r.date&&r.date.getFullYear()===dc.getFullYear()&&r.date.getMonth()===dc.getMonth()&&r.date.getDate()===dc.getDate());
+    const r=aggRows(dayRows);
+    if(r.BQL>0||r.HOTO>0||r.Order>0)
+      rows.push({d:new Date(dc),r});
+    d.setDate(d.getDate()+1);
+  }
+  const tbl=rows.map(({d:dt,r})=>`<tr>
+    <td style="font-weight:600;white-space:nowrap">${dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',weekday:'short'})}</td>
+    <td class="mono">${f(r.BQL)}</td><td class="mono">${f(r.MS)}</td><td class="mono">${f(r.MD)}</td><td class="mono">${f(r.Order)}</td><td class="mono">${f(r.HOTO)}</td>
+    <td>${pN(r.MS,r.BQL).toFixed(1)}%</td><td>${pN(r.Order,r.MD).toFixed(1)}%</td><td>${pN(r.HOTO,r.MD).toFixed(1)}%</td>
+  </tr>`).join('');
+  const {cur}=tfAgg(null,null);
+  document.getElementById('p-dod').innerHTML=`
+<div class="ptitle">Day-on-Day — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Each day's action data</div>
+<div class="tw"><table>
+<thead><tr><th>Date</th><th>BQL</th><th>MS</th><th>MD</th><th>Order</th><th>HOTO</th><th>BQL→MS%</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr>
+<tr style="font-weight:700;background:#f0f9ff"><td>TOTAL</td><td class="mono">${f(cur.BQL)}</td><td class="mono">${f(cur.MS)}</td><td class="mono">${f(cur.MD)}</td><td class="mono">${f(cur.Order)}</td><td class="mono">${f(cur.HOTO)}</td><td>${pN(cur.MS,cur.BQL).toFixed(1)}%</td><td>${pN(cur.Order,cur.MD).toFixed(1)}%</td><td>${pN(cur.HOTO,cur.MD).toFixed(1)}%</td></tr>
+</thead>
+<tbody>${tbl}</tbody>
+</table></div>`;
+  autoSort(document.getElementById('p-dod'));
+}
+
+// ── Override buildTab to intercept TF mode ─────────────────────
+const _origBuildTab = typeof buildTab === 'function' ? buildTab : null;
+
+// ── Patch the sw() function to show/hide the view mode switcher ──
+// We'll override sw after it's defined by hooking into the setChannel call
+// and tab switch. We do this by wrapping sw.
+
+// Hook into channel switching to show/hide the view mode switcher
+function updateViewModeSwitcherVisibility(tab) {
+  const sw2 = document.getElementById('ref-vm-sw');
+  if(!sw2) return;
+  const isReferralTab = REFERRAL_TABS.includes(tab);
+  sw2.style.display = isReferralTab ? 'flex' : 'none';
 }
 
 init();
