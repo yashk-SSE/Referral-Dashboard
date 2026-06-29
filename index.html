@@ -220,6 +220,15 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .ch-sw{display:flex;gap:4px;background:var(--s2);border-radius:8px;padding:3px}
 .ch-btn{padding:4px 14px;border:none;background:transparent;border-radius:6px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s;white-space:nowrap}
 .ch-btn.active{background:var(--sur);color:var(--bl);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+/* Metric Definition Switchers */
+.metric-sw-group{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px 6px}
+.metric-sw-label{font-size:9px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-right:2px;white-space:nowrap}
+.metric-sw-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:500;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .12s}
+.metric-sw-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+.metric-sw-btn.active{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.55);color:#fbbf24;font-weight:600}
+.metric-sw-sep{width:1px;height:14px;background:rgba(255,255,255,.1);margin:0 2px}
+#metric-switchers{display:none;align-items:center;gap:6px;flex-wrap:wrap}
+#metric-switchers.visible{display:flex}
 .ch-btn:hover:not(.active){color:var(--t1)}
 body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 /* Digital sidebar section — matches Referral styling */
@@ -314,6 +323,26 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
       <button class="ch-btn active" id="ch-ref" onclick="setChannel('referral',this)">Referral</button>
       <button class="ch-btn" id="ch-dig" onclick="setChannel('digital',this)">Digital</button>
       <button class="ch-btn" id="ch-cmp" onclick="setChannel('compare',this)">Ref vs Digital</button>
+    </div>
+    <!-- Metric Definition Switchers (Referral only) -->
+    <div id="metric-switchers">
+      <div class="metric-sw-group">
+        <span class="metric-sw-label">BQL</span>
+        <button class="metric-sw-btn active" id="sw-bql-old" onclick="setMetricDef('bql','old',this)">Old</button>
+        <button class="metric-sw-btn" id="sw-bql-new" onclick="setMetricDef('bql','new',this)">New</button>
+      </div>
+      <div class="metric-sw-sep"></div>
+      <div class="metric-sw-group">
+        <span class="metric-sw-label">MS</span>
+        <button class="metric-sw-btn active" id="sw-ms-first" onclick="setMetricDef('ms','first',this)">First</button>
+        <button class="metric-sw-btn" id="sw-ms-total" onclick="setMetricDef('ms','total',this)">Total</button>
+      </div>
+      <div class="metric-sw-sep"></div>
+      <div class="metric-sw-group">
+        <span class="metric-sw-label">MD</span>
+        <button class="metric-sw-btn active" id="sw-md-first" onclick="setMetricDef('md','first',this)">First</button>
+        <button class="metric-sw-btn" id="sw-md-total" onclick="setMetricDef('md','total',this)">Total</button>
+      </div>
     </div>
     <div class="fy-pill" id="fy-mini">FY27: –</div>
     <div class="upd" id="upd-lbl">–</div>
@@ -505,6 +534,32 @@ function defCellAbs(actual,mopMtd,extraStyle){
   return`<td class="${cls}" ${s}>${f(actual)}</td>`;
 }
 
+// ── Metric Definition Selector ──────────────────────────────────────────────
+// Controls which variant is used across ALL Referral tabs
+// bql: 'old' | 'new'   ms: 'first' | 'total'   md: 'first' | 'total'
+let METRIC_SEL={bql:'old',ms:'first',md:'first'};
+
+function setMetricDef(metric,val,btn){
+  METRIC_SEL[metric]=val;
+  // Update button active states
+  const pairs={bql:['sw-bql-old','sw-bql-new'],ms:['sw-ms-first','sw-ms-total'],md:['sw-md-first','sw-md-total']};
+  pairs[metric].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',el===btn);});
+  // Re-run precompute + re-render current tab if data is loaded and we're on Referral
+  if(dataLoaded&&ACTIVE_CH==='referral'){
+    precompute();   // rebuild ALL C.* caches with the new BQL/MS/MD definition
+    rendered={};    // clear render cache so every tab redraws fresh
+    sw(curTab);
+  }
+}
+
+// Helper: get BQL value from an effort row based on current selection
+function getBQL(r){return METRIC_SEL.bql==='new'?(r.BQL_New||0):(r.BQL_Old||0);}
+function getMS(r){return METRIC_SEL.ms==='total'?(r.MS_Total||0):(r.MS_First||0);}
+function getMD(r){return METRIC_SEL.md==='total'?(r.MD_Total||0):(r.MD_First||0);}
+// Lead-level helpers (uses lead data)
+function getLeadMS(l){return METRIC_SEL.ms==='total'?l.msDTotal:getLeadMS(l);}
+function getLeadMD(l){return METRIC_SEL.md==='total'?l.mdDTotal:getLeadMD(l);}
+
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
 async function fetchJSON(filename){
@@ -526,7 +581,7 @@ function precompute(){
 
   function agg(rows){
     const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-    rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});
+    rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});
     return r;
   }
   const edCur=ED.filter(r=>r.date>=cur&&r.date<=yd);
@@ -565,9 +620,9 @@ function precompute(){
   const curL=LD.filter(l=>l.created&&sameMonth(l.created));
   const prvL=LD.filter(l=>l.created&&l.created>=prevS&&l.created<=prevE);
   function velD(leads){
-    const bms=leads.filter(l=>l.msD).map(l=>dD(l.created,l.msD)).filter(d=>d!=null&&d>=0&&d<=90);
-    const mmd=leads.filter(l=>l.msD&&l.mdD).map(l=>dD(l.msD,l.mdD)).filter(d=>d!=null&&d>=0&&d<=90);
-    const mo=leads.filter(l=>l.mdD&&l.ordD).map(l=>dD(l.mdD,l.ordD)).filter(d=>d!=null&&d>=0&&d<=90);
+    const bms=leads.filter(l=>getLeadMS(l)).map(l=>dD(l.created,getLeadMS(l))).filter(d=>d!=null&&d>=0&&d<=90);
+    const mmd=leads.filter(l=>getLeadMS(l)&&getLeadMD(l)).map(l=>dD(getLeadMS(l),getLeadMD(l))).filter(d=>d!=null&&d>=0&&d<=90);
+    const mo=leads.filter(l=>getLeadMD(l)&&l.ordD).map(l=>dD(getLeadMD(l),l.ordD)).filter(d=>d!=null&&d>=0&&d<=90);
     return{b75:perc(bms,75),b90:perc(bms,90),m75:perc(mmd,75),m90:perc(mmd,90),o75:perc(mo,75),o90:perc(mo,90),n:leads.length};
   }
   // Fix 6: same-month activity only - stages must be completed within the lead's creation month
@@ -575,9 +630,9 @@ function precompute(){
   const prevE2=new Date(D0().getFullYear(),D0().getMonth(),0);
   // Current month: leads created this month, with stages done this month too
   function velDSameMonth(leads, monthStart, monthEnd){
-    const bms=leads.filter(l=>l.msD&&l.msD>=monthStart&&l.msD<=monthEnd).map(l=>dD(l.created,l.msD)).filter(d=>d!=null&&d>=0&&d<=31);
-    const mmd=leads.filter(l=>l.msD&&l.mdD&&l.mdD>=monthStart&&l.mdD<=monthEnd).map(l=>dD(l.msD,l.mdD)).filter(d=>d!=null&&d>=0&&d<=31);
-    const mo2=leads.filter(l=>l.mdD&&l.ordD&&l.ordD>=monthStart&&l.ordD<=monthEnd).map(l=>dD(l.mdD,l.ordD)).filter(d=>d!=null&&d>=0&&d<=31);
+    const bms=leads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=monthStart&&getLeadMS(l)<=monthEnd).map(l=>dD(l.created,getLeadMS(l))).filter(d=>d!=null&&d>=0&&d<=31);
+    const mmd=leads.filter(l=>getLeadMS(l)&&getLeadMD(l)&&getLeadMD(l)>=monthStart&&getLeadMD(l)<=monthEnd).map(l=>dD(getLeadMS(l),getLeadMD(l))).filter(d=>d!=null&&d>=0&&d<=31);
+    const mo2=leads.filter(l=>getLeadMD(l)&&l.ordD&&l.ordD>=monthStart&&l.ordD<=monthEnd).map(l=>dD(getLeadMD(l),l.ordD)).filter(d=>d!=null&&d>=0&&d<=31);
     return{b75:perc(bms,75),b90:perc(bms,90),m75:perc(mmd,75),m90:perc(mmd,90),o75:perc(mo2,75),o90:perc(mo2,90),n:leads.length};
   }
   const curMS2=MS0(yd);
@@ -590,9 +645,9 @@ function precompute(){
   // Aging
   const age=d=>d?Math.round((yd-d)/86400000):null;
   C.aging={
-    bms:LD.filter(l=>l.created&&!l.msD&&sameMonth(l.created)).map(l=>({...l,age:age(l.created)})).filter(l=>l.age!=null&&l.age>=0),
-    mmd:LD.filter(l=>l.msD&&!l.mdD).map(l=>({...l,age:age(l.msD)})).filter(l=>l.age!=null&&l.age>=0),
-    mo:LD.filter(l=>l.mdD&&!l.ordD).map(l=>({...l,age:age(l.mdD)})).filter(l=>l.age!=null&&l.age>=0)
+    bms:LD.filter(l=>l.created&&!getLeadMS(l)&&sameMonth(l.created)).map(l=>({...l,age:age(l.created)})).filter(l=>l.age!=null&&l.age>=0),
+    mmd:LD.filter(l=>getLeadMS(l)&&!getLeadMD(l)).map(l=>({...l,age:age(getLeadMS(l))})).filter(l=>l.age!=null&&l.age>=0),
+    mo:LD.filter(l=>getLeadMD(l)&&!l.ordD).map(l=>({...l,age:age(getLeadMD(l))})).filter(l=>l.age!=null&&l.age>=0)
   };
 
   // Pre-generate insights
@@ -605,6 +660,9 @@ function setChannel(ch,el){
   document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   ACTIVE_CH=ch;
+  // Show metric switchers only on Referral channel
+  const msEl=document.getElementById('metric-switchers');
+  if(msEl)msEl.classList.toggle('visible',ch==='referral');
   // Block sidebar/tab navigation until data is fully loaded
   if(!dataLoaded) return;
   // Items WITH data-ch: show only matching channel
@@ -694,7 +752,7 @@ function precomputeDigital(){
   const lmS=new Date(yd.getFullYear(),yd.getMonth()-1,1);
   const lmE=new Date(yd.getFullYear(),yd.getMonth()-1,yd.getDate());
   const months=C.months;
-  function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
+  function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   const edCur=DED.filter(r=>r.date>=cur&&r.date<=yd);
   const edLm=DED.filter(r=>r.date>=lmS&&r.date<=lmE);
   DC={
@@ -981,31 +1039,42 @@ async function init(){
     }
 
     // ── Effort data: JSON rows → ED[] ─────────────────────────────────────
-    // Python outputs named fields: action_date, month, year, city, sub_channel, BQL, MS, MD, Order, HOTO
+    // Fields: action_date, month, year, city, sub_channel,
+    //         BQL_Old, BQL_New, First_MS, First_MD, Total_MS, Total_MD, Order, HOTO
     const cityFix=c=>c==='Bengaluru'?'Bangalore':c;
     ED=eR.map(r=>({
-      date:    pd(r.action_date),
-      year:    num(r.year),
-      month:   num(r.month),
-      city:    cityFix((r.city||'').trim()),
-      sc:      (r.sub_channel||'').trim(),
-      BQL:     num(r.BQL),
-      MS:      num(r.MS),
-      MD:      num(r.MD),
-      Order:   num(r.Order),
-      HOTO:    num(r.HOTO)
+      date:     pd(r.action_date),
+      year:     num(r.year),
+      month:    num(r.month),
+      city:     cityFix((r.city||'').trim()),
+      sc:       (r.sub_channel||'').trim(),
+      BQL_Old:  num(r.BQL_Old),
+      BQL_New:  num(r.BQL_New),
+      MS_First: num(r.First_MS),
+      MS_Total: num(r.Total_MS),
+      MD_First: num(r.First_MD),
+      MD_Total: num(r.Total_MD),
+      // Legacy fields default to Old/First so any unreachable code stays safe
+      BQL:      num(r.BQL_Old),
+      MS:       num(r.First_MS),
+      MD:       num(r.First_MD),
+      Order:    num(r.Order),
+      HOTO:     num(r.HOTO)
     })).filter(r=>r.date&&r.city);
 
     // ── Lead data: JSON rows → LD[] ───────────────────────────────────────
-    // Python outputs named fields: city, sub_channel, created, msD, mdD, ordD, hotoD
+    // Fields: city, sub_channel, created, first_ms_date, first_md_date,
+    //         total_ms_date, total_md_date, ordD, hotoD
     LD=lR.map(r=>({
-      city:    cityFix((r.city||'').trim()),
-      sc:      (r.sub_channel||'').trim(),
-      created: pd(r.created),
-      msD:     pd(r.msD),
-      mdD:     pd(r.mdD),
-      ordD:    pd(r.ordD),
-      hotoD:   pd(r.hotoD)
+      city:     cityFix((r.city||'').trim()),
+      sc:       (r.sub_channel||'').trim(),
+      created:  pd(r.created),
+      msD:      pd(r.first_ms_date),   // First MS date
+      mdD:      pd(r.first_md_date),   // First MD date
+      msDTotal: pd(r.total_ms_date),   // Total MS date
+      mdDTotal: pd(r.total_md_date),   // Total MD date
+      ordD:     pd(r.ordD),
+      hotoD:    pd(r.hotoD)
     })).filter(r=>r.city);
 
     console.log(`Loaded: ED=${ED.length} rows, LD=${LD.length} rows`);
@@ -1048,6 +1117,10 @@ async function init(){
     // Mark data as loaded — channel switcher now fully functional
     dataLoaded=true;
     document.body.classList.remove('loading-data');
+
+    // Show metric switchers (default channel is Referral)
+    const msEl=document.getElementById('metric-switchers');
+    if(msEl&&ACTIVE_CH==='referral')msEl.classList.add('visible');
 
     // If user switched channel while data was loading, apply it now
     if(ACTIVE_CH!=='referral'){
@@ -1361,7 +1434,7 @@ function bIndia(){
 function rebuildIndia(){const t=document.getElementById('i-tier')?.value||'';const cities=t?CITIES.filter(c=>TIERS[c]===t):null;renderIndia(document.getElementById('i-city')?.value||'',document.getElementById('i-sc')?.value||'',cities);}
 function renderIndia(cf,sf,tierCities){
   const yd=C.yd,months=C.months;
-  function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
+  function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   const cur=MS0(yd),lmS=new Date(yd.getFullYear(),yd.getMonth()-1,1),lmE=new Date(yd.getFullYear(),yd.getMonth()-1,yd.getDate());
   const v=agg(ED.filter(r=>r.date>=cur&&r.date<=yd&&(!cf||r.city===cf)&&(!sf||r.sc===sf)));
   const pv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&(!cf||r.city===cf)&&(!sf||r.sc===sf)));
@@ -1698,7 +1771,7 @@ function buildSCTrendHtml(cf){
       if(x.year!==mo.y||x.month!==mo.m)return;
       if(cf&&x.city!==cf)return;
       if(tillDay){const me=new Date(mo.y,mo.m-1,tillDay);const ms=new Date(mo.y,mo.m-1,1);if(x.date<ms||x.date>me)return;}
-      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+      r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;
     });
     return r;
   }
@@ -1745,14 +1818,14 @@ function buildSCTrendHtml(cf){
   // ── Full Month table ──
   const fullIndiaCols=months.map(mo=>aggAllSCMo(mo,null));
   const fullSCRows=SCS.map(s=>{
-    const cols=months.map(mo=>{let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});
+    const cols=months.map(mo=>{let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s)return;if(cf&&x.city!==cf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});
     return scTrendRow(s,cols,false);
   }).join('');
   const trendHtml=tableHeader(true)+scTrendRow('India Overall',fullIndiaCols,true)+fullSCRows+'</tbody></table></div>';
   // ── MTD table ──
   const mtdIndiaCols=months.map(mo=>aggAllSCMo(mo,mtdDay));
   const mtdSCRows=SCS.map(s=>{
-    const mtdCols=months.map(mo=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});
+    const mtdCols=months.map(mo=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;});
     return scMtdRow(s,mtdCols,false);
   }).join('');
   const mtdTrendHtml=tableHeader(false)+scMtdRow('India Overall',mtdIndiaCols,true)+mtdSCRows+'</tbody></table></div>';
@@ -1779,7 +1852,7 @@ function buildSCFunnelMoM(cf){
     ED.forEach(x=>{
       if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;
       if(cf&&x.city!==cf)return;
-      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+      r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;
     });
     return r;
   }
@@ -1889,7 +1962,7 @@ ${SCS.map(s=>{
   const mtdCols=months.map(mo=>{
     const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
     let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});
+    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.sc!==s||x.date<ms||x.date>me)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});
     return r;
   });
   const curr=mtdCols[mtdCols.length-1],prev=mtdCols[mtdCols.length-2]||{BQL:0,HOTO:0,Order:0};
@@ -2111,7 +2184,7 @@ function renderFunnelChart(cf,sf){
       if(x.year!==mo.y||x.month!==mo.m)return;
       if(cf&&x.city!==cf)return;
       if(sf&&x.sc!==sf)return;
-      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+      r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;
     });
     return r;
   });
@@ -2136,7 +2209,7 @@ function renderFunnelViz(cf,sf){
 function renderFunnelMoTbl(cf,sf){
   const el=document.getElementById('fn-mo-tbl');if(!el)return;
   const months=C.months;
-  function aggMo(mo){let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m)return;if(cf&&x.city!==cf)return;if(sf&&x.sc!==sf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
+  function aggMo(mo){let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m)return;if(cf&&x.city!==cf)return;if(sf&&x.sc!==sf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   const moData=months.map(aggMo);
   const rows=moData.map((r,i)=>{
     const p=i>0?moData[i-1]:{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
@@ -2157,7 +2230,7 @@ function renderFunnelMoMtdTbl(cf,sf){
   function aggMoMtd(mo){
     let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
-    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;if(sf&&x.sc!==sf)return;r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;
+    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cf&&x.city!==cf)return;if(sf&&x.sc!==sf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;
   }
   const moData=months.map(aggMoMtd);
   const rows=moData.map((r,i)=>{
@@ -2199,8 +2272,8 @@ function bM0Funnel(){
     const mLeads=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me);
     const bql=mLeads.length;
     // Actions must also fall within same month window (1st -> me)
-    const msC=mLeads.filter(l=>l.msD&&l.msD>=ms&&l.msD<=me).length;
-    const mdC=mLeads.filter(l=>l.mdD&&l.mdD>=ms&&l.mdD<=me).length;
+    const msC=mLeads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).length;
+    const mdC=mLeads.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).length;
     const ordC=mLeads.filter(l=>l.ordD&&l.ordD>=ms&&l.ordD<=me).length;
     const hotoC=mLeads.filter(l=>l.hotoD&&l.hotoD>=ms&&l.hotoD<=me).length;
     return{BQL:bql,MS:msC,MD:mdC,Order:ordC,HOTO:hotoC,isCurMo};
@@ -2219,8 +2292,8 @@ function bM0Funnel(){
     const mLeads=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me);
     const bql=mLeads.length;
     // Actions also must be 1st -> me of same month
-    const msC=mLeads.filter(l=>l.msD&&l.msD>=ms&&l.msD<=me).length;
-    const mdC=mLeads.filter(l=>l.mdD&&l.mdD>=ms&&l.mdD<=me).length;
+    const msC=mLeads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).length;
+    const mdC=mLeads.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).length;
     const ordC=mLeads.filter(l=>l.ordD&&l.ordD>=ms&&l.ordD<=me).length;
     const hotoC=mLeads.filter(l=>l.hotoD&&l.hotoD>=ms&&l.hotoD<=me).length;
     return{BQL:bql,MS:msC,MD:mdC,Order:ordC,HOTO:hotoC,isCurMo};
@@ -2288,8 +2361,8 @@ function renderM0Tables(cfOrArr,sf,tf){
       if(cfArr&&!cfArr.includes(l.city))return;
       if(sf&&l.sc!==sf)return;
       r.BQL++;
-      if(l.msD&&l.msD>=ms&&l.msD<=me)r.MS++;
-      if(l.mdD&&l.mdD>=ms&&l.mdD<=me)r.MD++;
+      if(getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me)r.MS++;
+      if(getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me)r.MD++;
       if(l.ordD&&l.ordD>=ms&&l.ordD<=me)r.Order++;
       if(l.hotoD&&l.hotoD>=ms&&l.hotoD<=me)r.HOTO++;
     });
@@ -2347,7 +2420,7 @@ function renderM0Tables(cfOrArr,sf,tf){
   const cityRows=showCities.map(c=>{
     function m0city(city,ms,me){
       const mL=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me&&l.city===city&&(!sf||l.sc===sf));
-      return{BQL:mL.length,MS:mL.filter(l=>l.msD&&l.msD>=ms&&l.msD<=me).length,MD:mL.filter(l=>l.mdD&&l.mdD>=ms&&l.mdD<=me).length,Order:mL.filter(l=>l.ordD&&l.ordD>=ms&&l.ordD<=me).length,HOTO:mL.filter(l=>l.hotoD&&l.hotoD>=ms&&l.hotoD<=me).length};
+      return{BQL:mL.length,MS:mL.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).length,MD:mL.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).length,Order:mL.filter(l=>l.ordD&&l.ordD>=ms&&l.ordD<=me).length,HOTO:mL.filter(l=>l.hotoD&&l.hotoD>=ms&&l.hotoD<=me).length};
     }
     const cur=m0city(c,curW.ms,curW.me),prv=m0city(c,prvW.ms,prvW.me);
     if(!cur.BQL&&!prv.BQL)return'';
@@ -2470,7 +2543,7 @@ function reFilterVel(){
   const prevS3=new Date(D0().getFullYear(),D0().getMonth()-1,1),prevE3=new Date(D0().getFullYear(),D0().getMonth(),0);
   const curMS3=MS0(YD());
   const allC=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
-  function vDS(leads,ms,me){const bms=leads.filter(l=>l.msD&&l.msD>=ms&&l.msD<=me).map(l=>dD(l.created,l.msD)).filter(d=>d!=null&&d>=0&&d<=31);const mmd=leads.filter(l=>l.msD&&l.mdD&&l.mdD>=ms&&l.mdD<=me).map(l=>dD(l.msD,l.mdD)).filter(d=>d!=null&&d>=0&&d<=31);const mo3=leads.filter(l=>l.mdD&&l.ordD&&l.ordD>=ms&&l.ordD<=me).map(l=>dD(l.mdD,l.ordD)).filter(d=>d!=null&&d>=0&&d<=31);return{b75:perc(bms,75),b90:perc(bms,90),m75:perc(mmd,75),m90:perc(mmd,90),o75:perc(mo3,75),o90:perc(mo3,90),n:leads.length};}
+  function vDS(leads,ms,me){const bms=leads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).map(l=>dD(l.created,getLeadMS(l))).filter(d=>d!=null&&d>=0&&d<=31);const mmd=leads.filter(l=>getLeadMS(l)&&getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).map(l=>dD(getLeadMS(l),getLeadMD(l))).filter(d=>d!=null&&d>=0&&d<=31);const mo3=leads.filter(l=>getLeadMD(l)&&l.ordD&&l.ordD>=ms&&l.ordD<=me).map(l=>dD(getLeadMD(l),l.ordD)).filter(d=>d!=null&&d>=0&&d<=31);return{b75:perc(bms,75),b90:perc(bms,90),m75:perc(mmd,75),m90:perc(mmd,90),o75:perc(mo3,75),o90:perc(mo3,90),n:leads.length};}
   const curL2=LD.filter(l=>l.created&&sameMonth(l.created)&&(!sf||l.sc===sf));
   const prvL2=LD.filter(l=>l.created&&l.created>=prevS3&&l.created<=prevE3&&(!sf||l.sc===sf));
   const ci2=vDS(curL2,curMS3,YD()),pi2=vDS(prvL2,prevS3,prevE3);
@@ -2628,11 +2701,11 @@ function renderWoWCumm(){
       const ams=new Date(aY,aM-1,1);
       const ame=new Date(aY,aM,0);
       slots.push({
-        bqlMs:cohortLeads.filter(l=>l.msD&&l.msD>=ams&&l.msD<=ame).length,
-        msMd:cohortLeads.filter(l=>l.mdD&&l.mdD>=ams&&l.mdD<=ame).length,
+        bqlMs:cohortLeads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ams&&getLeadMS(l)<=ame).length,
+        msMd:cohortLeads.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ams&&getLeadMD(l)<=ame).length,
         mdOrd:cohortLeads.filter(l=>l.ordD&&l.ordD>=ams&&l.ordD<=ame).length,
-        msLeads:cohortLeads.filter(l=>l.msD&&l.msD>=new Date(cohortMo.y,cohortMo.m-1,1)&&l.msD<=ame).length, // for MS->MD denom
-        mdLeads:cohortLeads.filter(l=>l.mdD&&l.mdD>=new Date(cohortMo.y,cohortMo.m-1,1)&&l.mdD<=ame).length, // for MD->Ord denom
+        msLeads:cohortLeads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=new Date(cohortMo.y,cohortMo.m-1,1)&&getLeadMS(l)<=ame).length, // for MS->MD denom
+        mdLeads:cohortLeads.filter(l=>getLeadMD(l)&&getLeadMD(l)>=new Date(cohortMo.y,cohortMo.m-1,1)&&getLeadMD(l)<=ame).length, // for MD->Ord denom
       });
     }
     // Cumulative
@@ -2985,23 +3058,23 @@ function renderWoW(){
   leads=leads.filter(l=>l.created>=cutoff);
 
   // BQL->MS: row = creation week, col = week of msD
-  const bmsCohort=buildCohort(leads, l=>l.created, l=>l.msD, weeks);
+  const bmsCohort=buildCohort(leads, l=>l.created, l=>getLeadMS(l), weeks);
   renderCohortTable(bmsCohort, weeks, 'wow-bms', 'BQL');
 
   // MS->MD: pool = leads whose MS happened in same calendar month as creation
   const msmLeads=leads.filter(l=>{
-    if(!l.msD)return false;
-    return l.created.getFullYear()===l.msD.getFullYear()&&l.created.getMonth()===l.msD.getMonth();
+    if(!getLeadMS(l))return false;
+    return l.created.getFullYear()===getLeadMS(l).getFullYear()&&l.created.getMonth()===getLeadMS(l).getMonth();
   });
-  const mmdCohort=buildCohort(msmLeads, l=>l.msD, l=>l.mdD, weeks);
+  const mmdCohort=buildCohort(msmLeads, l=>getLeadMS(l), l=>getLeadMD(l), weeks);
   renderCohortTable(mmdCohort, weeks, 'wow-mmd', 'MS');
 
   // MD->Order: pool = leads whose MD happened in same calendar month as creation
   const mdmLeads=leads.filter(l=>{
-    if(!l.mdD)return false;
-    return l.created.getFullYear()===l.mdD.getFullYear()&&l.created.getMonth()===l.mdD.getMonth();
+    if(!getLeadMD(l))return false;
+    return l.created.getFullYear()===getLeadMD(l).getFullYear()&&l.created.getMonth()===getLeadMD(l).getMonth();
   });
-  const mdoCohort=buildCohort(mdmLeads, l=>l.mdD, l=>l.ordD, weeks);
+  const mdoCohort=buildCohort(mdmLeads, l=>getLeadMD(l), l=>l.ordD, weeks);
   renderCohortTable(mdoCohort, weeks, 'wow-mdo', 'MD');
 
   renderWoWExtra();
@@ -3020,14 +3093,14 @@ function renderWoWExtra(){
   let cohort, rowLabel, stitle;
   if(mode==='mdhoto'){
     // MD->HOTO: pool = leads whose MD in same month as creation
-    const mdLeads=leads.filter(l=>l.mdD&&l.created.getFullYear()===l.mdD.getFullYear()&&l.created.getMonth()===l.mdD.getMonth());
-    cohort=buildCohort(mdLeads, l=>l.mdD, l=>l.hotoD, weeks);
+    const mdLeads=leads.filter(l=>getLeadMD(l)&&l.created.getFullYear()===getLeadMD(l).getFullYear()&&l.created.getMonth()===getLeadMD(l).getMonth());
+    cohort=buildCohort(mdLeads, l=>getLeadMD(l), l=>l.hotoD, weeks);
     rowLabel='MD'; stitle='MD -> HOTO';
   } else if(mode==='bqlord'){
     cohort=buildCohort(leads, l=>l.created, l=>l.ordD, weeks);
     rowLabel='BQL'; stitle='BQL -> Order';
   } else {
-    cohort=buildCohort(leads, l=>l.created, l=>l.mdD, weeks);
+    cohort=buildCohort(leads, l=>l.created, l=>getLeadMD(l), weeks);
     rowLabel='BQL'; stitle='BQL -> Meeting Done';
   }
   // Update the section title dynamically
@@ -4119,11 +4192,11 @@ function renderDoDFunnel(){
 
   const stages=[
     {id:'bms',title:'BQL → Meeting Scheduled',subtitle:'Row = day BQL created · Col = day MS happened · Cell = % of that day\'s BQL that got MS on that specific day',color:'#1a56db',
-     startFn:l=>l.created,endFn:l=>l.msD},
+     startFn:l=>l.created,endFn:l=>getLeadMS(l)},
     {id:'mmd',title:'Meeting Scheduled → Meeting Done',subtitle:'Row = day MS happened · Col = day MD happened · Cell = % of that day\'s MS leads that got MD on that specific day',color:'#1a56db',
-     startFn:l=>l.msD,endFn:l=>l.mdD},
+     startFn:l=>getLeadMS(l),endFn:l=>getLeadMD(l)},
     {id:'mdo',title:'Meeting Done → Order',subtitle:'Row = day MD happened · Col = day Order happened · Cell = % of that day\'s MD leads that ordered on that specific day',color:'#1a56db',
-     startFn:l=>l.mdD,endFn:l=>l.ordD},
+     startFn:l=>getLeadMD(l),endFn:l=>l.ordD},
   ];
 
   function matrixTable(stg){
@@ -4255,7 +4328,7 @@ function renderCityMoM(){
       if(x.year!==mo.y||x.month!==mo.m)return;
       if(city&&x.city!==city)return;
       if(sc&&x.sc!==sc)return;
-      r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;
+      r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;
     });
     return r;
   }
@@ -4492,8 +4565,8 @@ function renderCohort(){
       const ams=new Date(aY,aM-1,1);
       const ame=new Date(aY,aM,0); // last day of action month
       slots.push({
-        msC:cohortLeads.filter(l=>l.msD&&l.msD>=ams&&l.msD<=ame).length,
-        mdC:cohortLeads.filter(l=>l.mdD&&l.mdD>=ams&&l.mdD<=ame).length,
+        msC:cohortLeads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ams&&getLeadMS(l)<=ame).length,
+        mdC:cohortLeads.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ams&&getLeadMD(l)<=ame).length,
         ordC:cohortLeads.filter(l=>l.ordD&&l.ordD>=ams&&l.ordD<=ame).length,
         hotoC:cohortLeads.filter(l=>l.hotoD&&l.hotoD>=ams&&l.hotoD<=ame).length,
       });
@@ -4798,8 +4871,8 @@ function bDigitalM0(){
       if(!l.created||l.created<ms||l.created>me)return;
       if(cityFilter&&l.city!==cityFilter)return;
       r.BQL++;
-      if(l.msD&&l.msD>=ms&&l.msD<=me)r.MS++;
-      if(l.mdD&&l.mdD>=ms&&l.mdD<=me)r.MD++;
+      if(getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me)r.MS++;
+      if(getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me)r.MD++;
       if(l.ordD&&l.ordD>=ms&&l.ordD<=me)r.Order++;
       if(l.hotoD&&l.hotoD>=ms&&l.hotoD<=me)r.HOTO++;
     });
@@ -4844,7 +4917,7 @@ function bDigitalM0(){
 function bCompare(){
   const yd=C.yd,months=C.months,mtdDay=yd.getDate();
   const rI=C.india,dI=DC.india,rIL=C.indiaL,dIL=DC.indiaL;
-  function aggR(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
+  function aggR(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   // MoM growth helper
   function momGrowth(cur,prev){if(!prev||prev===0)return null;return((cur-prev)/prev*100);}
   function growthBadge(pct,label,inverted=false){
@@ -5241,7 +5314,7 @@ function tfAgg(cityFilter, scFilter) {
 
 function aggRows(rows) {
   const r = {BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-  rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});
+  rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});
   return r;
 }
 
