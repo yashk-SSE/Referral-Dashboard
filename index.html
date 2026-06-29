@@ -557,8 +557,8 @@ function getBQL(r){return METRIC_SEL.bql==='new'?(r.BQL_New||0):(r.BQL_Old||0);}
 function getMS(r){return METRIC_SEL.ms==='total'?(r.MS_Total||0):(r.MS_First||0);}
 function getMD(r){return METRIC_SEL.md==='total'?(r.MD_Total||0):(r.MD_First||0);}
 // Lead-level helpers (uses lead data)
-function getLeadMS(l){return METRIC_SEL.ms==='total'?l.msDTotal:getLeadMS(l);}
-function getLeadMD(l){return METRIC_SEL.md==='total'?l.mdDTotal:getLeadMD(l);}
+function getLeadMS(l){return METRIC_SEL.ms==='total'?l.msDTotal:l.msD;}
+function getLeadMD(l){return METRIC_SEL.md==='total'?l.mdDTotal:l.mdD;}
 
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
