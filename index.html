@@ -328,8 +328,8 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     <div id="metric-switchers">
       <div class="metric-sw-group">
         <span class="metric-sw-label">BQL</span>
-        <button class="metric-sw-btn active" id="sw-bql-old" onclick="setMetricDef('bql','old',this)">Old</button>
-        <button class="metric-sw-btn" id="sw-bql-new" onclick="setMetricDef('bql','new',this)">New</button>
+        <button class="metric-sw-btn" id="sw-bql-old" onclick="setMetricDef('bql','old',this)">Old</button>
+        <button class="metric-sw-btn active" id="sw-bql-new" onclick="setMetricDef('bql','new',this)">New</button>
       </div>
       <div class="metric-sw-sep"></div>
       <div class="metric-sw-group">
@@ -537,7 +537,7 @@ function defCellAbs(actual,mopMtd,extraStyle){
 // ── Metric Definition Selector ──────────────────────────────────────────────
 // Controls which variant is used across ALL Referral tabs
 // bql: 'old' | 'new'   ms: 'first' | 'total'   md: 'first' | 'total'
-let METRIC_SEL={bql:'old',ms:'first',md:'first'};
+let METRIC_SEL={bql:'new',ms:'first',md:'first'};
 
 function setMetricDef(metric,val,btn){
   METRIC_SEL[metric]=val;
