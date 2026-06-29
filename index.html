@@ -23,9 +23,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-
 .mob-tab{display:inline-block;padding:10px 12px;font-size:12px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
 .mob-tab.active{color:var(--bl);border-bottom-color:var(--bl)}
 .layout{display:flex;height:calc(100vh - 48px);overflow:hidden}
-.sidebar{width:178px;background:var(--sur);border-right:1px solid var(--bd);padding:10px 0;flex-shrink:0;overflow-y:auto}
-.sh{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--t3);padding:10px 12px 4px;text-transform:uppercase}
-.ni{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:var(--t2);border-left:2px solid transparent;transition:background .1s}
+.sidebar{width:178px;background:var(--sur);border-right:1px solid var(--bd);padding:10px 0;flex-shrink:0;overflow-y:auto;transition:width .2s ease,padding .2s ease}
+.sidebar.nav-collapsed{width:0;padding:0;overflow:hidden}
+.nav-toggle{position:absolute;top:50%;transform:translateY(-50%);right:-11px;width:22px;height:22px;background:var(--sur);border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:var(--t2);z-index:300;box-shadow:1px 0 4px rgba(0,0,0,.1);transition:background .15s}
+.nav-toggle:hover{background:var(--bg);color:var(--tx)}
+.sidebar-wrap{position:relative;flex-shrink:0}
+.sh{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--t3);padding:10px 12px 4px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:color .15s}
+.sh:hover{color:var(--t2)}
+.sh-arrow{font-size:8px;transition:transform .2s;opacity:.6;flex-shrink:0}
+.sh.collapsed .sh-arrow{transform:rotate(-90deg)}
+.nav-group{overflow:hidden;transition:max-height .22s ease,opacity .18s ease;max-height:500px;opacity:1}
+.nav-group.collapsed{max-height:0;opacity:0}
 .ni:hover{background:var(--bg)}.ni.active{background:var(--bll);color:var(--bl);border-left-color:var(--bl);font-weight:500}
 .main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .panel{display:none;padding:16px}.panel.active{display:block}
@@ -368,28 +376,43 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <span class="mob-tab" onclick="sw('citydeep',this)">City Deep Dive</span>
 </div>
 <div class="layout">
-<nav class="sidebar">
-  <div class="sh">Overview</div>
-  <div class="ni active" onclick="sw('exec',this)">⬡ Executive</div>
-  <div class="ni" onclick="sw('mop',this)">⊞ MOP vs MTD</div>
-  <div class="ni" onclick="sw('india',this)">◈ India Summary</div>
-  <div class="sh">Breakdown</div>
-  <div class="ni" onclick="sw('city',this)">◎ City Summary</div>
-  <div class="ni" onclick="sw('sc',this)">◫ Sub-Channel</div>
-  <div class="sh">Analytics</div>
-  <div class="ni" onclick="sw('funnel',this)">▽ Funnel (Effort)</div>
-  <div class="ni" onclick="sw('m0funnel',this)">▽ Funnel (M0)</div>
-  <div class="ni" onclick="sw('vel',this)">◷ Velocity</div>
-  <div class="ni" onclick="sw('wow',this)">⊟ WoW Cohort</div>
-  <div class="sh">Intelligence</div>
-  <div class="ni" data-ch="referral" onclick="sw('ins',this)">◉ Insights</div>
-  <div class="ni" data-ch="referral" onclick="sw('act',this)">> Actions</div>
-  <div class="sh">Daily</div>
-  <div class="ni" data-ch="referral" onclick="sw('dod',this)">◈ Day-on-Day</div>
-  <div class="ni" data-ch="referral" onclick="sw('dodfunnel',this)">⊞ DoD Funnel</div>
-  <div class="ni" data-ch="referral" onclick="sw('cohort',this)">⬡ MoM Cohort</div>
-  <div class="ni" data-ch="referral" onclick="sw('citymom',this)">⬡ City MoM</div>
-  <div class="ni" data-ch="referral" onclick="sw('citydeep',this)">⊕ City Deep Dive</div>
+<div class="sidebar-wrap">
+<nav class="sidebar" id="sidebar">
+  <div class="nav-toggle" id="nav-toggle" onclick="toggleSidebar()" title="Collapse/expand navigator">‹</div>
+  <div class="sh" onclick="toggleNavGroup(this)">Overview<span class="sh-arrow">▾</span></div>
+  <div class="nav-group">
+    <div class="ni active" onclick="sw('exec',this)">⬡ Executive</div>
+    <div class="ni" onclick="sw('mop',this)">⊞ MOP vs MTD</div>
+    <div class="ni" onclick="sw('india',this)">◈ India Summary</div>
+    <div class="ni" onclick="sw('funnel',this)">▽ Funnel (Effort)</div>
+    <div class="ni" onclick="sw('m0funnel',this)">▽ Funnel (M0)</div>
+  </div>
+  <div class="sh" onclick="toggleNavGroup(this)">Deep Dive<span class="sh-arrow">▾</span></div>
+  <div class="nav-group">
+    <div class="ni" onclick="sw('sc',this)">◫ Sub-Channel</div>
+    <div class="ni" onclick="sw('city',this)">◎ City Summary</div>
+    <div class="ni" data-ch="referral" onclick="sw('citymom',this)">⬡ City MoM</div>
+    <div class="ni" data-ch="referral" onclick="sw('citydeep',this)">⊕ City Deep Dive</div>
+  </div>
+  <div class="sh" onclick="toggleNavGroup(this)">Daily<span class="sh-arrow">▾</span></div>
+  <div class="nav-group">
+    <div class="ni" data-ch="referral" onclick="sw('dod',this)">◈ Day-on-Day</div>
+    <div class="ni" data-ch="referral" onclick="sw('dodfunnel',this)">⊞ DoD Funnel</div>
+  </div>
+  <div class="sh" onclick="toggleNavGroup(this)">Cohort<span class="sh-arrow">▾</span></div>
+  <div class="nav-group">
+    <div class="ni" data-ch="referral" onclick="sw('cohort',this)">⬡ MoM Cohort</div>
+    <div class="ni" onclick="sw('wow',this)">⊟ WoW Cohort</div>
+  </div>
+  <div class="sh" onclick="toggleNavGroup(this)">Intelligence<span class="sh-arrow">▾</span></div>
+  <div class="nav-group">
+    <div class="ni" data-ch="referral" onclick="sw('ins',this)">◉ Insights</div>
+    <div class="ni" data-ch="referral" onclick="sw('act',this)">> Actions</div>
+  </div>
+  <div class="sh" onclick="toggleNavGroup(this)">Other<span class="sh-arrow">▾</span></div>
+  <div class="nav-group">
+    <div class="ni" onclick="sw('vel',this)">◷ Velocity</div>
+  </div>
   <!-- DIGITAL CHANNEL -->
   <div class="sh sh-d" data-ch="digital" style="display:none">Digital Channel</div>
   <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dexec',this)">⬡ Executive</div>
@@ -401,6 +424,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="sh sh-cmp" data-ch="compare" style="display:none">Comparison</div>
   <div class="ni ni-cmp" data-ch="compare" style="display:none" onclick="sw('compare',this)">⟺ Referral vs Digital</div>
 </nav>
+</div>
 <main class="main" id="main">
   <div id="sticky-hdr" style="position:sticky;top:0;z-index:200;background:var(--sur);border-bottom:1px solid var(--bd);padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <span class="sticky-tab-name" style="font-size:13px;font-weight:600;color:var(--tx)">Executive Summary</span>
@@ -508,6 +532,35 @@ const perc=(arr,p)=>{if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b
 const moEl=()=>{const s=new Date(2026,3,1),n=D0();return Math.max(1,(n.getFullYear()-s.getFullYear())*12+(n.getMonth()-s.getMonth())+1);};
 
 // ?? UI UTILS ??
+
+// ── Collapsible Nav ──────────────────────────────────────────────────────────
+function toggleNavGroup(sh){
+  const group=sh.nextElementSibling;
+  if(!group||!group.classList.contains('nav-group'))return;
+  const isCollapsed=group.classList.contains('collapsed');
+  group.classList.toggle('collapsed',!isCollapsed);
+  sh.classList.toggle('collapsed',!isCollapsed);
+}
+// Expand the nav group containing the active tab (called after sw() updates active state)
+function expandActiveNavGroup(){
+  const active=document.querySelector('.sidebar .ni.active');
+  if(!active)return;
+  const group=active.closest('.nav-group');
+  if(!group)return;
+  group.classList.remove('collapsed');
+  const sh=group.previousElementSibling;
+  if(sh&&sh.classList.contains('sh'))sh.classList.remove('collapsed');
+}
+
+// ── Sidebar collapse/expand toggle ──────────────────────────────────────────
+function toggleSidebar(){
+  const sidebar=document.getElementById('sidebar');
+  const btn=document.getElementById('nav-toggle');
+  const collapsed=sidebar.classList.toggle('nav-collapsed');
+  btn.textContent=collapsed?'›':'‹';
+  btn.title=collapsed?'Expand navigator':'Collapse navigator';
+}
+
 const mb=(c,p)=>{if(!p)return`<span class="nc">-</span>`;const d=c-p,pp=Math.round(d/p*100);const tip=`title="This period: ${f(c)} | Last period (LMTD): ${f(p)} | Change: ${d>=0?'+':''}${f(d)} (${d>=0?'+':''}${pp}%)"`;return d>0?`<span class="up" ${tip}>+${pp}%</span>`:d<0?`<span class="dn" ${tip}>-${Math.abs(pp)}%</span>`:`<span class="nc" ${tip}>0%</span>`;};
 const cv=(c,p)=>{if(p==null)return`<span class="mono">${f(c)}</span>`;const tip=`title="Current: ${f(c)} | LMTD: ${f(p)} | Change: ${c>=p?'+':''}${f(c-p)}"`;return c>p?`<span class="mono green" ${tip}>${f(c)}</span>`:c<p?`<span class="mono red" ${tip}>${f(c)}</span>`:`<span class="mono" ${tip}>${f(c)}</span>`;};
 const tc=(c,p)=>{if(p==null)return`<span class="mono">${f(c)}</span>`;const d=c-p,pp=Math.round(d/Math.max(p,1)*100);const tip=`title="Current: ${f(c)} | LMTD: ${f(p)}"`;return`${cv(c,p)}<span class="${d>0?'green':d<0?'red':''}" style="font-size:9px;margin-left:2px" ${tip}>${d>0?'+':d<0?'-':''}${Math.abs(pp)}%</span>`;};
@@ -701,6 +754,7 @@ function sw(tab,el){
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
+  expandActiveNavGroup();
   // Show/hide view mode switcher for Referral tabs
   if(typeof updateViewModeSwitcherVisibility==='function') updateViewModeSwitcherVisibility(tab);
   // Show/hide TF bar
@@ -1453,7 +1507,7 @@ function renderIndia(cf,sf,tierCities){
     const isCur=i===months.length-1;
     const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),pBMs=(pr.MS/Math.max(pr.BQL,1)*100).toFixed(1),mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),pMMd=(pr.MD/Math.max(pr.MS,1)*100).toFixed(1),mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1),pMO=(pr.Order/Math.max(pr.MD,1)*100).toFixed(1);
     const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1),pMH=(pr.HOTO||0/Math.max(pr.MD||1,1)*100).toFixed(1);
-    return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">MTD</span>':''}</td><td>${isCur?cv(r.BQL,pr.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td><td>${isCur?cv(r.MS,pr.MS):`<span class="mono">${f(r.MS)}</span>`}</td><td>${isCur?`<span class="${parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'}" title="Current: ${bMs}% | Prior month: ${pBMs}%">${bMs}%</span>`:bMs+'%'}</td><td>${isCur?cv(r.MD,pr.MD):`<span class="mono">${f(r.MD)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'}" title="Current: ${mMd}% | Prior: ${pMMd}%">${mMd}%</span>`:mMd+'%'}</td><td>${isCur?cv(r.Order,pr.Order):`<span class="mono">${f(r.Order)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mO)>=parseFloat(pMO)?'green':'red'}" title="Current: ${mO}% | Prior: ${pMO}%">${mO}%</span>`:mO+'%'}</td><td>${isCur?`<span class="${parseFloat(mH)>=parseFloat(pMH)?'green':'red'}" title="Current: ${mH}%">${mH}%</span>`:mH+'%'}</td></tr>`;
+    return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">MTD</span>':''}</td><td>${isCur?cv(r.BQL,pr.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td><td>${isCur?cv(r.MS,pr.MS):`<span class="mono">${f(r.MS)}</span>`}</td><td>${isCur?`<span class="${parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'}" title="Current: ${bMs}% | Prior month: ${pBMs}%">${bMs}%</span>`:bMs+'%'}</td><td>${isCur?cv(r.MD,pr.MD):`<span class="mono">${f(r.MD)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'}" title="Current: ${mMd}% | Prior: ${pMMd}%">${mMd}%</span>`:mMd+'%'}</td><td>${isCur?cv(r.Order,pr.Order):`<span class="mono">${f(r.Order)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mO)>=parseFloat(pMO)?'green':'red'}" title="Current: ${mO}% | Prior: ${pMO}%">${mO}%</span>`:mO+'%'}</td><td>${isCur?cv(r.HOTO,pr.HOTO||0):`<span class="mono">${f(r.HOTO)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mH)>=parseFloat(pMH)?'green':'red'}" title="Current: ${mH}%">${mH}%</span>`:mH+'%'}</td></tr>`;
   }).join('');
 
   const scRows=SCS.map(s=>{
@@ -1470,16 +1524,16 @@ function renderIndia(cf,sf,tierCities){
     const pr2=i>0?agg(ED.filter(x=>{const ps=new Date(months[i-1].y,months[i-1].m-1,1),pe=new Date(months[i-1].y,months[i-1].m-1,mtdDay);return x.date>=ps&&x.date<=pe&&(!cf||x.city===cf)&&(!sf||x.sc===sf);})):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     const isCur=i===months.length-1;
     const bMs2=(r2.MS/Math.max(r2.BQL,1)*100).toFixed(1),pBMs2=(pr2.MS/Math.max(pr2.BQL,1)*100).toFixed(1),mMd2=(r2.MD/Math.max(r2.MS,1)*100).toFixed(1),pMMd2=(pr2.MD/Math.max(pr2.MS,1)*100).toFixed(1),mO2=(r2.Order/Math.max(r2.MD,1)*100).toFixed(1),pMO2=(pr2.Order/Math.max(pr2.MD,1)*100).toFixed(1),mH2=(r2.HOTO/Math.max(r2.MD,1)*100).toFixed(1),pMH2=(pr2.HOTO/Math.max(pr2.MD,1)*100).toFixed(1);
-    return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">Current</span>':` <span style="font-size:9px;color:var(--t3)">till ${mtdDay}</span>`}</td><td>${isCur?cv(r2.BQL,pr2.BQL):`<span class="mono">${f(r2.BQL)}</span>`}</td><td>${isCur?cv(r2.MS,pr2.MS):`<span class="mono">${f(r2.MS)}</span>`}</td><td title="Cur: ${bMs2}% | Prior MTD: ${pBMs2}%"><span class="${isCur?(parseFloat(bMs2)>=parseFloat(pBMs2)?'green':'red'):''}">${bMs2}%</span></td><td>${isCur?cv(r2.MD,pr2.MD):`<span class="mono">${f(r2.MD)}</span>`}</td><td title="Cur: ${mMd2}% | Prior MTD: ${pMMd2}%"><span class="${isCur?(parseFloat(mMd2)>=parseFloat(pMMd2)?'green':'red'):''}">${mMd2}%</span></td><td>${isCur?cv(r2.Order,pr2.Order):`<span class="mono">${f(r2.Order)}</span>`}</td><td title="Cur: ${mO2}% | Prior MTD: ${pMO2}%"><span class="${isCur?(parseFloat(mO2)>=parseFloat(pMO2)?'green':'red'):''}">${mO2}%</span></td><td title="Cur: ${mH2}% | Prior MTD: ${pMH2}%"><span class="${isCur?(parseFloat(mH2)>=parseFloat(pMH2)?'green':'red'):''}">${mH2}%</span></td></tr>`;
+    return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">Current</span>':` <span style="font-size:9px;color:var(--t3)">till ${mtdDay}</span>`}</td><td>${isCur?cv(r2.BQL,pr2.BQL):`<span class="mono">${f(r2.BQL)}</span>`}</td><td>${isCur?cv(r2.MS,pr2.MS):`<span class="mono">${f(r2.MS)}</span>`}</td><td title="Cur: ${bMs2}% | Prior MTD: ${pBMs2}%"><span class="${isCur?(parseFloat(bMs2)>=parseFloat(pBMs2)?'green':'red'):''}">${bMs2}%</span></td><td>${isCur?cv(r2.MD,pr2.MD):`<span class="mono">${f(r2.MD)}</span>`}</td><td title="Cur: ${mMd2}% | Prior MTD: ${pMMd2}%"><span class="${isCur?(parseFloat(mMd2)>=parseFloat(pMMd2)?'green':'red'):''}">${mMd2}%</span></td><td>${isCur?cv(r2.Order,pr2.Order):`<span class="mono">${f(r2.Order)}</span>`}</td><td title="Cur: ${mO2}% | Prior MTD: ${pMO2}%"><span class="${isCur?(parseFloat(mO2)>=parseFloat(pMO2)?'green':'red'):''}">${mO2}%</span></td><td>${isCur?cv(r2.HOTO,pr2.HOTO||0):`<span class="mono">${f(r2.HOTO)}</span>`}</td><td title="Cur: ${mH2}% | Prior MTD: ${pMH2}%"><span class="${isCur?(parseFloat(mH2)>=parseFloat(pMH2)?'green':'red'):''}">${mH2}%</span></td></tr>`;
   }).join('');
 
   document.getElementById('i-body').innerHTML=`
 <div class="stitle">MOP vs Actuals <span style="font-weight:400;font-size:10px;color:var(--t3)">(Actual MTD compared with MOP MTD . MoM compared with LMTD)</span></div>
 <div class="tw"><table><tr><th>Metric</th><th>MOP Full</th><th>MOP MTD</th><th>Actual MTD</th><th style="white-space:normal;max-width:80px">MoM<br><span style="font-size:8px;font-weight:400">(vs LMTD)</span></th><th>Status</th><th style="white-space:normal;max-width:90px">Achievement<br><span style="font-size:8px;font-weight:400">(vs MOP MTD)</span></th></tr>${mopRows}</table></div>
 <div class="stitle">Monthly Trend - Full Month (6 Months) <span style="font-weight:400;font-size:10px;color:var(--t3)">(Effort view . full month values)</span></div>
-<div class="tw"><table><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL→MS%</th><th>MD</th><th style="white-space:normal">MS→MD%</th><th>Order</th><th style="white-space:normal">MD→Ord%</th><th style="white-space:normal">MD→HOTO%</th></tr>${moRows}</table></div>
+<div class="tw"><table><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL→MS%</th><th>MD</th><th style="white-space:normal">MS→MD%</th><th>Order</th><th style="white-space:normal">MD→Ord%</th><th>HOTO</th><th style="white-space:normal">MD→HOTO%</th></tr>${moRows}</table></div>
 <div class="stitle">MTD Comparison - Each month till Day ${yd.getDate()} only <span style="font-weight:400;font-size:9px">(apple-to-apple . LMTD comparison)</span></div>
-<div class="tw"><table><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL→MS%</th><th>MD</th><th style="white-space:normal">MS→MD%</th><th>Order</th><th style="white-space:normal">MD→Ord%</th><th style="white-space:normal">MD→HOTO%</th></tr>${moMtdRows}</table></div>
+<div class="tw"><table><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL→MS%</th><th>MD</th><th style="white-space:normal">MS→MD%</th><th>Order</th><th style="white-space:normal">MD→Ord%</th><th>HOTO</th><th style="white-space:normal">MD→HOTO%</th></tr>${moMtdRows}</table></div>
 <div class="stitle">Sub-Channel Mix - MTD <span style="font-weight:400;font-size:10px;color:var(--t3)">(Achievement vs MOP MTD)</span></div>
 <div class="tw"><table>
 <thead><tr>
