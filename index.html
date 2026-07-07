@@ -219,6 +219,9 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .tf-cmp-lbl{font-size:10px;color:#3b82f6;font-weight:700}
 .tf-cmp-btn{padding:3px 8px;border:1px solid #93c5fd;border-radius:5px;font-size:10px;cursor:pointer;background:var(--sur);color:#3b82f6;font-weight:500;transition:all .12s}
 .tf-cmp-btn.active{background:var(--bl);color:#fff;border-color:var(--bl)}
+.exp-toggle-btn{padding:3px 10px;border:1px solid #fbbf24;border-radius:5px;font-size:10px;cursor:pointer;background:var(--sur);color:#92400e;font-weight:600;transition:all .12s;white-space:nowrap}
+.exp-toggle-btn:hover{background:#fffbeb}
+.exp-toggle-btn.active{background:#f59e0b;color:#fff;border-color:#f59e0b}
 .tf-status-chip{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:#1d4ed8;color:#fff;white-space:nowrap;margin-left:auto}
 .tf-no-data-banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:5px 10px;font-size:10px;font-weight:600;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .tf-mop-banner{background:#e0f2fe;border:1px solid #7dd3fc;border-radius:6px;padding:8px 12px;font-size:11px;color:#0369a1;font-weight:500;margin-bottom:12px}
@@ -506,12 +509,17 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 <script>
 // Data loaded from GitHub repo JSON files (no API keys needed)
 const FY_T=40000;
-const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp'};
+const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp',Meerut:'Exp',Bareilly:'Exp',Vijayawada:'Exp',Kota:'Exp',Ahilyanagar:'Exp'};
+// City is shown in MOP-target tables only once referral_mop.json actually has an entry for it
+// (checked live via hasMop() below — no manual list to maintain as new cities get added to MOP)
 const MOP={India:{BQL:4880,MS:3906,MD:3515,HOTO:1831},Ahmedabad:{BQL:80,MS:71,MD:64,HOTO:36},Nagpur:{BQL:814,MS:738,MD:664,HOTO:361},Amravati:{BQL:110,MS:92,MD:83,HOTO:44},Aurangabad:{BQL:91,MS:86,MD:77,HOTO:47},Nashik:{BQL:137,MS:141,MD:127,HOTO:68},Pune:{BQL:699,MS:628,MD:565,HOTO:315},Kolhapur:{BQL:69,MS:64,MD:58,HOTO:33},Bhopal:{BQL:367,MS:263,MD:237,HOTO:119},Gwalior:{BQL:447,MS:212,MD:191,HOTO:70},Indore:{BQL:289,MS:223,MD:201,HOTO:79},Jabalpur:{BQL:403,MS:247,MD:222,HOTO:126},Jaipur:{BQL:102,MS:68,MD:61,HOTO:32},Delhi:{BQL:105,MS:82,MD:74,HOTO:36},Gurgaon:{BQL:37,MS:31,MD:28,HOTO:15},Ghaziabad:{BQL:63,MS:50,MD:45,HOTO:22},Noida:{BQL:25,MS:18,MD:16,HOTO:8},Kanpur:{BQL:180,MS:183,MD:165,HOTO:94},Lucknow:{BQL:406,MS:323,MD:291,HOTO:146},Varanasi:{BQL:38,MS:36,MD:32,HOTO:20},Hyderabad:{BQL:145,MS:132,MD:119,HOTO:71},Bangalore:{BQL:131,MS:94,MD:85,HOTO:36},Chennai:{BQL:142,MS:122,MD:110,HOTO:50}};
 const SCS=['Sales','Online','BTL','Ops / AMC','Customer_App','Referral_Others'];
+// True once referral_mop.json actually has a (nonzero) entry for this city — used to
+// auto-include/exclude cities from MOP-target tables without a manually maintained list.
+function hasMop(c){const m=MOP[c];return!!m&&(m.BQL||m.MS||m.MD||m.HOTO||m.ORDER);}
 // Master city list — hardcoded explicitly (not derived from MOP keys) so the tab list
 // stays correct even if a city is temporarily missing from referral_mop.json.
-const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore'];
+const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore','Meerut','Bareilly','Vijayawada','Kota','Ahilyanagar'];
 const FOCUS=['Nagpur','Lucknow','Pune'];
 const BIG=['Indore','Jabalpur','Chennai','Bhopal','Delhi','Nashik','Kanpur'];
 const MID=['Gwalior','Aurangabad','Hyderabad','Bangalore','Amravati','Jaipur','Ahmedabad','Kolhapur','Varanasi'];
@@ -577,6 +585,20 @@ const cityOpts=()=>`<option value="">All Cities</option>${CITIES.map(c=>`<option
 const tierOpts=()=>`<option value="">All Tiers</option><option value="Focus">Focus</option><option value="Big">Big</option><option value="Mid">Mid</option><option value="Small">Small</option><option value="Exp">Expansion</option>`;
 const filterByCityTier=(tier)=>tier?CITIES.filter(c=>TIERS[c]===tier):CITIES;
 const scOpts=()=>`<option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}`;
+// Reusable "Expansion cities only" toggle — drops next to any existing `-tier` select.
+// Click forces that select to 'Exp' (or clears it) and re-runs the tab's own filter/rebuild fn.
+function expToggleBtn(selId,fnName){
+  return `<button type="button" class="exp-toggle-btn" id="${selId}-exp-btn" onclick="toggleExpOnly('${selId}','${fnName}')" title="Show Expansion-tier cities only">\uD83E\uDDED Expansion Only</button>`;
+}
+function toggleExpOnly(selId,fnName){
+  const sel=document.getElementById(selId),btn=document.getElementById(selId+'-exp-btn');
+  if(!sel||!btn)return;
+  const turningOn=!btn.classList.contains('active');
+  sel.value=turningOn?'Exp':'';
+  btn.classList.toggle('active',turningOn);
+  const fn=window[fnName];
+  if(typeof fn==='function')fn();
+}
 // Deficit/surplus cell for MOP table
 function defCell(actual,mopMtd,extraStyle){
   const s=extraStyle?`style="${extraStyle}"`:'';
@@ -1485,7 +1507,7 @@ function bMop(){
 
   const tableRows=[
     cityRowHtml(null,true),
-    ...CITIES.map(c=>cityRowHtml(c,false))
+    ...CITIES.filter(hasMop).map(c=>cityRowHtml(c,false))
   ].join('');
 
   const mHead=m=>`<th style="text-align:right">${m}</th>`;
@@ -1499,7 +1521,7 @@ function bMop(){
   <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600">Green = surplus</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 8px;border-radius:6px">Hover cells for detail</span>
 </div>
-<div class="fbar"><select id="mop-tier" onchange="filterMopTable()">${tierOpts()}</select><span id="mop-city-mc-wrap"></span></div>
+<div class="fbar"><select id="mop-tier" onchange="filterMopTable()">${tierOpts()}</select>${expToggleBtn('mop-tier','filterMopTable')}<span id="mop-city-mc-wrap"></span></div>
 <div class="tw" id="mop-tbl"><table>
   <thead>
     <tr>
@@ -1546,7 +1568,8 @@ function filterMop(cf,tf){
     const ordMtdCell=`<td class="neu">${f(mopOrdMtd)}</td>`;
     return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${baseCells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${ordFullCell}${hotoCell?`<td class="neu" style="font-weight:600">${f(hotoCell.mopFull)}</td>`:''}${baseCells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${ordMtdCell}${hotoCell?`<td class="neu">${f(hotoCell.mopMtd)}</td>`:''}${baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):''}${baseCells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}${ordPctCell}${(()=>{if(!hotoCell)return'';const hm=hotoCell.mopMtd,hd=hotoCell.actual-hm,hp=hm?Math.round(hd/hm*100):0,hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`;})()}${baseCells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td>${hotoCell?`<td>${mb(hotoCell.actual,hotoCell.prevActual)}</td>`:''}</tr>`;
   }
-  const cities=cf?[cf]:tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const mopCities=CITIES.filter(hasMop);
+  const cities=cf?[cf]:tf?mopCities.filter(c=>TIERS[c]===tf):mopCities;
   const tbody=document.querySelector('#mop-tbl tbody');
   if(tbody)tbody.innerHTML=cityRowHtml(null,true)+cities.map(c=>cityRowHtml(c,false)).join('');
 }
@@ -1558,7 +1581,7 @@ function filterMop(cf,tf){
 function bIndia(){
   const p=document.getElementById('p-india');
   p.innerHTML=`<div class="ptitle">India Summary</div><div class="psub">All cities . Referral Channel</div>
-<div class="fbar"><select id="i-tier" onchange="rebuildIndia()">${tierOpts()}</select><select id="i-city" onchange="rebuildIndia()">${cityOpts()}</select><select id="i-sc" onchange="rebuildIndia()">${scOpts()}</select></div>
+<div class="fbar"><select id="i-tier" onchange="rebuildIndia()">${tierOpts()}</select>${expToggleBtn('i-tier','rebuildIndia')}<select id="i-city" onchange="rebuildIndia()">${cityOpts()}</select><select id="i-sc" onchange="rebuildIndia()">${scOpts()}</select></div>
 <div id="i-body"></div>`;
   renderIndia('','');
 }
@@ -1815,7 +1838,7 @@ function bCity(){
     </tbody></table></div></div></div>`;
   }).join('');
   document.getElementById('p-city').innerHTML=`<div class="ptitle">City Summary</div><div class="psub">India row at top . Cities sorted by Order drop vs LMTD (worst first) . MTD vs MOP &amp; LMTD</div>
-<div class="fbar"><select id="city-tier" onchange="filterCityTable()">${tierOpts()}</select><span id="city-city-mc-wrap"></span><select id="city-sc-f" onchange="filterCityTable()">${scOpts()}</select></div>
+<div class="fbar"><select id="city-tier" onchange="filterCityTable()">${tierOpts()}</select>${expToggleBtn('city-tier','filterCityTable')}<span id="city-city-mc-wrap"></span><select id="city-sc-f" onchange="filterCityTable()">${scOpts()}</select></div>
 <div class="stitle">Performance - Absolute vs MOP MTD &amp; LMTD . Funnel % vs LMTD</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:8px">
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Absolute: Actual / MOP MTD / LMTD</span>
@@ -2188,7 +2211,7 @@ ${SCS.map(s=>{
   }).join('');
 
   document.getElementById('p-sc').innerHTML=`<div class="ptitle">Sub-Channel Analysis</div><div class="psub">MoM trend . Growing vs declining . City breakdown</div>
-<div class="fbar"><select id="sc-tier" onchange="reFilterSC()">${tierOpts()}</select><span id="sc-city-mc-wrap"></span></div>
+<div class="fbar"><select id="sc-tier" onchange="reFilterSC()">${tierOpts()}</select>${expToggleBtn('sc-tier','reFilterSC')}<span id="sc-city-mc-wrap"></span></div>
 <div class="stitle">Full Month Trend vs LMTD - BQL, Order, HOTO . Green=grew, Red=dropped <span style="font-weight:400;font-size:10px;color:var(--t3)">(Full month values . compared with prior full month)</span></div><div id="sc-trend-full"></div>
 <div class="stitle">MTD Comparison vs LMTD - Each month till Day ${mtdDay} only <span style="font-weight:400;font-size:10px;color:var(--t3)">(apple-to-apple . compared with LMTD)</span></div><div id="sc-trend-mtd"></div>
 <div class="stitle">MTD Funnel by Sub-Channel <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with LMTD)</span></div>
@@ -2273,7 +2296,7 @@ function bFunnel(){
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Effort: BQL = current month created . MS/MD/Ord = any lead, action in that month</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">Arrows = vs LMTD (hover for values)</span>
 </div>
-<div class="fbar"><select id="fn-tier" onchange="reFilterFunnel()">${tierOpts()}</select><span id="fn-city-mc-wrap"></span><select id="fn-sc" onchange="reFilterFunnel()">${scOpts()}</select></div>
+<div class="fbar"><select id="fn-tier" onchange="reFilterFunnel()">${tierOpts()}</select>${expToggleBtn('fn-tier','reFilterFunnel')}<span id="fn-city-mc-wrap"></span><select id="fn-sc" onchange="reFilterFunnel()">${scOpts()}</select></div>
 <div id="fn-viz"></div>
 <div class="stitle">Effort Funnel - Full Month Trend (6M) <span style="font-weight:400;font-size:10px;color:var(--t3)">(full month values)</span></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--t2);margin-bottom:6px">
@@ -2461,7 +2484,7 @@ function bM0Funnel(){
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">M0 MTD: BQL created 1->day ${mtdDay} . MS/MD/Ord also 1->day ${mtdDay} of same month</span>
   <span style="background:#f0fdf4;color:#166534;padding:2px 7px;border-radius:5px">Current month: Full Month = MTD (month not yet complete)</span>
 </div>
-<div class="fbar"><select id="m0-tier" onchange="reFilterM0()">${tierOpts()}</select><span id="m0-city-mc-wrap"></span><select id="m0-sc" onchange="reFilterM0()">${scOpts()}</select></div>
+<div class="fbar"><select id="m0-tier" onchange="reFilterM0()">${tierOpts()}</select>${expToggleBtn('m0-tier','reFilterM0')}<span id="m0-city-mc-wrap"></span><select id="m0-sc" onchange="reFilterM0()">${scOpts()}</select></div>
 <div class="stitle">M0 Full Month Funnel <span style="font-weight:400;font-size:10px;color:var(--t3)">(past months: full 1->30/31 . current month: 1->yesterday, same as MTD)</span></div>
 <div class="tw" id="m0-full-tbl"></div>
 <div class="stitle">M0 MTD Funnel - Apple-to-Apple <span style="font-weight:400;font-size:10px;color:var(--t3)">(each month: BQL created 1->${mtdDay}, actions also 1->${mtdDay} of same month . current month 1->yesterday)</span></div>
@@ -2635,7 +2658,7 @@ function bBQLQ(){
   <span style="background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:5px;font-weight:600">Red = both fields missing/low (worst expected funnel)</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">pp deltas are vs Core, same period</span>
 </div>
-<div class="fbar"><select id="bq-tier" onchange="reFilterBQLQ()">${tierOpts()}</select><span id="bq-city-mc-wrap"></span><select id="bq-sc" onchange="reFilterBQLQ()">${scOpts()}</select></div>
+<div class="fbar"><select id="bq-tier" onchange="reFilterBQLQ()">${tierOpts()}</select>${expToggleBtn('bq-tier','reFilterBQLQ')}<span id="bq-city-mc-wrap"></span><select id="bq-sc" onchange="reFilterBQLQ()">${scOpts()}</select></div>
 <div class="stitle">Segment Scorecard — Current Month (M0) <span style="font-weight:400;font-size:10px;color:var(--t3)">(BQL created this month, MS/MD/Order/HOTO also this month)</span></div>
 <div class="tw" id="bq-scorecard"></div>
 <div class="stitle" style="margin-top:14px">Composition Trend — Full Month (6M) <span style="font-weight:400;font-size:10px;color:var(--t3)">(is the incremental pool growing as a share of total BQL_New?)</span></div>
@@ -2853,7 +2876,7 @@ function bVel(){
     <strong>Green ? = improving (fewer days = faster) . Red ? = degrading (more days = slower)</strong>
   </div>
 </div>
-<div class="fbar"><select id="vel-tier" onchange="reFilterVel()">${tierOpts()}</select><select id="vel-sc" onchange="reFilterVel()">${scOpts()}</select></div>
+<div class="fbar"><select id="vel-tier" onchange="reFilterVel()">${tierOpts()}</select>${expToggleBtn('vel-tier','reFilterVel')}<select id="vel-sc" onchange="reFilterVel()">${scOpts()}</select></div>
 <div id="vel-body"></div>
 <div class="stitle">India Level - This vs Last Month <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with last month same-cohort velocity)</span></div>
 <div class="tw"><table><tr><th>Period</th><th colspan="2">BQL->MS</th><th colspan="2">MS->MD</th><th colspan="2">MD->Order</th><th>Leads</th></tr>
@@ -6041,7 +6064,7 @@ function bFunnelTF() {
 <div class="psub">📊 ${tfPeriodLabel()} · Action date based${cmpAvailable?' · vs '+tfCmpLabel():''}</div>
 ${tfNoBanner()}
 <div class="card"><div class="ctitle">India Overall Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
-<div class="fbar"><select id="tffn-tier" onchange="reFilterFunnelTF()">${tierOpts()}</select><select id="tffn-sc" onchange="reFilterFunnelTF()">${scOpts()}</select></div>
+<div class="fbar"><select id="tffn-tier" onchange="reFilterFunnelTF()">${tierOpts()}</select>${expToggleBtn('tffn-tier','reFilterFunnelTF')}<select id="tffn-sc" onchange="reFilterFunnelTF()">${scOpts()}</select></div>
 <div class="stitle">City-wise Funnel — ${tfPeriodLabel()} <span style="font-size:10px;font-weight:400;color:var(--t3)">(filter by tier / sub-channel above)</span></div>
 <div class="tw" id="tffn-city-tbl"></div>`;
   renderFunnelCityTblTF('','');
@@ -6127,7 +6150,7 @@ ${(()=>{ if(cmpAvailable) return ''; const fmt=d=>d.toLocaleDateString('en-IN',{
   const {cmpFrom,cmpTo}=tfAggM0(null,null);
   return`<div class="tf-no-data-banner">⚠️ Prior comparison period (${fmt(cmpFrom)}–${fmt(cmpTo)}) is outside available data (from Oct'25). Showing current period only.</div>`; })()}
 <div class="card"><div class="ctitle">India Overall M0 Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
-<div class="fbar"><select id="tfm0-tier" onchange="reFilterM0TF()">${tierOpts()}</select><select id="tfm0-sc" onchange="reFilterM0TF()">${scOpts()}</select></div>
+<div class="fbar"><select id="tfm0-tier" onchange="reFilterM0TF()">${tierOpts()}</select>${expToggleBtn('tfm0-tier','reFilterM0TF')}<select id="tfm0-sc" onchange="reFilterM0TF()">${scOpts()}</select></div>
 <div class="stitle">City-wise M0 Funnel — ${tfPeriodLabel()} <span style="font-size:10px;font-weight:400;color:var(--t3)">(filter by tier / sub-channel above)</span></div>
 <div class="tw" id="tfm0-city-tbl"></div>`;
   renderM0CityTblTF('','');
