@@ -623,13 +623,16 @@ function getLeadMD(l){return METRIC_SEL.md==='total'?l.mdDTotal:l.mdD;}
 // Old rule: Pincode Active AND Bill >=1500  (= "Core")
 // New rule adds: Null Pincode, and/or Null/<1500 Bill — segmented below.
 const BQL_SEGMENTS=[
-  {key:'Core',              label:'Core',                    full:'Core (Active Pin + Bill \u22651500)', color:'#1a56db'},
-  {key:'ActivePin_LowBill', label:'Active Pin, Bill <1500',  full:'Active Pincode + Bill <1500',        color:'#f59e0b'},
-  {key:'ActivePin_NullBill',label:'Active Pin, Null Bill',   full:'Active Pincode + Null Bill',         color:'#f59e0b'},
-  {key:'NullPin_ActiveBill',label:'Null Pin, Active Bill',   full:'Null Pincode + Bill \u22651500',     color:'#f59e0b'},
-  {key:'NullPin_LowBill',   label:'Null Pin, Bill <1500',    full:'Null Pincode + Bill <1500',          color:'#dc2626'},
-  {key:'NullPin_NullBill',  label:'Null Pin, Null Bill',     full:'Null Pincode + Null Bill',           color:'#dc2626'},
+  {key:'Core',              label:'Core',                    tag:'(BQL_Old)',  full:'Core (Active Pin + Bill \u22651500)', color:'#1a56db'},
+  {key:'ActivePin_LowBill', label:'Active Pin, Bill <1500',  tag:'',            full:'Active Pincode + Bill <1500',        color:'#f59e0b'},
+  {key:'ActivePin_NullBill',label:'Active Pin, Null Bill',   tag:'',            full:'Active Pincode + Null Bill',         color:'#f59e0b'},
+  {key:'NullPin_ActiveBill',label:'Null Pin, Active Bill',   tag:'',            full:'Null Pincode + Bill \u22651500',     color:'#f59e0b'},
+  {key:'NullPin_LowBill',   label:'Null Pin, Bill <1500',    tag:'',            full:'Null Pincode + Bill <1500',          color:'#dc2626'},
+  {key:'NullPin_NullBill',  label:'Null Pin, Null Bill',     tag:'',            full:'Null Pincode + Null Bill',           color:'#dc2626'},
 ];
+// "Non-Core" = all 5 incremental segments combined (everything BQL_Old doesn't cover)
+const NON_CORE_KEYS=BQL_SEGMENTS.filter(s=>s.key!=='Core').map(s=>s.key);
+const NON_CORE_META={label:'Non-Core',tag:'(Extra BQL)',full:'Non-Core \u2014 all 5 incremental segments combined',color:'#f59e0b'};
 function billIsLow(b){return b==='<1500'||b==='< 1500';}
 function getBQLSegment(l){
   if(l.bqlOld) return 'Core';
@@ -643,7 +646,11 @@ function getBQLSegment(l){
   if(!pinActive&&!billNull&&!billLow) return 'NullPin_ActiveBill';
   return 'Other'; // safety net for any unclassifiable edge case
 }
-const segOpts=()=>`<option value="">All (BQL_New)</option>${BQL_SEGMENTS.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}`;
+const segOpts=()=>`<option value="">All (BQL_New)</option><option value="NonCore">Non-Core (Extra BQL)</option>${BQL_SEGMENTS.filter(s=>s.key!=='Core').map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}<option value="Core">Core (BQL_Old)</option>`;
+// Sum a set of segment keys' {BQL,MS,MD,Order,HOTO} out of an aggM0BySegment() result
+function sumSegKeys(agg,keys){
+  return keys.reduce((s,k)=>({BQL:s.BQL+agg[k].BQL,MS:s.MS+agg[k].MS,MD:s.MD+agg[k].MD,Order:s.Order+agg[k].Order,HOTO:s.HOTO+agg[k].HOTO}),{BQL:0,MS:0,MD:0,Order:0,HOTO:0});
+}
 // M0 (cohort) aggregation by segment: BQL = leads created in [ms,me];
 // MS/MD/Order/HOTO = same leads whose action also falls in [ms,me].
 // cityArr/scArr: null or [] = no filter (all).
@@ -664,6 +671,7 @@ function aggM0BySegment(ms,me,cityArr,scArr){
   });
   return out;
 }
+
 
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
@@ -2670,19 +2678,19 @@ function renderBQLScorecard(cityArr,scArr){
   const yd=C.yd,ms=MS0(yd);
   const seg=aggM0BySegment(ms,yd,cityArr,scArr);
   const core=seg.Core;
+  const nonCore=sumSegKeys(seg,NON_CORE_KEYS);
   const others=BQL_SEGMENTS.filter(s=>s.key!=='Core').sort((a,b)=>seg[b.key].BQL-seg[a.key].BQL);
-  const ordered=[BQL_SEGMENTS[0],...others];
+  const tagHtml=t=>t?`<span style="font-size:9px;color:var(--t3);font-weight:400;margin-left:3px">${t}</span>`:'';
   const ppBadge=(cur,base,isCore)=>{
     if(isCore)return'';
     const d=(cur-base);
     return `<span class="${d>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${d>=0?'+':''}${d.toFixed(1)}pp)</span>`;
   };
-  const rows=ordered.map(s=>{
-    const v=seg[s.key];const isCore=s.key==='Core';
+  const renderRow=(labelHtml,v,isCore,rowStyle)=>{
     const bMs=pN(v.MS,v.BQL),mMd=pN(v.MD,v.MS),mdo=pN(v.Order,v.MD),bOrd=pN(v.Order,v.BQL);
     const cBMs=pN(core.MS,core.BQL),cMMd=pN(core.MD,core.MS),cMdo=pN(core.Order,core.MD),cBOrd=pN(core.Order,core.BQL);
-    return`<tr ${isCore?'style="font-weight:700;background:#eff6ff"':''}>
-      <td>${isCore?'<strong>'+s.full+'</strong>':`<span title="${s.full}">${s.label}</span>`}</td>
+    return`<tr ${rowStyle?`style="${rowStyle}"`:''}>
+      <td>${labelHtml}</td>
       <td class="mono">${f(v.BQL)}</td>
       <td class="mono">${f(v.MS)}</td>
       <td>${bMs.toFixed(1)}%${ppBadge(bMs,cBMs,isCore)}</td>
@@ -2693,10 +2701,14 @@ function renderBQLScorecard(cityArr,scArr){
       <td style="font-weight:600">${bOrd.toFixed(1)}%${ppBadge(bOrd,cBOrd,isCore)}</td>
       <td class="mono">${f(v.HOTO)}</td>
     </tr>`;
-  }).join('');
+  };
+  const coreRow=renderRow(`<strong>Core</strong>${tagHtml('(BQL_Old)')}`,core,true,'font-weight:700;background:#eff6ff');
+  const nonCoreRow=renderRow(`<strong>Non-Core</strong>${tagHtml('(Extra BQL)')}`,nonCore,false,'font-weight:700;background:#fffbeb;border-bottom:2px solid #fde68a');
+  const detailRows=others.map(s=>renderRow(`<span title="${s.full}">${s.label}</span>`,seg[s.key],false,'')).join('');
+  const rows=coreRow+nonCoreRow+detailRows;
   el.innerHTML=`<table><thead><tr>
     <th>Segment</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL\u2192MS%</th><th>MD</th><th style="white-space:normal">MS\u2192MD%</th><th>Order</th><th style="white-space:normal">MD\u2192Ord%</th><th style="white-space:normal">BQL\u2192Ord%</th><th>HOTO</th>
-  </tr></thead><tbody>${rows}</tbody></table>`;
+</tr></thead><tbody>${rows}</tbody></table>`;
 }
 // ── Composition trend: 6-month Full Month, segment volumes ──────────
 function renderBQLComposition(cityArr,scArr){
@@ -2716,11 +2728,13 @@ function renderBQLComposition(cityArr,scArr){
   },options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}}}});
   const rows=monthData.map(({mo,seg})=>{
     const total=BQL_SEGMENTS.reduce((s,x)=>s+seg[x.key].BQL,0)+seg.Other.BQL;
-    const incr=total-seg.Core.BQL;
-    const incrPct=total?(incr/total*100):0;
-    return`<tr><td style="font-weight:600">${mo.lbl}</td>${BQL_SEGMENTS.map(s=>`<td class="mono">${f(seg[s.key].BQL)}</td>`).join('')}<td style="font-weight:700" class="mono">${f(total)}</td><td style="font-weight:600">${incrPct.toFixed(1)}%</td></tr>`;
+    const nonCoreBQL=sumSegKeys(seg,NON_CORE_KEYS).BQL;
+    const incrPct=total?(nonCoreBQL/total*100):0;
+    const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
+    return`<tr><td style="font-weight:600">${mo.lbl}</td><td class="mono" style="font-weight:700">${f(seg.Core.BQL)}</td><td class="mono" style="font-weight:700;background:#fffbeb">${f(nonCoreBQL)}</td>${others.map(s=>`<td class="mono">${f(seg[s.key].BQL)}</td>`).join('')}<td style="font-weight:700" class="mono">${f(total)}</td><td style="font-weight:600">${incrPct.toFixed(1)}%</td></tr>`;
   }).join('');
-  tblEl.innerHTML=`<table><thead><tr><th style="white-space:normal;max-width:80px">Month</th>${BQL_SEGMENTS.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total BQL_New</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
+  tblEl.innerHTML=`<table><thead><tr><th style="white-space:normal;max-width:80px">Month</th><th>Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(BQL_Old)</span></th><th style="background:#fffbeb">Non-Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(Extra BQL)</span></th>${others.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total BQL_New</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rows}</tbody></table>`;
   setTimeout(()=>autoSort(tblEl),50);
 }
 // ── Segment trend: Full Month + MTD, 6-month, one segment at a time ─
@@ -2729,7 +2743,11 @@ function renderBQLSegmentTrend(cityArr,scArr,segKey){
   if(!fullEl||!mtdEl)return;
   const months=C.months,yd=C.yd,mtdDay=yd.getDate();
   const th=`<thead><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL\u2192MS%</th><th>MD</th><th style="white-space:normal">MS\u2192MD%</th><th>Order</th><th style="white-space:normal">MD\u2192Ord%</th><th style="white-space:normal">BQL\u2192Ord%</th><th>HOTO</th></tr></thead>`;
-  function pickSeg(agg){return segKey?agg[segKey]:BQL_SEGMENTS.reduce((s,x)=>({BQL:s.BQL+agg[x.key].BQL,MS:s.MS+agg[x.key].MS,MD:s.MD+agg[x.key].MD,Order:s.Order+agg[x.key].Order,HOTO:s.HOTO+agg[x.key].HOTO}),{BQL:0,MS:0,MD:0,Order:0,HOTO:0});}
+  function pickSeg(agg){
+    if(segKey==='NonCore')return sumSegKeys(agg,NON_CORE_KEYS);
+    if(segKey)return agg[segKey];
+    return sumSegKeys(agg,[...NON_CORE_KEYS,'Core']);
+  }
   function row(r,p,lbl,isCur){
     const bMs=pN(r.MS,r.BQL).toFixed(1),pBMs=pN(p.MS,p.BQL).toFixed(1);
     const mMd=pN(r.MD,r.MS).toFixed(1),pMMd=pN(p.MD,p.MS).toFixed(1);
@@ -2769,20 +2787,24 @@ function renderBQLCityTable(cityArr,tf,scArr){
   const yd=C.yd,ms=MS0(yd);
   const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
   const cities=cityArr&&cityArr.length?cityArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=cities.map(c=>{
     const seg=aggM0BySegment(ms,yd,[c],scArr);
     const total=BQL_SEGMENTS.reduce((s,x)=>s+seg[x.key].BQL,0)+seg.Other.BQL;
-    const incrShare=total?((total-seg.Core.BQL)/total*100):0;
-    return{c,tier:TIERS[c]||'',seg,total,incrShare};
+    const nonCoreBQL=sumSegKeys(seg,NON_CORE_KEYS).BQL;
+    const incrShare=total?(nonCoreBQL/total*100):0;
+    return{c,tier:TIERS[c]||'',seg,total,nonCoreBQL,incrShare};
   }).filter(r=>r.total>0)
     .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.incrShare-a.incrShare);
   const rowsHtml=rows.map(r=>`<tr>
     <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
-    ${BQL_SEGMENTS.map(s=>`<td class="mono">${f(r.seg[s.key].BQL)}</td>`).join('')}
+    <td class="mono" style="font-weight:700">${f(r.seg.Core.BQL)}</td>
+    <td class="mono" style="font-weight:700;background:#fffbeb">${f(r.nonCoreBQL)}</td>
+    ${others.map(s=>`<td class="mono">${f(r.seg[s.key].BQL)}</td>`).join('')}
     <td style="font-weight:700" class="mono">${f(r.total)}</td>
     <td style="font-weight:600" class="${r.incrShare>=30?'red':r.incrShare>=15?'amber':'green'}">${r.incrShare.toFixed(1)}%</td>
   </tr>`).join('');
-  el.innerHTML=`<table><thead><tr><th>City</th>${BQL_SEGMENTS.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  el.innerHTML=`<table><thead><tr><th>City</th><th>Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(BQL_Old)</span></th><th style="background:#fffbeb">Non-Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(Extra BQL)</span></th>${others.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
   setTimeout(()=>autoSort(el),50);
 }
 // ── Sub-Channel x Segment — current month M0 ─────────────────────────
@@ -2790,19 +2812,23 @@ function renderBQLSCTable(cityArr,scArr){
   const el=document.getElementById('bq-sc-tbl');if(!el)return;
   const yd=C.yd,ms=MS0(yd);
   const scs=scArr&&scArr.length?scArr:SCS;
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=scs.map(s=>{
     const seg=aggM0BySegment(ms,yd,cityArr,[s]);
     const total=BQL_SEGMENTS.reduce((a,x)=>a+seg[x.key].BQL,0)+seg.Other.BQL;
-    const incrShare=total?((total-seg.Core.BQL)/total*100):0;
-    return{s,seg,total,incrShare};
+    const nonCoreBQL=sumSegKeys(seg,NON_CORE_KEYS).BQL;
+    const incrShare=total?(nonCoreBQL/total*100):0;
+    return{s,seg,total,nonCoreBQL,incrShare};
   }).filter(r=>r.total>0).sort((a,b)=>b.incrShare-a.incrShare);
   const rowsHtml=rows.map(r=>`<tr>
     <td style="font-weight:600">${r.s}</td>
-    ${BQL_SEGMENTS.map(x=>`<td class="mono">${f(r.seg[x.key].BQL)}</td>`).join('')}
+    <td class="mono" style="font-weight:700">${f(r.seg.Core.BQL)}</td>
+    <td class="mono" style="font-weight:700;background:#fffbeb">${f(r.nonCoreBQL)}</td>
+    ${others.map(x=>`<td class="mono">${f(r.seg[x.key].BQL)}</td>`).join('')}
     <td style="font-weight:700" class="mono">${f(r.total)}</td>
     <td style="font-weight:600" class="${r.incrShare>=30?'red':r.incrShare>=15?'amber':'green'}">${r.incrShare.toFixed(1)}%</td>
   </tr>`).join('');
-  el.innerHTML=`<table><thead><tr><th>Sub-Channel</th>${BQL_SEGMENTS.map(x=>`<th style="white-space:normal;max-width:70px" title="${x.full}">${x.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  el.innerHTML=`<table><thead><tr><th>Sub-Channel</th><th>Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(BQL_Old)</span></th><th style="background:#fffbeb">Non-Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(Extra BQL)</span></th>${others.map(x=>`<th style="white-space:normal;max-width:70px" title="${x.full}">${x.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
   setTimeout(()=>autoSort(el),50);
 }
 
