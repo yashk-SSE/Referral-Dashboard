@@ -1075,17 +1075,19 @@ async function init(){
       let updated=0;
       mopR.forEach(row=>{
         if(!row.city)return;
-        let city=row.city.trim();
+        let city=String(row.city).trim();
         if(city==='Bengaluru')city='Bangalore';
         const b=parseFloat(row.BQL)||0;
         const ms=parseFloat(row.MS)||0;
         const md=parseFloat(row.MD)||0;
+        const o=parseFloat(row.ORDER)||0;
         const h=parseFloat(row.HOTO)||0;
-        if(b||ms||md||h){
-          if(!MOP[city])MOP[city]={BQL:0,MS:0,MD:0,HOTO:0};
+        if(b||ms||md||o||h){
+          if(!MOP[city])MOP[city]={BQL:0,MS:0,MD:0,ORDER:0,HOTO:0};
           if(b)MOP[city].BQL=b;
           if(ms)MOP[city].MS=ms;
           if(md)MOP[city].MD=md;
+          if(o)MOP[city].ORDER=o;
           if(h)MOP[city].HOTO=h;
           updated++;
         }
@@ -1211,7 +1213,7 @@ function bExec(){
   const rr=Math.round(C.ytdHoto/moEl()),rem=FY_T-C.ytdHoto;
   const moN=Math.ceil(rem/Math.max(12-moEl()+1,1));
   const cols={BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
-  const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'HOTO',HOTO:'HOTO'};
+  const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'ORDER',HOTO:'HOTO'};
   const cards=['BQL','MS','MD','Order','HOTO'].map(m=>{
     const v=ind[m],pv=indL[m],mop=C.mopMTD(null,mK[m]);
     const ach=mop?Math.min(Math.round(v/mop*100),150):0;
@@ -1230,9 +1232,9 @@ function bExec(){
     h:C.cMTD[c].HOTO,ph:C.cLMTD[c].HOTO,
     mH:C.mopMTD(c,'HOTO'),mF:MOP[c]?.HOTO||0,
     o:C.cMTD[c].Order,po:C.cLMTD[c].Order,
-    mO:C.mopMTD(c,'HOTO'),
+    mO:C.mopMTD(c,'ORDER'),
     hAch:C.mopMTD(c,'HOTO')>0?C.cMTD[c].HOTO/C.mopMTD(c,'HOTO'):0,
-    oAch:C.mopMTD(c,'HOTO')>0?C.cMTD[c].Order/C.mopMTD(c,'HOTO'):0
+    oAch:C.mopMTD(c,'ORDER')>0?C.cMTD[c].Order/C.mopMTD(c,'ORDER'):0
   })).filter(x=>x.mF>0);
   const topC=cityPerf.filter(x=>x.mH>0).sort((a,b)=>b.hAch-a.hAch).slice(0,5);
   const lagC=cityPerf.filter(x=>x.hAch<0.7).sort((a,b)=>a.hAch-b.hAch).slice(0,5);
@@ -1372,7 +1374,7 @@ ${(()=>{
 // ??????????????????????????????????????
 function bMop(){
   const yd=C.yd,doneD=yd.getDate(),daysLeft=dim(yd)-doneD;
-  const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'HOTO',HOTO:'HOTO'};
+  const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'ORDER',HOTO:'HOTO'};
   const metrics=['BQL','MS','MD','HOTO'];
 
   // Build city rows - now includes actual Order column after HOTO actuals
@@ -1392,23 +1394,26 @@ function bMop(){
       return{m,mopFull,mopMtd,actual,prevActual};
     });
 
-    // Order actual - colour formatted same as defCellAbs (background + text colour)
-    const mopHotoMtd=Math.round((mFull.HOTO||0)*doneD/dim(yd));
+    // Order — now uses its own explicit MOP target (mFull.ORDER) instead of the HOTO MOP as a proxy
+    const mopOrdFull=mFull.ORDER||0;
+    const mopOrdMtd=Math.round(mopOrdFull*doneD/dim(yd));
     const actOrder=v.Order||0;
     const lmtdOrder=pv.Order||0;
-    const ordRatio=mopHotoMtd?actOrder/mopHotoMtd:1;
-    const ordDiff=actOrder-mopHotoMtd,ordPctV=mopHotoMtd?Math.round(ordDiff/mopHotoMtd*100):0;
+    const ordRatio=mopOrdMtd?actOrder/mopOrdMtd:1;
+    const ordDiff=actOrder-mopOrdMtd,ordPctV=mopOrdMtd?Math.round(ordDiff/mopOrdMtd*100):0;
     const ordBgCls=ordDiff<0?(Math.abs(ordPctV)>=20?'def-hi':'def-md'):'sur-hi';
-    const ordTip=`title="Actual Order: ${f(actOrder)} | MOP HOTO MTD: ${f(mopHotoMtd)} | LMTD Order: ${f(lmtdOrder)} | vs MOP: ${ordPctV>=0?'+':''}${ordPctV}%"`;
+    const ordTip=`title="Actual Order: ${f(actOrder)} | MOP Order MTD: ${f(mopOrdMtd)} | LMTD Order: ${f(lmtdOrder)} | vs MOP: ${ordPctV>=0?'+':''}${ordPctV}%"`;
     const ordCell=`<td class="${ordBgCls}" ${ordTip} style="font-weight:600">${f(actOrder)}</td>`;
     const ordPctCell=`<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>`;
+    const ordFullCell=`<td class="neu" style="font-weight:600">${f(mopOrdFull)}</td>`;
+    const ordMtdCell=`<td class="neu">${f(mopOrdMtd)}</td>`;
 
     return`<tr ${rowStyle}>
       <td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
-      ${cells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}
-      ${cells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}
+      ${(()=>{const baseCells=cells.filter(c=>c.m!=='HOTO');const hotoCell=cells.find(c=>c.m==='HOTO');return baseCells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')+ordFullCell+(hotoCell?`<td class="neu" style="font-weight:600">${f(hotoCell.mopFull)}</td>`:'');})()}
+      ${(()=>{const baseCells=cells.filter(c=>c.m!=='HOTO');const hotoCell=cells.find(c=>c.m==='HOTO');return baseCells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')+ordMtdCell+(hotoCell?`<td class="neu">${f(hotoCell.mopMtd)}</td>`:'');})()}
       ${(()=>{const baseCells=cells.filter(c=>c.m!=='HOTO');const hotoCell=cells.find(c=>c.m==='HOTO');return baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')+ordCell+(hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):'');})()}
-      ${cells.filter(c=>c.m!=='HOTO').map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')}${ordPctCell}${(()=>{const hc=cells.find(c=>c.m==='HOTO');if(!hc)return'';const hm=mopHotoMtd;const hd=hc.actual-hm;const hp=hm?Math.round(hd/hm*100):0;const hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`})()}
+      ${cells.filter(c=>c.m!=='HOTO').map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:2px solid #6b7280':'')).join('')}${ordPctCell}${(()=>{const hc=cells.find(c=>c.m==='HOTO');if(!hc)return'';const hm=hc.mopMtd;const hd=hc.actual-hm;const hp=hm?Math.round(hd/hm*100):0;const hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`})()}
       ${cells.filter(c=>c.m!=='HOTO').map((c,i)=>`<td style="${i===0?'border-left:2px solid #6b7280':''}"><span class="mono">${mb(c.actual,c.prevActual)}</span></td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td>${(()=>{const hc=cells.find(c=>c.m==='HOTO');return hc?`<td>${mb(hc.actual,hc.prevActual)}</td>`:''})()}
     </tr>`;
   }
@@ -1434,15 +1439,15 @@ function bMop(){
   <thead>
     <tr>
       <th rowspan="2" style="min-width:100px;background:#f1f3f6;color:#374151">City</th>
-      <th colspan="${metrics.length}" style="text-align:center;background:#e9ecef;color:#1f2937;border-left:2px solid #adb5bd">Full Month MOP</th>
-      <th colspan="${metrics.length}" style="text-align:center;background:#dee2e6;color:#1f2937;border-left:2px solid #adb5bd">MOP MTD (Target)</th>
+      <th colspan="${metrics.length+1}" style="text-align:center;background:#e9ecef;color:#1f2937;border-left:2px solid #adb5bd">Full Month MOP</th>
+      <th colspan="${metrics.length+1}" style="text-align:center;background:#dee2e6;color:#1f2937;border-left:2px solid #adb5bd">MOP MTD (Target)</th>
       <th colspan="${metrics.length+1}" style="text-align:center;background:#f1f3f6;color:#1f2937;border-left:2px solid #6b7280">Actual MTD</th>
       <th colspan="${metrics.length+1}" style="text-align:center;background:#e9ecef;color:#1f2937;border-left:2px solid #6b7280">% vs MOP MTD</th>
       <th colspan="${metrics.length+1}" style="text-align:center;background:#f8f9fa;color:#374151;border-left:2px solid #9ca3af">vs LMTD</th>
     </tr>
     <tr>
-      ${metrics.map((m,i)=>`<th style="text-align:right;background:#e9ecef;color:#1f2937;${i===0?'border-left:2px solid #adb5bd':''}">${m}</th>`).join('')}
-      ${metrics.map((m,i)=>`<th style="text-align:right;background:#dee2e6;color:#1f2937;${i===0?'border-left:2px solid #adb5bd':''}">${m}</th>`).join('')}
+      ${metrics.filter(m=>m!=='HOTO').map((m,i)=>`<th style="text-align:right;background:#e9ecef;color:#1f2937;${i===0?'border-left:2px solid #adb5bd':''}">${m}</th>`).join('')}<th style="background:#e9ecef;color:#1f2937;font-weight:600">Order</th><th style="background:#e9ecef;color:#1f2937;font-weight:600">HOTO</th>
+      ${metrics.filter(m=>m!=='HOTO').map((m,i)=>`<th style="text-align:right;background:#dee2e6;color:#1f2937;${i===0?'border-left:2px solid #adb5bd':''}">${m}</th>`).join('')}<th style="background:#dee2e6;color:#1f2937;font-weight:600">Order</th><th style="background:#dee2e6;color:#1f2937;font-weight:600">HOTO</th>
       ${metrics.filter(m=>m!=='HOTO').map((m,i)=>`<th style="text-align:right;background:#f1f3f6;color:#1f2937;${i===0?'border-left:2px solid #6b7280':''}">${m}</th>`).join('')}<th style="background:#f1f3f6;color:#1f2937;font-weight:600">Order</th><th style="background:#f1f3f6;color:#1f2937;font-weight:600">HOTO</th>
       ${metrics.filter(m=>m!=='HOTO').map((m,i)=>`<th style="text-align:right;background:#e9ecef;color:#374151;${i===0?'border-left:2px solid #6b7280':''}">${m}</th>`).join('')}<th style="background:#e9ecef;color:#374151">Ord%</th><th style="background:#e9ecef;color:#374151">HOTO%</th>
       ${metrics.filter(m=>m!=='HOTO').map((m,i)=>`<th style="text-align:right;background:#f8f9fa;color:#374151;${i===0?'border-left:2px solid #9ca3af':''}">${m}</th>`).join('')}<th style="background:#f8f9fa;color:#374151">Ord</th><th style="background:#f8f9fa;color:#374151">HOTO</th>
@@ -1462,13 +1467,19 @@ function filterMop(cf,tf){
     const tier=isIndia?'India':TIERS[city]||'';
     const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-top:2px solid var(--bl)"':'';
     const cells=metrics.map(m=>({m,mopFull:mFull[m]||0,mopMtd:Math.round((mFull[m]||0)*doneD/dim(yd)),actual:v[m]||0,prevActual:pv[m]||0}));
-    const mopHotoMtd=Math.round((mFull.HOTO||0)*doneD/dim(yd));
+    const baseCells=cells.filter(c=>c.m!=='HOTO'),hotoCell=cells.find(c=>c.m==='HOTO');
+    // Order — explicit MOP target (mFull.ORDER), not the HOTO MOP proxy
+    const mopOrdFull=mFull.ORDER||0;
+    const mopOrdMtd=Math.round(mopOrdFull*doneD/dim(yd));
     const actOrder=v.Order||0,lmtdOrder=pv.Order||0;
-    const ordDiff=actOrder-mopHotoMtd,ordPctV=mopHotoMtd?Math.round(ordDiff/mopHotoMtd*100):0;
+    const ordDiff=actOrder-mopOrdMtd,ordPctV=mopOrdMtd?Math.round(ordDiff/mopOrdMtd*100):0;
     const ordBgCls=ordDiff<0?(Math.abs(ordPctV)>=20?'def-hi':'def-md'):'sur-hi';
-    const ordTip=`title="Order: ${f(actOrder)} | MOP HOTO MTD: ${f(mopHotoMtd)} | LMTD Order: ${f(lmtdOrder)} | vs MOP: ${ordPctV>=0?'+':''}${ordPctV}%"`;
+    const ordTip=`title="Order: ${f(actOrder)} | MOP Order MTD: ${f(mopOrdMtd)} | LMTD Order: ${f(lmtdOrder)} | vs MOP: ${ordPctV>=0?'+':''}${ordPctV}%"`;
     const ordCell=`<td class="${ordBgCls}" ${ordTip} style="font-weight:600">${f(actOrder)}</td>`;
-    return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'<>India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${cells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${cells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${cells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${cells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>${cells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td></tr>`;
+    const ordPctCell=`<td class="${ordBgCls}" ${ordTip}>${ordPctV>=0?'+':''}${ordPctV}%</td>`;
+    const ordFullCell=`<td class="neu" style="font-weight:600">${f(mopOrdFull)}</td>`;
+    const ordMtdCell=`<td class="neu">${f(mopOrdMtd)}</td>`;
+    return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${baseCells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${ordFullCell}${hotoCell?`<td class="neu" style="font-weight:600">${f(hotoCell.mopFull)}</td>`:''}${baseCells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${ordMtdCell}${hotoCell?`<td class="neu">${f(hotoCell.mopMtd)}</td>`:''}${baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):''}${baseCells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}${ordPctCell}${(()=>{if(!hotoCell)return'';const hm=hotoCell.mopMtd,hd=hotoCell.actual-hm,hp=hm?Math.round(hd/hm*100):0,hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`;})()}${baseCells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td>${hotoCell?`<td>${mb(hotoCell.actual,hotoCell.prevActual)}</td>`:''}</tr>`;
   }
   const cities=cf?[cf]:tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
   const tbody=document.querySelector('#mop-tbl tbody');
@@ -1495,7 +1506,7 @@ function renderIndia(cf,sf,tierCities){
   const pv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&(!cf||r.city===cf)&&(!sf||r.sc===sf)));
   const mop=cf?MOP[cf]:MOP.India;
   const metrics=['BQL','MS','MD','Order','HOTO'];
-  const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'HOTO',HOTO:'HOTO'};
+  const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'ORDER',HOTO:'HOTO'};
   const mopRows=metrics.map(m=>{
     const mv=v[m],mpv=pv[m],mopFull=mop?.[mK[m]]||0,mopMTD=Math.round(mopFull*yd.getDate()/dim(yd));
     const ach=mopMTD?Math.min(Math.round(mv/mopMTD*100),150):0;
@@ -1612,7 +1623,7 @@ function bCity(){
   };
   const rows=CITIES.map(c=>{
     const v=C.cMTD[c],pv=C.cLMTD[c];
-    return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mB:C.mopMTD(c,'BQL'),mMS:C.mopMTD(c,'MS'),mMD:C.mopMTD(c,'MD'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
+    return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mO:C.mopMTD(c,'ORDER'),mB:C.mopMTD(c,'BQL'),mMS:C.mopMTD(c,'MS'),mMD:C.mopMTD(c,'MD'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
   }).sort((a,b)=>{
     // Primary: tier order (Focus=0, Big=1, Mid=2, Small=3, Exp=4)
     const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
@@ -1629,7 +1640,7 @@ function bCity(){
     <td>${vsMop(indV.BQL,C.mopMTD(null,'BQL'),indPV.BQL)}</td>
     <td>${vsMop(indV.MS,C.mopMTD(null,'MS'),indPV.MS)}</td>
     <td>${vsMop(indV.MD,C.mopMTD(null,'MD'),indPV.MD)}</td>
-    <td>${vsMop(indV.Order,C.mopMTD(null,'HOTO'),indPV.Order)}</td>
+    <td>${vsMop(indV.Order,C.mopMTD(null,'ORDER'),indPV.Order)}</td>
     <td>${vsMop(indV.HOTO,C.mopMTD(null,'HOTO'),indPV.HOTO)}</td>
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${funnelPct(indV.MS,indV.BQL,indPV.MS,indPV.BQL)}</td>
@@ -1642,7 +1653,7 @@ function bCity(){
     <td>${vsMop(r.v.BQL,r.mB,r.pv.BQL)}</td>
     <td>${vsMop(r.v.MS,r.mMS,r.pv.MS)}</td>
     <td>${vsMop(r.v.MD,r.mMD,r.pv.MD)}</td>
-    <td>${vsMop(r.v.Order,r.mH,r.pv.Order)}</td>
+    <td>${vsMop(r.v.Order,r.mO,r.pv.Order)}</td>
     <td>${vsMop(r.v.HOTO,r.mH,r.pv.HOTO)}</td>
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${funnelPct(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td>
@@ -1776,17 +1787,17 @@ function filterCityTable(){
   const allCities=cityFArr.length>0?cityFArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
   const rows=allCities.map(c=>{
     const v=sf?C.cscMTD[c][sf]:C.cMTD[c],pv=sf?C.cscLMTD[c][sf]:C.cLMTD[c];
-    return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mB:C.mopMTD(c,'BQL'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
+    return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mO:C.mopMTD(c,'ORDER'),mB:C.mopMTD(c,'BQL'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
   }).sort((a,b)=>(tierOrd[a.tier]||5)-(tierOrd[b.tier]||5)||b.v.HOTO-a.v.HOTO);
   // Aggregate India row from filtered cities
   const aggV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
   const aggPV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-  const aggMop={BQL:0,MS:0,MD:0,HOTO:0};
+  const aggMop={BQL:0,MS:0,MD:0,HOTO:0,ORDER:0};
   rows.forEach(r=>{
     ['BQL','MS','MD','Order','HOTO'].forEach(m=>{aggV[m]+=r.v[m]||0;aggPV[m]+=r.pv[m]||0;});
-    ['BQL','MS','MD','HOTO'].forEach(m=>{aggMop[m]+=C.mopMTD(r.c,m);});
+    ['BQL','MS','MD','HOTO','ORDER'].forEach(m=>{aggMop[m]+=C.mopMTD(r.c,m);});
   });
-  const indMH=aggMop.HOTO,indMB=aggMop.BQL,indMMS=aggMop.MS,indMMD=aggMop.MD;
+  const indMH=aggMop.HOTO,indMO=aggMop.ORDER,indMB=aggMop.BQL,indMMS=aggMop.MS,indMMD=aggMop.MD;
   const tb=document.getElementById('city-tbody');
   const vM2=(a,m)=>{if(!m)return`<span class="mono">${f(a)}</span>`;const r=a/m,p=Math.round(r*100);const cls=r>=.95?'green':r>=.75?'amber':'red';return`<span class="mono ${cls}">${f(a)}</span><span style="font-size:9px;color:var(--t3)">/${f(m)}</span>`;};
   const fP2=(a,b,pa,pb)=>{
@@ -1802,16 +1813,16 @@ function filterCityTable(){
   const indRow=(tf||cityFArr.length>0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)">
     <td><strong>India (filtered)</strong><span class="ctag" style="background:#1a56db;color:#fff">${tf||cityFArr.length+' cities'}</span></td>
     <td>${vM2(aggV.BQL,indMB)}</td><td>${vM2(aggV.MS,indMMS)}</td><td>${vM2(aggV.MD,indMMD)}</td>
-    <td>${vM2(aggV.Order,indMH)}</td><td>${vM2(aggV.HOTO,indMH)}</td>
+    <td>${vM2(aggV.Order,indMO)}</td><td>${vM2(aggV.HOTO,indMH)}</td>
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${fP2(aggV.MS,aggV.BQL,aggPV.MS,aggPV.BQL)}</td><td>${fP2(aggV.MD,aggV.MS,aggPV.MD,aggPV.MS)}</td>
     <td>${fP2(aggV.Order,aggV.MD,aggPV.Order,aggPV.MD)}</td><td>${fP2(aggV.HOTO,aggV.MD,aggPV.HOTO,aggPV.MD)}</td>
     </tr>`:''
   +(()=>{
-    const iV=C.india,iPV=C.indiaL,iMH=C.mopMTD(null,'HOTO'),iMB=C.mopMTD(null,'BQL'),iMMS=C.mopMTD(null,'MS'),iMMD=C.mopMTD(null,'MD');
-    return(!tf&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMH)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td></tr>`:'';
+    const iV=C.india,iPV=C.indiaL,iMH=C.mopMTD(null,'HOTO'),iMO=C.mopMTD(null,'ORDER'),iMB=C.mopMTD(null,'BQL'),iMMS=C.mopMTD(null,'MS'),iMMD=C.mopMTD(null,'MD');
+    return(!tf&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td></tr>`:'';
   })();
-  if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fP2(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td></tr>`).join('');
+  if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mO||C.mopMTD(r.c,'ORDER'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fP2(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td></tr>`).join('');
   setTimeout(()=>autoSort(document.querySelector('#city-tbody')?.closest('table')),50);
 }
 
@@ -3243,11 +3254,11 @@ function buildInsData(){
   // India
   const india={name:'India'};
   METS.forEach(m=>{
-    // Orders has no separate MOP — use HOTO MOP MTD as the benchmark (orders should ≥ HOTOs)
-    const mopM = m==='Order' ? C.mopMTD(null,'HOTO') : C.mopMTD(null,m);
-    const mopF = m==='Order' ? (MOP.India?.HOTO||0) : (MOP.India?.[m]||0);
+    // Order now has its own explicit MOP target (mFull.ORDER)
+    const mopM = C.mopMTD(null,m==='Order'?'ORDER':m);
+    const mopF = m==='Order' ? (MOP.India?.ORDER||0) : (MOP.India?.[m]||0);
     india[m]={cur:ind[m]||0,lmtd:indL[m]||0,mop:mopM,mopFull:mopF,
-              mopLabel:m==='Order'?'HOTO MOP MTD':m+' MOP MTD'};
+              mopLabel:m+' MOP MTD'};
     india[m].alert=insAlertAbs(india[m].cur,mopM);
   });
   india.funnel=addFunnelAlerts(funnelBlock(ind,indL));
@@ -3266,10 +3277,10 @@ function buildInsData(){
     if(!v.BQL&&!v.HOTO) return null;
     const cd={name:city,tier:TIERS[city]||''};
     METS.forEach(m=>{
-      const mopM = m==='Order' ? C.mopMTD(city,'HOTO') : C.mopMTD(city,m);
-      const mopF = m==='Order' ? (MOP[city]?.HOTO||0) : (MOP[city]?.[m]||0);
+      const mopM = C.mopMTD(city,m==='Order'?'ORDER':m);
+      const mopF = m==='Order' ? (MOP[city]?.ORDER||0) : (MOP[city]?.[m]||0);
       cd[m]={cur:v[m]||0,lmtd:pv[m]||0,mop:mopM,mopFull:mopF,
-             mopLabel:m==='Order'?'HOTO MOP MTD':m+' MOP MTD'};
+             mopLabel:m+' MOP MTD'};
       cd[m].alert=insAlertAbs(cd[m].cur,mopM);
     });
     cd.funnel=addFunnelAlerts(funnelBlock(v,pv));
@@ -3473,7 +3484,7 @@ function renderInsAlertTable(d){
       const lbl=x.mopLabel||(m+' MOP');
       return`<td style="text-align:center;padding:5px 4px">
         <div style="font-weight:700;font-size:12px;font-family:'DM Mono',monospace">${f(x.cur)}</div>
-        <div style="font-size:9px;color:var(--t3)">${f(x.mop)} ${m==='Order'?'HOTO MOP':m+' MOP'}</div>
+        <div style="font-size:9px;color:var(--t3)">${f(x.mop)} ${m+' MOP'}</div>
         <div style="font-size:8px;color:${c.dk};font-weight:700">${defPct>=0?'+':''}${defPct.toFixed(0)}%</div>
         ${iBadge(x.alert,true)}
       </td>`;
@@ -3887,7 +3898,7 @@ function bIns(){
   ${renderAlertBanner(d)}
   <div style="margin-top:4px">${renderLocalInsights(d)}</div>
   <div class="stitle" style="margin:20px 0 8px">📋 Quick Alert Matrix — All Cities × All Metrics</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:8px">Sorted worst→best · Blue cols = absolute vs MOP MTD · Amber cols = funnel vs LMTD · Orders benchmarked vs HOTO MOP MTD</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:8px">Sorted worst→best · Blue cols = absolute vs MOP MTD · Amber cols = funnel vs LMTD · Orders benchmarked vs their own Order MOP MTD</div>
   ${renderInsAlertTable(d)}`;
 }
 
@@ -4030,10 +4041,9 @@ function renderDoD(){
   const showMetrics=metricF==='all'?metrics:[metricF];
 
   // MOP full month for current month (India level or filtered)
-  // Order and HOTO both benchmark against HOTO MOP (as per business requirement)
   const getMop=(m)=>{
     const mopKey='India';
-    if(m==='Order'||m==='HOTO') return MOP[mopKey]?.HOTO||0;
+    if(m==='Order') return MOP[mopKey]?.ORDER||0;
     return MOP[mopKey]?.[m]||0;
   };
 
