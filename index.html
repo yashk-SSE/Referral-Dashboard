@@ -503,10 +503,12 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 <script>
 // Data loaded from GitHub repo JSON files (no API keys needed)
 const FY_T=40000;
-const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Agra:'Exp',Meerut:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Bareilly:'Exp',Solapur:'Exp',Vijaywada:'Exp'};
+const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp'};
 const MOP={India:{BQL:4880,MS:3906,MD:3515,HOTO:1831},Ahmedabad:{BQL:80,MS:71,MD:64,HOTO:36},Nagpur:{BQL:814,MS:738,MD:664,HOTO:361},Amravati:{BQL:110,MS:92,MD:83,HOTO:44},Aurangabad:{BQL:91,MS:86,MD:77,HOTO:47},Nashik:{BQL:137,MS:141,MD:127,HOTO:68},Pune:{BQL:699,MS:628,MD:565,HOTO:315},Kolhapur:{BQL:69,MS:64,MD:58,HOTO:33},Bhopal:{BQL:367,MS:263,MD:237,HOTO:119},Gwalior:{BQL:447,MS:212,MD:191,HOTO:70},Indore:{BQL:289,MS:223,MD:201,HOTO:79},Jabalpur:{BQL:403,MS:247,MD:222,HOTO:126},Jaipur:{BQL:102,MS:68,MD:61,HOTO:32},Delhi:{BQL:105,MS:82,MD:74,HOTO:36},Gurgaon:{BQL:37,MS:31,MD:28,HOTO:15},Ghaziabad:{BQL:63,MS:50,MD:45,HOTO:22},Noida:{BQL:25,MS:18,MD:16,HOTO:8},Kanpur:{BQL:180,MS:183,MD:165,HOTO:94},Lucknow:{BQL:406,MS:323,MD:291,HOTO:146},Varanasi:{BQL:38,MS:36,MD:32,HOTO:20},Hyderabad:{BQL:145,MS:132,MD:119,HOTO:71},Bangalore:{BQL:131,MS:94,MD:85,HOTO:36},Chennai:{BQL:142,MS:122,MD:110,HOTO:50}};
 const SCS=['Sales','Online','BTL','Ops / AMC','Customer_App','Referral_Others'];
-const CITIES=Object.keys(MOP).filter(c=>c!=='India');
+// Master city list — hardcoded explicitly (not derived from MOP keys) so the tab list
+// stays correct even if a city is temporarily missing from referral_mop.json.
+const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore'];
 const FOCUS=['Nagpur','Lucknow','Pune'];
 const BIG=['Indore','Jabalpur','Chennai','Bhopal','Delhi','Nashik','Kanpur'];
 const MID=['Gwalior','Aurangabad','Hyderabad','Bangalore','Amravati','Jaipur','Ahmedabad','Kolhapur','Varanasi'];
