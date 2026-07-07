@@ -1,6 +1,6 @@
 [
     {
-        "City": "India",
+        "city": "India",
         "BQL": 6177,
         "MS": 4711,
         "MD": 4318,
@@ -8,7 +8,7 @@
         "HOTO": 2208
     },
     {
-        "City": "Ahmedabad",
+        "city": "Ahmedabad",
         "BQL": 106,
         "MS": 100,
         "MD": 94,
@@ -16,7 +16,7 @@
         "HOTO": 50
     },
     {
-        "City": "Nagpur",
+        "city": "Nagpur",
         "BQL": 973,
         "MS": 801,
         "MD": 733,
@@ -24,7 +24,7 @@
         "HOTO": 374
     },
     {
-        "City": "Amravati",
+        "city": "Amravati",
         "BQL": 141,
         "MS": 105,
         "MD": 101,
@@ -32,7 +32,7 @@
         "HOTO": 42
     },
     {
-        "City": "Aurangabad",
+        "city": "Aurangabad",
         "BQL": 111,
         "MS": 86,
         "MD": 84,
@@ -40,7 +40,7 @@
         "HOTO": 49
     },
     {
-        "City": "Nashik",
+        "city": "Nashik",
         "BQL": 165,
         "MS": 169,
         "MD": 158,
@@ -48,7 +48,7 @@
         "HOTO": 98
     },
     {
-        "City": "Pune",
+        "city": "Pune",
         "BQL": 873,
         "MS": 752,
         "MD": 693,
@@ -56,7 +56,7 @@
         "HOTO": 371
     },
     {
-        "City": "Kolhapur",
+        "city": "Kolhapur",
         "BQL": 86,
         "MS": 75,
         "MD": 71,
@@ -64,7 +64,7 @@
         "HOTO": 52
     },
     {
-        "City": "Jalgaon",
+        "city": "Jalgaon",
         "BQL": 35,
         "MS": 33,
         "MD": 31,
@@ -72,7 +72,7 @@
         "HOTO": 19
     },
     {
-        "City": "Solapur",
+        "city": "Solapur",
         "BQL": 35,
         "MS": 26,
         "MD": 23,
@@ -80,7 +80,7 @@
         "HOTO": 5
     },
     {
-        "City": "Bhopal",
+        "city": "Bhopal",
         "BQL": 458,
         "MS": 299,
         "MD": 274,
@@ -88,7 +88,7 @@
         "HOTO": 146
     },
     {
-        "City": "Gwalior",
+        "city": "Gwalior",
         "BQL": 416,
         "MS": 209,
         "MD": 169,
@@ -96,7 +96,7 @@
         "HOTO": 60
     },
     {
-        "City": "Indore",
+        "city": "Indore",
         "BQL": 393,
         "MS": 303,
         "MD": 268,
@@ -104,7 +104,7 @@
         "HOTO": 120
     },
     {
-        "City": "Jabalpur",
+        "city": "Jabalpur",
         "BQL": 476,
         "MS": 271,
         "MD": 245,
@@ -112,7 +112,7 @@
         "HOTO": 146
     },
     {
-        "City": "Jaipur",
+        "city": "Jaipur",
         "BQL": 157,
         "MS": 108,
         "MD": 91,
@@ -120,7 +120,7 @@
         "HOTO": 45
     },
     {
-        "City": "Delhi",
+        "city": "Delhi",
         "BQL": 132,
         "MS": 103,
         "MD": 97,
@@ -128,7 +128,7 @@
         "HOTO": 47
     },
     {
-        "City": "Faridabad",
+        "city": "Faridabad",
         "BQL": 25,
         "MS": 19,
         "MD": 15,
@@ -136,7 +136,7 @@
         "HOTO": 7
     },
     {
-        "City": "Gurgaon",
+        "city": "Gurgaon",
         "BQL": 52,
         "MS": 40,
         "MD": 39,
@@ -144,7 +144,7 @@
         "HOTO": 22
     },
     {
-        "City": "Ghaziabad",
+        "city": "Ghaziabad",
         "BQL": 73,
         "MS": 61,
         "MD": 59,
@@ -152,7 +152,7 @@
         "HOTO": 28
     },
     {
-        "City": "Noida",
+        "city": "Noida",
         "BQL": 32,
         "MS": 24,
         "MD": 23,
@@ -160,7 +160,7 @@
         "HOTO": 10
     },
     {
-        "City": "Agra",
+        "city": "Agra",
         "BQL": 45,
         "MS": 30,
         "MD": 26,
@@ -168,7 +168,7 @@
         "HOTO": 11
     },
     {
-        "City": "Kanpur",
+        "city": "Kanpur",
         "BQL": 218,
         "MS": 196,
         "MD": 187,
@@ -176,7 +176,7 @@
         "HOTO": 127
     },
     {
-        "City": "Lucknow",
+        "city": "Lucknow",
         "BQL": 514,
         "MS": 403,
         "MD": 356,
@@ -184,7 +184,7 @@
         "HOTO": 146
     },
     {
-        "City": "Varanasi",
+        "city": "Varanasi",
         "BQL": 59,
         "MS": 54,
         "MD": 53,
@@ -192,7 +192,7 @@
         "HOTO": 28
     },
     {
-        "City": "Hyderabad",
+        "city": "Hyderabad",
         "BQL": 205,
         "MS": 170,
         "MD": 161,
@@ -200,7 +200,7 @@
         "HOTO": 85
     },
     {
-        "City": "Bangalore",
+        "city": "Bangalore",
         "BQL": 175,
         "MS": 121,
         "MD": 118,
@@ -208,7 +208,7 @@
         "HOTO": 47
     },
     {
-        "City": "Chennai",
+        "city": "Chennai",
         "BQL": 192,
         "MS": 138,
         "MD": 132,
@@ -216,7 +216,7 @@
         "HOTO": 66
     },
     {
-        "City": "Coimbatore",
+        "city": "Coimbatore",
         "BQL": 30,
         "MS": 17,
         "MD": 16,
