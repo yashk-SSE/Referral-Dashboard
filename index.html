@@ -775,6 +775,7 @@ function buildTab(t){
       case 'city': bCityTF(); rendered[t]=true; return;
       case 'sc': bSCTF(); rendered[t]=true; return;
       case 'funnel': bFunnelTF(); rendered[t]=true; return;
+      case 'm0funnel': bM0FunnelTF(); rendered[t]=true; return;
       case 'dod': bDoDTF(); rendered[t]=true; return;
       case 'mop':
         // MOP tab: show message
@@ -1647,6 +1648,8 @@ function bCity(){
     <td>${funnelPct(indV.MD,indV.MS,indPV.MD,indPV.MS)}</td>
     <td>${funnelPct(indV.Order,indV.MD,indPV.Order,indPV.MD)}</td>
     <td>${funnelPct(indV.HOTO,indV.MD,indPV.HOTO,indPV.MD)}</td>
+    <td>${funnelPct(indV.Order,indV.BQL,indPV.Order,indPV.BQL)}</td>
+    <td>${funnelPct(indV.HOTO,indV.BQL,indPV.HOTO,indPV.BQL)}</td>
   </tr>`;
   const tbl=indRow+rows.map(r=>`<tr>
     <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
@@ -1660,6 +1663,8 @@ function bCity(){
     <td>${funnelPct(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td>
     <td>${funnelPct(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td>
     <td>${funnelPct(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td>
+    <td>${funnelPct(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td>
+    <td>${funnelPct(r.v.HOTO,r.v.BQL,r.pv.HOTO,r.pv.BQL)}</td>
   </tr>`).join('');
   const drills=rows.filter(r=>r.v.BQL>0||r.v.HOTO>0).map(r=>{
     const scd=SCS.map(s=>({s,v:C.cscMTD[r.c][s],pv:C.cscLMTD[r.c][s]})).filter(x=>x.v.BQL>0||x.v.HOTO>0);
@@ -1764,11 +1769,11 @@ function bCity(){
   <th rowspan="2">City</th>
   <th colspan="5" style="text-align:center;background:#dbeafe;color:#1e40af;border-bottom:0;border-left:3px solid #3b82f6">Absolute Metrics — MOP MTD &amp; LMTD</th>
   <th style="min-width:6px;background:#e5e7eb;padding:0" rowspan="2"></th>
-  <th colspan="4" style="text-align:center;background:#f0fdf4;color:#166534;border-bottom:0;border-left:3px solid #22c55e">Funnel Rates — vs LMTD</th>
+  <th colspan="6" style="text-align:center;background:#f0fdf4;color:#166534;border-bottom:0;border-left:3px solid #22c55e">Funnel Rates — vs LMTD</th>
 </tr>
 <tr>
   <th style="background:#eff6ff;color:#1e40af;border-left:3px solid #3b82f6">BQL</th><th style="background:#eff6ff;color:#1e40af">MS</th><th style="background:#eff6ff;color:#1e40af">MD</th><th style="background:#eff6ff;color:#1e40af">Order</th><th style="background:#eff6ff;color:#1e40af">HOTO</th>
-  <th style="background:#f0fdf4;color:#166534;border-left:3px solid #22c55e">BQL→MS%</th><th style="background:#f0fdf4;color:#166534">MS→MD%</th><th style="background:#f0fdf4;color:#166534">MD→Ord%</th><th style="background:#f0fdf4;color:#166534">MD→HOTO%</th>
+  <th style="background:#f0fdf4;color:#166534;border-left:3px solid #22c55e">BQL→MS%</th><th style="background:#f0fdf4;color:#166534">MS→MD%</th><th style="background:#f0fdf4;color:#166534">MD→Ord%</th><th style="background:#f0fdf4;color:#166534">MD→HOTO%</th><th style="background:#f0fdf4;color:#166534">BQL→Ord%</th><th style="background:#f0fdf4;color:#166534">BQL→HOTO%</th>
 </tr>
 </thead>
 <tbody id="city-tbody">${tbl}</tbody></table></div>
@@ -1817,12 +1822,13 @@ function filterCityTable(){
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${fP2(aggV.MS,aggV.BQL,aggPV.MS,aggPV.BQL)}</td><td>${fP2(aggV.MD,aggV.MS,aggPV.MD,aggPV.MS)}</td>
     <td>${fP2(aggV.Order,aggV.MD,aggPV.Order,aggPV.MD)}</td><td>${fP2(aggV.HOTO,aggV.MD,aggPV.HOTO,aggPV.MD)}</td>
+    <td>${fP2(aggV.Order,aggV.BQL,aggPV.Order,aggPV.BQL)}</td><td>${fP2(aggV.HOTO,aggV.BQL,aggPV.HOTO,aggPV.BQL)}</td>
     </tr>`:''
   +(()=>{
     const iV=C.india,iPV=C.indiaL,iMH=C.mopMTD(null,'HOTO'),iMO=C.mopMTD(null,'ORDER'),iMB=C.mopMTD(null,'BQL'),iMMS=C.mopMTD(null,'MS'),iMMD=C.mopMTD(null,'MD');
-    return(!tf&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td></tr>`:'';
+    return(!tf&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td><td>${fP2(iV.Order,iV.BQL,iPV.Order,iPV.BQL)}</td><td>${fP2(iV.HOTO,iV.BQL,iPV.HOTO,iPV.BQL)}</td></tr>`:'';
   })();
-  if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mO||C.mopMTD(r.c,'ORDER'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fP2(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td></tr>`).join('');
+  if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mO||C.mopMTD(r.c,'ORDER'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fP2(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td><td>${fP2(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td><td>${fP2(r.v.HOTO,r.v.BQL,r.pv.HOTO,r.pv.BQL)}</td></tr>`).join('');
   setTimeout(()=>autoSort(document.querySelector('#city-tbody')?.closest('table')),50);
 }
 
@@ -5383,6 +5389,42 @@ function aggRows(rows) {
   return r;
 }
 
+// M0 (cohort) version of tfAgg — uses lead-level LD data instead of effort ED data.
+// Same window is used for BQL creation AND the MS/MD/Order/HOTO actions (cohort logic),
+// generalizing the month-bound M0 definition to an arbitrary [from,to] timeframe range.
+function tfAggM0(cityFilter, scFilter) {
+  function agg(from, to) {
+    const leads = LD.filter(l => {
+      if(!l.created || l.created < from || l.created > to) return false;
+      if(cityFilter && l.city !== cityFilter) return false;
+      if(scFilter && l.sc !== scFilter) return false;
+      return true;
+    });
+    const BQL = leads.length;
+    const MS = leads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=from&&getLeadMS(l)<=to).length;
+    const MD = leads.filter(l=>getLeadMD(l)&&getLeadMD(l)>=from&&getLeadMD(l)<=to).length;
+    const Order = leads.filter(l=>l.ordD&&l.ordD>=from&&l.ordD<=to).length;
+    const HOTO = leads.filter(l=>l.hotoD&&l.hotoD>=from&&l.hotoD<=to).length;
+    return {BQL,MS,MD,Order,HOTO};
+  }
+  const cur = agg(TF.from, TF.to);
+
+  let cmpFrom, cmpTo;
+  const days = TF.to - TF.from;
+  if(TF.cmpMode === 'prior') {
+    cmpTo = new Date(TF.from.getTime() - 86400000);
+    cmpFrom = new Date(cmpTo.getTime() - days);
+  } else {
+    cmpFrom = new Date(TF.from); cmpFrom.setFullYear(cmpFrom.getFullYear()-1);
+    cmpTo = new Date(TF.to); cmpTo.setFullYear(cmpTo.getFullYear()-1);
+  }
+  const dataStart = new Date(2025,9,1);
+  const cmpAvailable = cmpTo >= dataStart;
+  const prv = cmpAvailable ? agg(cmpFrom, cmpTo) : {BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+
+  return { cur, prv, cmpFrom, cmpTo, cmpAvailable };
+}
+
 function tfNoBanner() {
   const {cmpFrom, cmpTo, cmpAvailable} = tfAgg(null, null);
   if(cmpAvailable) return '';
@@ -5577,6 +5619,8 @@ function bCityTF() {
     <td>${fpc(indV.MD,indV.MS,indPV.MD,indPV.MS)}</td>
     <td>${fpc(indV.Order,indV.MD,indPV.Order,indPV.MD)}</td>
     <td>${fpc(indV.HOTO,indV.MD,indPV.HOTO,indPV.MD)}</td>
+    <td>${fpc(indV.Order,indV.BQL,indPV.Order,indPV.BQL)}</td>
+    <td>${fpc(indV.HOTO,indV.BQL,indPV.HOTO,indPV.BQL)}</td>
   </tr>`;
 
   const tbl = indRow + rows.map(r=>`<tr>
@@ -5591,6 +5635,8 @@ function bCityTF() {
     <td>${fpc(r.cur.MD,r.cur.MS,r.prv.MD,r.prv.MS)}</td>
     <td>${fpc(r.cur.Order,r.cur.MD,r.prv.Order,r.prv.MD)}</td>
     <td>${fpc(r.cur.HOTO,r.cur.MD,r.prv.HOTO,r.prv.MD)}</td>
+    <td>${fpc(r.cur.Order,r.cur.BQL,r.prv.Order,r.prv.BQL)}</td>
+    <td>${fpc(r.cur.HOTO,r.cur.BQL,r.prv.HOTO,r.prv.BQL)}</td>
   </tr>`).join('');
 
   document.getElementById('p-city').innerHTML=`
@@ -5601,7 +5647,7 @@ ${tfNoBanner()}
 <thead><tr>
   <th>City</th><th>BQL</th><th>MS</th><th>MD</th><th>Order</th><th>HOTO</th>
   <th style="width:8px;background:#e5e7eb"></th>
-  <th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th>
+  <th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th><th>BQL→Ord%</th><th>BQL→HOTO%</th>
 </tr></thead>
 <tbody>${tbl}</tbody>
 </table></div>`;
@@ -5717,72 +5763,147 @@ function bFunnelTF() {
     </div>`;
   }).join('');
 
-  // City-wise funnel with SC sub-breakdown (collapsible)
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const cityFunnels = CITIES
-    .map(c=>({c, tier:TIERS[c]||'', ...tfAgg(c,null)}))
-    .filter(x=>x.cur.BQL>0||x.cur.HOTO>0)
-    .sort((a,b)=>{
-      const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
-      if(tA!==tB)return tA-tB;
-      return b.cur.HOTO-a.cur.HOTO;
-    })
-    .map(({c,tier,cur:cv,prv:pv,cmpAvailable:ca})=>{
-      const bmsC=pN(cv.MS,cv.BQL), mmdC=pN(cv.MD,cv.MS), mdoC=pN(cv.Order,cv.MD), mdhC=pN(cv.HOTO,cv.MD);
-      const pbmsC=ca?pN(pv.MS,pv.BQL):null, pmdoC=ca?pN(pv.Order,pv.MD):null;
-      const ppBadge=(c2,p2)=>p2!=null?`<span class="${(c2-p2)>=0?'green':'red'}" style="font-size:9px">(${(c2-p2)>=0?'+':''}${(c2-p2).toFixed(1)}pp)</span>`:'';
-      // SC breakdown within this city
-      const scRows=SCS.map(s=>{
-        const {cur:sv,prv:spv}=tfAgg(c,s);
-        if(sv.BQL===0&&sv.HOTO===0) return '';
-        const sbmsC=pN(sv.MS,sv.BQL), smmdC=pN(sv.MD,sv.MS), smdoC=pN(sv.Order,sv.MD), smdhC=pN(sv.HOTO,sv.MD);
-        const spbmsC=ca?pN(spv.MS,spv.BQL):null, spmdoC=ca?pN(spv.Order,spv.MD):null;
-        return`<tr style="background:var(--s2)">
-          <td style="padding-left:20px;font-size:11px;color:var(--t2)">${s}</td>
-          <td class="mono" style="font-size:11px">${f(sv.BQL)}</td>
-          <td class="mono" style="font-size:11px">${f(sv.MS)}</td>
-          <td class="mono" style="font-size:11px">${f(sv.MD)}</td>
-          <td class="mono" style="font-size:11px">${f(sv.Order)}</td>
-          <td class="mono" style="font-size:11px">${f(sv.HOTO)}</td>
-          <td style="font-size:11px">${sbmsC.toFixed(1)}%${ppBadge(sbmsC,spbmsC)}</td>
-          <td style="font-size:11px">${smmdC.toFixed(1)}%</td>
-          <td style="font-size:11px">${smdoC.toFixed(1)}%${ppBadge(smdoC,spmdoC)}</td>
-          <td style="font-size:11px">${smdhC.toFixed(1)}%</td>
-        </tr>`;
-      }).join('');
-      return`<div class="coll-wrap"><div class="coll-hd" onclick="tog(this)">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <strong>${c}</strong><span class="ctag">${tier}</span>
-          <span style="font-size:11px;color:var(--t2)">BQL: ${f(cv.BQL)} · HOTO: ${f(cv.HOTO)} · MD→HOTO: ${mdhC.toFixed(1)}% · MD→Ord: ${mdoC.toFixed(1)}%</span>
-          ${ca?mb(cv.HOTO,pv.HOTO):''}
-        </div><span style="color:var(--t3)">▾</span></div>
-        <div class="coll-body">
-        <div class="tw"><table>
-        <thead><tr><th>Segment</th><th>BQL</th><th>MS</th><th>MD</th><th>Order</th><th>HOTO</th><th>BQL→MS%</th><th>MS→MD%</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>
-        <tbody>
-        <tr style="font-weight:700;background:#f0f9ff">
-          <td>${c} Overall</td>
-          <td class="mono">${f(cv.BQL)}</td><td class="mono">${f(cv.MS)}</td><td class="mono">${f(cv.MD)}</td>
-          <td class="mono">${f(cv.Order)}</td><td class="mono">${f(cv.HOTO)}</td>
-          <td>${bmsC.toFixed(1)}%${ppBadge(bmsC,pbmsC)}</td>
-          <td>${mmdC.toFixed(1)}%</td>
-          <td>${mdoC.toFixed(1)}%${ppBadge(mdoC,pmdoC)}</td>
-          <td>${mdhC.toFixed(1)}%</td>
-        </tr>
-        ${scRows}
-        </tbody></table></div>
-        </div></div>`;
-    }).join('');
-
   document.getElementById('p-funnel').innerHTML=`
 <div class="ptitle">Funnel Analysis — Timeframe View</div>
 <div class="psub">📊 ${tfPeriodLabel()} · Action date based${cmpAvailable?' · vs '+tfCmpLabel():''}</div>
 ${tfNoBanner()}
 <div class="card"><div class="ctitle">India Overall Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
-<div class="stitle">City-wise Funnel with Sub-Channel Breakdown <span style="font-size:10px;font-weight:400;color:var(--t3)">(click city to expand SC breakdown)</span></div>
-${cityFunnels}`;
-  autoSort(document.getElementById('p-funnel'));
+<div class="fbar"><select id="tffn-tier" onchange="reFilterFunnelTF()">${tierOpts()}</select><select id="tffn-sc" onchange="reFilterFunnelTF()">${scOpts()}</select></div>
+<div class="stitle">City-wise Funnel — ${tfPeriodLabel()} <span style="font-size:10px;font-weight:400;color:var(--t3)">(filter by tier / sub-channel above)</span></div>
+<div class="tw" id="tffn-city-tbl"></div>`;
+  renderFunnelCityTblTF('','');
 }
+function reFilterFunnelTF(){
+  const tf=document.getElementById('tffn-tier')?.value||'';
+  const sf=document.getElementById('tffn-sc')?.value||'';
+  renderFunnelCityTblTF(sf,tf);
+}
+function renderFunnelCityTblTF(sf,tf){
+  const el=document.getElementById('tffn-city-tbl');if(!el)return;
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const cities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const rows=cities.map(c=>{
+    const {cur:v,prv:pv,cmpAvailable:ca}=tfAgg(c,sf||null);
+    return{c,v,pv,ca,tier:TIERS[c]||''};
+  }).filter(r=>r.v.BQL>0)
+    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.v.HOTO-a.v.HOTO);
+  const mL=(v,pv,ca)=>ca?`<span class="mono ${v>pv?'green':v<pv?'red':''}">${f(v)}</span><span style="font-size:9px;color:var(--t3)" title="Prior period: ${f(pv)}"> / ${f(pv)}</span>`:`<span class="mono">${f(v)}</span>`;
+  const fP=(a,b,pa,pb,ca)=>{if(!b)return'-';const cur2=(a/b*100).toFixed(1),prev=ca&&pb?(pa/pb*100).toFixed(1):null;const cls=prev&&parseFloat(cur2)>=parseFloat(prev)?'green':prev?'red':'';const pp=prev!=null?((parseFloat(cur2)-parseFloat(prev)).toFixed(1)):null;const ppBadge=pp!=null?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';return`<span class="${cls}" title="Current: ${cur2}%${prev?' | Prior: '+prev+'%':''}">${cur2}%${ppBadge}</span>`;};
+  el.innerHTML=`<table>
+<thead>
+<tr>
+  <th rowspan="2">City</th>
+  <th colspan="7" style="text-align:center;background:#e9ecef;color:#1f2937;border-left:2px solid #adb5bd">Absolute — Current / Prior Period</th>
+  <th colspan="4" style="text-align:center;background:#f1f3f6;color:#1f2937;border-left:2px solid #6b7280">Funnel % — vs Prior Period</th>
+</tr>
+<tr>
+  <th style="background:#e9ecef;color:#1f2937;border-left:2px solid #adb5bd">BQL</th><th style="background:#e9ecef;color:#1f2937">BQL Δ</th><th style="background:#e9ecef;color:#1f2937">MS</th><th style="background:#e9ecef;color:#1f2937">MD</th><th style="background:#e9ecef;color:#1f2937">Order</th><th style="background:#e9ecef;color:#1f2937">HOTO</th><th style="background:#e9ecef;color:#1f2937">Ord Δ</th>
+  <th style="background:#f1f3f6;color:#1f2937;border-left:2px solid #6b7280">BQL→MS%</th><th style="background:#f1f3f6;color:#1f2937">MS→MD%</th><th style="background:#f1f3f6;color:#1f2937">MD→Ord%</th><th style="font-weight:600">BQL→Ord%</th>
+</tr>
+</thead>
+<tbody>${rows.map(r=>`<tr>
+  <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
+  <td>${mL(r.v.BQL,r.pv.BQL,r.ca)}</td>
+  <td>${r.ca?mb(r.v.BQL,r.pv.BQL):'<span class="nc">-</span>'}</td>
+  <td>${mL(r.v.MS,r.pv.MS,r.ca)}</td>
+  <td>${mL(r.v.MD,r.pv.MD,r.ca)}</td>
+  <td>${mL(r.v.Order,r.pv.Order,r.ca)}</td>
+  <td>${mL(r.v.HOTO,r.pv.HOTO,r.ca)}</td>
+  <td>${r.ca?mb(r.v.Order,r.pv.Order):'<span class="nc">-</span>'}</td>
+  <td>${fP(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL,r.ca)}</td>
+  <td>${fP(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS,r.ca)}</td>
+  <td>${fP(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD,r.ca)}</td>
+  <td style="font-weight:600">${fP(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL,r.ca)}</td>
+</tr>`).join('')}</tbody></table>`;
+  setTimeout(()=>autoSort(el),50);
+}
+
+// ── M0 (Cohort) Funnel — Timeframe View ────────────────────────────
+function bM0FunnelTF() {
+  const {cur,prv,cmpAvailable} = tfAggM0(null,null);
+  const stages=[
+    {lbl:'BQL',val:cur.BQL,pval:cmpAvailable?prv.BQL:null},
+    {lbl:'MS',val:cur.MS,pval:cmpAvailable?prv.MS:null},
+    {lbl:'MD',val:cur.MD,pval:cmpAvailable?prv.MD:null},
+    {lbl:'Order',val:cur.Order,pval:cmpAvailable?prv.Order:null},
+    {lbl:'HOTO',val:cur.HOTO,pval:cmpAvailable?prv.HOTO:null},
+  ];
+  const maxV=Math.max(...stages.map(s=>s.val),1);
+  const stagesHtml=stages.map((s,i)=>{
+    const pct=Math.round(s.val/maxV*100);
+    const convPct=i>0?pN(s.val,stages[i-1].val).toFixed(1):null;
+    const pConvPct=i>0&&s.pval!=null&&stages[i-1].pval?pN(s.pval,stages[i-1].pval).toFixed(1):null;
+    const diff=convPct&&pConvPct?(parseFloat(convPct)-parseFloat(pConvPct)).toFixed(1):null;
+    return`<div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:700;width:50px">${s.lbl}</span>
+        <div style="flex:1;background:var(--s2);border-radius:4px;height:28px;position:relative;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:#7c3aed;border-radius:4px;opacity:.85"></div>
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:#fff;font-family:'DM Mono',monospace">${f(s.val)}</span>
+        </div>
+        ${s.pval!=null?`<span style="font-size:10px;color:var(--t2);min-width:60px">${mb(s.val,s.pval)}</span>`:''}
+      </div>
+      ${convPct!=null?`<div style="margin-left:58px;font-size:10px;color:var(--t3)">→ ${convPct}% conversion${diff!=null?` <span class="${parseFloat(diff)>=0?'green':'red'}">(${parseFloat(diff)>=0?'+':''}${diff}pp vs prior)</span>`:''}</div>`:''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('p-m0funnel').innerHTML=`
+<div class="ptitle">Funnel Analysis — M0 (Cohort) · Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Same-window cohort: lead created in range AND stage action also in range${cmpAvailable?' · vs '+tfCmpLabel():''}</div>
+${(()=>{ if(cmpAvailable) return ''; const fmt=d=>d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+  const {cmpFrom,cmpTo}=tfAggM0(null,null);
+  return`<div class="tf-no-data-banner">⚠️ Prior comparison period (${fmt(cmpFrom)}–${fmt(cmpTo)}) is outside available data (from Oct'25). Showing current period only.</div>`; })()}
+<div class="card"><div class="ctitle">India Overall M0 Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
+<div class="fbar"><select id="tfm0-tier" onchange="reFilterM0TF()">${tierOpts()}</select><select id="tfm0-sc" onchange="reFilterM0TF()">${scOpts()}</select></div>
+<div class="stitle">City-wise M0 Funnel — ${tfPeriodLabel()} <span style="font-size:10px;font-weight:400;color:var(--t3)">(filter by tier / sub-channel above)</span></div>
+<div class="tw" id="tfm0-city-tbl"></div>`;
+  renderM0CityTblTF('','');
+}
+function reFilterM0TF(){
+  const tf=document.getElementById('tfm0-tier')?.value||'';
+  const sf=document.getElementById('tfm0-sc')?.value||'';
+  renderM0CityTblTF(sf,tf);
+}
+function renderM0CityTblTF(sf,tf){
+  const el=document.getElementById('tfm0-city-tbl');if(!el)return;
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const cities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const rows=cities.map(c=>{
+    const {cur:v,prv:pv,cmpAvailable:ca}=tfAggM0(c,sf||null);
+    return{c,v,pv,ca,tier:TIERS[c]||''};
+  }).filter(r=>r.v.BQL>0)
+    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.v.HOTO-a.v.HOTO);
+  const mL=(v,pv,ca)=>ca?`<span class="mono ${v>pv?'green':v<pv?'red':''}">${f(v)}</span><span style="font-size:9px;color:var(--t3)" title="Prior period: ${f(pv)}"> / ${f(pv)}</span>`:`<span class="mono">${f(v)}</span>`;
+  const fP=(a,b,pa,pb,ca)=>{if(!b)return'-';const cur2=(a/b*100).toFixed(1),prev=ca&&pb?(pa/pb*100).toFixed(1):null;const cls=prev&&parseFloat(cur2)>=parseFloat(prev)?'green':prev?'red':'';const pp=prev!=null?((parseFloat(cur2)-parseFloat(prev)).toFixed(1)):null;const ppBadge=pp!=null?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';return`<span class="${cls}" title="Current: ${cur2}%${prev?' | Prior: '+prev+'%':''}">${cur2}%${ppBadge}</span>`;};
+  el.innerHTML=`<table>
+<thead>
+<tr>
+  <th rowspan="2">City</th>
+  <th colspan="7" style="text-align:center;background:#eff6ff;color:#1a56db">Absolute — Current / Prior Period (M0)</th>
+  <th colspan="4" style="text-align:center;background:#f0fdf4;color:#166534">Funnel % — vs Prior Period (M0)</th>
+</tr>
+<tr>
+  <th style="background:#eff6ff">BQL</th><th style="background:#eff6ff">BQL Δ</th><th style="background:#eff6ff">MS</th><th style="background:#eff6ff">MD</th><th style="background:#eff6ff">Order</th><th style="background:#eff6ff">HOTO</th><th style="background:#eff6ff">Ord Δ</th>
+  <th style="background:#f0fdf4">BQL→MS%</th><th style="background:#f0fdf4">MS→MD%</th><th style="background:#f0fdf4">MD→Ord%</th><th style="background:#f0fdf4;font-weight:600">BQL→Ord%</th>
+</tr>
+</thead>
+<tbody>${rows.map(r=>`<tr>
+  <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
+  <td>${mL(r.v.BQL,r.pv.BQL,r.ca)}</td>
+  <td>${r.ca?mb(r.v.BQL,r.pv.BQL):'<span class="nc">-</span>'}</td>
+  <td>${mL(r.v.MS,r.pv.MS,r.ca)}</td>
+  <td>${mL(r.v.MD,r.pv.MD,r.ca)}</td>
+  <td>${mL(r.v.Order,r.pv.Order,r.ca)}</td>
+  <td>${mL(r.v.HOTO,r.pv.HOTO,r.ca)}</td>
+  <td>${r.ca?mb(r.v.Order,r.pv.Order):'<span class="nc">-</span>'}</td>
+  <td>${fP(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL,r.ca)}</td>
+  <td>${fP(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS,r.ca)}</td>
+  <td>${fP(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD,r.ca)}</td>
+  <td style="font-weight:600">${fP(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL,r.ca)}</td>
+</tr>`).join('')}</tbody></table>`;
+  setTimeout(()=>autoSort(el),50);
+}
+
 
 function bDoDTF() {
   // Day-on-Day in timeframe mode: show each date in range
