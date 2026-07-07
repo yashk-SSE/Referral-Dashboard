@@ -366,6 +366,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <span class="mob-tab" onclick="sw('sc',this)">Sub-Channel</span>
   <span class="mob-tab" onclick="sw('funnel',this)">Effort Funnel</span>
   <span class="mob-tab" onclick="sw('m0funnel',this)">M0 Funnel</span>
+  <span class="mob-tab" onclick="sw('bqlq',this)">BQL Quality</span>
   <span class="mob-tab" onclick="sw('vel',this)">Velocity</span>
   <span class="mob-tab" onclick="sw('wow',this)">WoW Cohort</span>
   <span class="mob-tab" onclick="sw('ins',this)">Insights</span>
@@ -387,6 +388,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     <div class="ni" onclick="sw('india',this)">◈ India Summary</div>
     <div class="ni" onclick="sw('funnel',this)">▽ Funnel (Effort)</div>
     <div class="ni" onclick="sw('m0funnel',this)">▽ Funnel (M0)</div>
+    <div class="ni" onclick="sw('bqlq',this)">◆ BQL Quality</div>
   </div>
   <div class="sh" onclick="toggleNavGroup(this)">Deep Dive<span class="sh-arrow">▾</span></div>
   <div class="nav-group">
@@ -480,6 +482,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-sc" class="panel"></div>
   <div id="p-funnel" class="panel"></div>
   <div id="p-m0funnel" class="panel"></div>
+  <div id="p-bqlq" class="panel"></div>
   <div id="p-vel" class="panel"></div>
   <div id="p-wow" class="panel"></div>
   <div id="p-aging" class="panel"></div>
@@ -616,6 +619,52 @@ function getMD(r){return METRIC_SEL.md==='total'?(r.MD_Total||0):(r.MD_First||0)
 function getLeadMS(l){return METRIC_SEL.ms==='total'?l.msDTotal:l.msD;}
 function getLeadMD(l){return METRIC_SEL.md==='total'?l.mdDTotal:l.mdD;}
 
+// ── BQL Quality: New-definition segmentation ────────────────────────
+// Old rule: Pincode Active AND Bill >=1500  (= "Core")
+// New rule adds: Null Pincode, and/or Null/<1500 Bill — segmented below.
+const BQL_SEGMENTS=[
+  {key:'Core',              label:'Core',                    full:'Core (Active Pin + Bill \u22651500)', color:'#1a56db'},
+  {key:'ActivePin_LowBill', label:'Active Pin, Bill <1500',  full:'Active Pincode + Bill <1500',        color:'#f59e0b'},
+  {key:'ActivePin_NullBill',label:'Active Pin, Null Bill',   full:'Active Pincode + Null Bill',         color:'#f59e0b'},
+  {key:'NullPin_ActiveBill',label:'Null Pin, Active Bill',   full:'Null Pincode + Bill \u22651500',     color:'#f59e0b'},
+  {key:'NullPin_LowBill',   label:'Null Pin, Bill <1500',    full:'Null Pincode + Bill <1500',          color:'#dc2626'},
+  {key:'NullPin_NullBill',  label:'Null Pin, Null Bill',     full:'Null Pincode + Null Bill',           color:'#dc2626'},
+];
+function billIsLow(b){return b==='<1500'||b==='< 1500';}
+function getBQLSegment(l){
+  if(l.bqlOld) return 'Core';
+  const pinActive=l.pincodeStatus==='Active';
+  const billNull=!l.billBucket;
+  const billLow=billIsLow(l.billBucket);
+  if(pinActive&&billLow) return 'ActivePin_LowBill';
+  if(pinActive&&billNull) return 'ActivePin_NullBill';
+  if(!pinActive&&billLow) return 'NullPin_LowBill';
+  if(!pinActive&&billNull) return 'NullPin_NullBill';
+  if(!pinActive&&!billNull&&!billLow) return 'NullPin_ActiveBill';
+  return 'Other'; // safety net for any unclassifiable edge case
+}
+const segOpts=()=>`<option value="">All (BQL_New)</option>${BQL_SEGMENTS.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}`;
+// M0 (cohort) aggregation by segment: BQL = leads created in [ms,me];
+// MS/MD/Order/HOTO = same leads whose action also falls in [ms,me].
+// cityArr/scArr: null or [] = no filter (all).
+function aggM0BySegment(ms,me,cityArr,scArr){
+  const out={};
+  BQL_SEGMENTS.forEach(s=>out[s.key]={BQL:0,MS:0,MD:0,Order:0,HOTO:0});
+  out.Other={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+  LD.forEach(l=>{
+    if(!l.created||l.created<ms||l.created>me)return;
+    if(cityArr&&cityArr.length&&!cityArr.includes(l.city))return;
+    if(scArr&&scArr.length&&!scArr.includes(l.sc))return;
+    const seg=out[getBQLSegment(l)]||out.Other;
+    seg.BQL++;
+    if(getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me)seg.MS++;
+    if(getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me)seg.MD++;
+    if(l.ordD&&l.ordD>=ms&&l.ordD<=me)seg.Order++;
+    if(l.hotoD&&l.hotoD>=ms&&l.hotoD<=me)seg.HOTO++;
+  });
+  return out;
+}
+
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
 async function fetchJSON(filename){
@@ -738,7 +787,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
+  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -753,7 +802,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -798,7 +847,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
+  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -1124,7 +1173,8 @@ async function init(){
 
     // ── Lead data: JSON rows → LD[] ───────────────────────────────────────
     // Fields: city, sub_channel, created, first_ms_date, first_md_date,
-    //         total_ms_date, total_md_date, ordD, hotoD
+    //         total_ms_date, total_md_date, ordD, hotoD,
+    //         pincode_status, monthly_bill_value, BQL_Old, BQL_New (for segmentation)
     LD=lR.map(r=>({
       city:     cityFix((r.city||'').trim()),
       sc:       (r.sub_channel||'').trim(),
@@ -1134,7 +1184,11 @@ async function init(){
       msDTotal: pd(r.total_ms_date),   // Total MS date
       mdDTotal: pd(r.total_md_date),   // Total MD date
       ordD:     pd(r.ordD),
-      hotoD:    pd(r.hotoD)
+      hotoD:    pd(r.hotoD),
+      pincodeStatus: r.pincode_status||null,
+      billBucket:    r.monthly_bill_value||null,
+      bqlOld:   r.BQL_Old==='Yes',
+      bqlNew:   r.BQL_New==='Yes'
     })).filter(r=>r.city);
 
     console.log(`Loaded: ED=${ED.length} rows, LD=${LD.length} rows`);
@@ -2559,6 +2613,197 @@ function renderFunnelCityTbl(cf,sf,cityArr,tf){
   <td>${fP(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td>
   <td style="font-weight:600">${fP(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td>
 </tr>`).join('')}</tbody></table></div>`;
+}
+
+// ??????????????????????????????????????
+// BQL QUALITY — New-definition segmentation vs Core
+// ??????????????????????????????????????
+function bBQLQ(){
+  document.getElementById('p-bqlq').innerHTML=`<div class="ptitle">BQL Quality — New-Definition Segments</div>
+<div class="psub">M0 (cohort) basis . Core = old BQL rule (Active Pin + Bill \u22651500) . other segments = incremental leads only counted since the BQL_New expansion</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:8px">
+  <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Core</span>
+  <span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:5px;font-weight:600">Amber = 1 field missing/low (Pincode or Bill)</span>
+  <span style="background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:5px;font-weight:600">Red = both fields missing/low (worst expected funnel)</span>
+  <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">pp deltas are vs Core, same period</span>
+</div>
+<div class="fbar"><select id="bq-tier" onchange="reFilterBQLQ()">${tierOpts()}</select><span id="bq-city-mc-wrap"></span><select id="bq-sc" onchange="reFilterBQLQ()">${scOpts()}</select></div>
+<div class="stitle">Segment Scorecard — Current Month (M0) <span style="font-weight:400;font-size:10px;color:var(--t3)">(BQL created this month, MS/MD/Order/HOTO also this month)</span></div>
+<div class="tw" id="bq-scorecard"></div>
+<div class="stitle" style="margin-top:14px">Composition Trend — Full Month (6M) <span style="font-weight:400;font-size:10px;color:var(--t3)">(is the incremental pool growing as a share of total BQL_New?)</span></div>
+<div class="cwrap" style="height:220px"><canvas id="bq-comp-chart" role="img" aria-label="BQL segment composition trend">Segment composition trend.</canvas></div>
+<div class="tw" id="bq-comp-tbl" style="margin-top:8px"></div>
+<div class="stitle" style="margin-top:14px">Segment Funnel Trend <span style="font-weight:400;font-size:10px;color:var(--t3)">(pick a segment to see its 6-month Full Month + MTD trend, same layout as Funnel (M0))</span></div>
+<div class="fbar"><select id="bq-seg-sel" onchange="reFilterBQLQTrend()">${segOpts()}</select></div>
+<div class="stitle">Full Month</div><div class="tw" id="bq-seg-full-tbl"></div>
+<div class="stitle">MTD (apple-to-apple)</div><div class="tw" id="bq-seg-mtd-tbl"></div>
+<div class="stitle" style="margin-top:14px">City \u00d7 Segment — Current Month (M0) <span style="font-weight:400;font-size:10px;color:var(--t3)">(sorted by tier, then by incremental share desc)</span></div>
+<div class="tw" id="bq-city-tbl"></div>
+<div class="stitle" style="margin-top:14px">Sub-Channel \u00d7 Segment — Current Month (M0)</div>
+<div class="tw" id="bq-sc-tbl"></div>`;
+  const bqMCW=document.getElementById('bq-city-mc-wrap');
+  if(bqMCW&&!bqMCW.dataset.init){bqMCW.dataset.init='1';const mc=buildMultiCity('bq-city',()=>reFilterBQLQ());bqMCW.appendChild(mc);}
+  reFilterBQLQ();
+  reFilterBQLQTrend();
+}
+function reFilterBQLQ(){
+  const cfArr=getMCVal('bq-city'),tf=document.getElementById('bq-tier')?.value||'';
+  const sfv=document.getElementById('bq-sc')?.value||'';
+  const scArr=sfv?[sfv]:null;
+  const effectiveCfArr=cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):null);
+  renderBQLScorecard(effectiveCfArr,scArr);
+  renderBQLComposition(effectiveCfArr,scArr);
+  renderBQLCityTable(effectiveCfArr,tf,scArr);
+  renderBQLSCTable(effectiveCfArr,scArr);
+}
+function reFilterBQLQTrend(){
+  const cfArr=getMCVal('bq-city'),tf=document.getElementById('bq-tier')?.value||'';
+  const sfv=document.getElementById('bq-sc')?.value||'';
+  const scArr=sfv?[sfv]:null;
+  const effectiveCfArr=cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):null);
+  const segKey=document.getElementById('bq-seg-sel')?.value||'';
+  renderBQLSegmentTrend(effectiveCfArr,scArr,segKey);
+}
+// ── Scorecard: current-month M0, all segments, Core pinned top ──────
+function renderBQLScorecard(cityArr,scArr){
+  const el=document.getElementById('bq-scorecard');if(!el)return;
+  const yd=C.yd,ms=MS0(yd);
+  const seg=aggM0BySegment(ms,yd,cityArr,scArr);
+  const core=seg.Core;
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core').sort((a,b)=>seg[b.key].BQL-seg[a.key].BQL);
+  const ordered=[BQL_SEGMENTS[0],...others];
+  const ppBadge=(cur,base,isCore)=>{
+    if(isCore)return'';
+    const d=(cur-base);
+    return `<span class="${d>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${d>=0?'+':''}${d.toFixed(1)}pp)</span>`;
+  };
+  const rows=ordered.map(s=>{
+    const v=seg[s.key];const isCore=s.key==='Core';
+    const bMs=pN(v.MS,v.BQL),mMd=pN(v.MD,v.MS),mdo=pN(v.Order,v.MD),bOrd=pN(v.Order,v.BQL);
+    const cBMs=pN(core.MS,core.BQL),cMMd=pN(core.MD,core.MS),cMdo=pN(core.Order,core.MD),cBOrd=pN(core.Order,core.BQL);
+    return`<tr ${isCore?'style="font-weight:700;background:#eff6ff"':''}>
+      <td>${isCore?'<strong>'+s.full+'</strong>':`<span title="${s.full}">${s.label}</span>`}</td>
+      <td class="mono">${f(v.BQL)}</td>
+      <td class="mono">${f(v.MS)}</td>
+      <td>${bMs.toFixed(1)}%${ppBadge(bMs,cBMs,isCore)}</td>
+      <td class="mono">${f(v.MD)}</td>
+      <td>${mMd.toFixed(1)}%${ppBadge(mMd,cMMd,isCore)}</td>
+      <td class="mono">${f(v.Order)}</td>
+      <td>${mdo.toFixed(1)}%${ppBadge(mdo,cMdo,isCore)}</td>
+      <td style="font-weight:600">${bOrd.toFixed(1)}%${ppBadge(bOrd,cBOrd,isCore)}</td>
+      <td class="mono">${f(v.HOTO)}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=`<table><thead><tr>
+    <th>Segment</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL\u2192MS%</th><th>MD</th><th style="white-space:normal">MS\u2192MD%</th><th>Order</th><th style="white-space:normal">MD\u2192Ord%</th><th style="white-space:normal">BQL\u2192Ord%</th><th>HOTO</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+// ── Composition trend: 6-month Full Month, segment volumes ──────────
+function renderBQLComposition(cityArr,scArr){
+  const chartEl=document.getElementById('bq-comp-chart'),tblEl=document.getElementById('bq-comp-tbl');
+  if(!chartEl||!tblEl)return;
+  const months=C.months,yd=C.yd;
+  const monthData=months.map(mo=>{
+    const isCurMo=(mo.y===yd.getFullYear()&&mo.m===yd.getMonth()+1);
+    const ms=new Date(mo.y,mo.m-1,1);
+    const me=isCurMo?yd:new Date(mo.y,mo.m,0);
+    return{mo,seg:aggM0BySegment(ms,me,cityArr,scArr)};
+  });
+  if(chartInst.bqComp)chartInst.bqComp.destroy();
+  chartInst.bqComp=new Chart(chartEl,{type:'bar',data:{
+    labels:monthData.map(d=>d.mo.lbl),
+    datasets:BQL_SEGMENTS.map(s=>({label:s.label,data:monthData.map(d=>d.seg[s.key].BQL),backgroundColor:s.color}))
+  },options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}},plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}}}});
+  const rows=monthData.map(({mo,seg})=>{
+    const total=BQL_SEGMENTS.reduce((s,x)=>s+seg[x.key].BQL,0)+seg.Other.BQL;
+    const incr=total-seg.Core.BQL;
+    const incrPct=total?(incr/total*100):0;
+    return`<tr><td style="font-weight:600">${mo.lbl}</td>${BQL_SEGMENTS.map(s=>`<td class="mono">${f(seg[s.key].BQL)}</td>`).join('')}<td style="font-weight:700" class="mono">${f(total)}</td><td style="font-weight:600">${incrPct.toFixed(1)}%</td></tr>`;
+  }).join('');
+  tblEl.innerHTML=`<table><thead><tr><th style="white-space:normal;max-width:80px">Month</th>${BQL_SEGMENTS.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total BQL_New</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rows}</tbody></table>`;
+  setTimeout(()=>autoSort(tblEl),50);
+}
+// ── Segment trend: Full Month + MTD, 6-month, one segment at a time ─
+function renderBQLSegmentTrend(cityArr,scArr,segKey){
+  const fullEl=document.getElementById('bq-seg-full-tbl'),mtdEl=document.getElementById('bq-seg-mtd-tbl');
+  if(!fullEl||!mtdEl)return;
+  const months=C.months,yd=C.yd,mtdDay=yd.getDate();
+  const th=`<thead><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL\u2192MS%</th><th>MD</th><th style="white-space:normal">MS\u2192MD%</th><th>Order</th><th style="white-space:normal">MD\u2192Ord%</th><th style="white-space:normal">BQL\u2192Ord%</th><th>HOTO</th></tr></thead>`;
+  function pickSeg(agg){return segKey?agg[segKey]:BQL_SEGMENTS.reduce((s,x)=>({BQL:s.BQL+agg[x.key].BQL,MS:s.MS+agg[x.key].MS,MD:s.MD+agg[x.key].MD,Order:s.Order+agg[x.key].Order,HOTO:s.HOTO+agg[x.key].HOTO}),{BQL:0,MS:0,MD:0,Order:0,HOTO:0});}
+  function row(r,p,lbl,isCur){
+    const bMs=pN(r.MS,r.BQL).toFixed(1),pBMs=pN(p.MS,p.BQL).toFixed(1);
+    const mMd=pN(r.MD,r.MS).toFixed(1),pMMd=pN(p.MD,p.MS).toFixed(1);
+    const mO=pN(r.Order,r.MD).toFixed(1),pMO=pN(p.Order,p.MD).toFixed(1);
+    const bOrd=pN(r.Order,r.BQL).toFixed(1),pBOrd=pN(p.Order,p.BQL).toFixed(1);
+    return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${lbl}${isCur?' <span class="badge bb">Current</span>':''}</td>
+    <td>${isCur?cv(r.BQL,p.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td>
+    <td>${isCur?cv(r.MS,p.MS):`<span class="mono">${f(r.MS)}</span>`}</td>
+    <td title="Current: ${bMs}% | Prior: ${pBMs}%"><span class="${isCur?(parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'):''}">${bMs}%</span></td>
+    <td>${isCur?cv(r.MD,p.MD):`<span class="mono">${f(r.MD)}</span>`}</td>
+    <td title="Current: ${mMd}% | Prior: ${pMMd}%"><span class="${isCur?(parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'):''}">${mMd}%</span></td>
+    <td>${isCur?cv(r.Order,p.Order):`<span class="mono">${f(r.Order)}</span>`}</td>
+    <td title="Current: ${mO}% | Prior: ${pMO}%"><span class="${isCur?(parseFloat(mO)>=parseFloat(pMO)?'green':'red'):''}">${mO}%</span></td>
+    <td style="font-weight:600" title="Current: ${bOrd}% | Prior: ${pBOrd}%"><span class="${isCur?(parseFloat(bOrd)>=parseFloat(pBOrd)?'green':'red'):''}">${bOrd}%</span></td>
+    <td class="mono">${f(r.HOTO)}</td></tr>`;
+  }
+  const fullData=months.map(mo=>{
+    const isCurMo=(mo.y===yd.getFullYear()&&mo.m===yd.getMonth()+1);
+    const ms=new Date(mo.y,mo.m-1,1);
+    const me=isCurMo?yd:new Date(mo.y,mo.m,0);
+    return pickSeg(aggM0BySegment(ms,me,cityArr,scArr));
+  });
+  const mtdData=months.map(mo=>{
+    const isCurMo=(mo.y===yd.getFullYear()&&mo.m===yd.getMonth()+1);
+    const ms=new Date(mo.y,mo.m-1,1);
+    const me=isCurMo?yd:new Date(mo.y,mo.m-1,mtdDay);
+    return pickSeg(aggM0BySegment(ms,me,cityArr,scArr));
+  });
+  const fullRows=fullData.map((r,i)=>row(r,i>0?fullData[i-1]:{BQL:0,MS:0,MD:0,Order:0,HOTO:0},months[i].lbl,i===months.length-1)).join('');
+  const mtdRows=mtdData.map((r,i)=>row(r,i>0?mtdData[i-1]:{BQL:0,MS:0,MD:0,Order:0,HOTO:0},months[i].lbl,i===months.length-1)).join('');
+  fullEl.innerHTML=`<table style="table-layout:fixed;width:100%">${th}<tbody>${fullRows}</tbody></table>`;
+  mtdEl.innerHTML=`<table style="table-layout:fixed;width:100%">${th}<tbody>${mtdRows}</tbody></table>`;
+}
+// ── City x Segment — current month M0 ────────────────────────────────
+function renderBQLCityTable(cityArr,tf,scArr){
+  const el=document.getElementById('bq-city-tbl');if(!el)return;
+  const yd=C.yd,ms=MS0(yd);
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const cities=cityArr&&cityArr.length?cityArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
+  const rows=cities.map(c=>{
+    const seg=aggM0BySegment(ms,yd,[c],scArr);
+    const total=BQL_SEGMENTS.reduce((s,x)=>s+seg[x.key].BQL,0)+seg.Other.BQL;
+    const incrShare=total?((total-seg.Core.BQL)/total*100):0;
+    return{c,tier:TIERS[c]||'',seg,total,incrShare};
+  }).filter(r=>r.total>0)
+    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.incrShare-a.incrShare);
+  const rowsHtml=rows.map(r=>`<tr>
+    <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
+    ${BQL_SEGMENTS.map(s=>`<td class="mono">${f(r.seg[s.key].BQL)}</td>`).join('')}
+    <td style="font-weight:700" class="mono">${f(r.total)}</td>
+    <td style="font-weight:600" class="${r.incrShare>=30?'red':r.incrShare>=15?'amber':'green'}">${r.incrShare.toFixed(1)}%</td>
+  </tr>`).join('');
+  el.innerHTML=`<table><thead><tr><th>City</th>${BQL_SEGMENTS.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  setTimeout(()=>autoSort(el),50);
+}
+// ── Sub-Channel x Segment — current month M0 ─────────────────────────
+function renderBQLSCTable(cityArr,scArr){
+  const el=document.getElementById('bq-sc-tbl');if(!el)return;
+  const yd=C.yd,ms=MS0(yd);
+  const scs=scArr&&scArr.length?scArr:SCS;
+  const rows=scs.map(s=>{
+    const seg=aggM0BySegment(ms,yd,cityArr,[s]);
+    const total=BQL_SEGMENTS.reduce((a,x)=>a+seg[x.key].BQL,0)+seg.Other.BQL;
+    const incrShare=total?((total-seg.Core.BQL)/total*100):0;
+    return{s,seg,total,incrShare};
+  }).filter(r=>r.total>0).sort((a,b)=>b.incrShare-a.incrShare);
+  const rowsHtml=rows.map(r=>`<tr>
+    <td style="font-weight:600">${r.s}</td>
+    ${BQL_SEGMENTS.map(x=>`<td class="mono">${f(r.seg[x.key].BQL)}</td>`).join('')}
+    <td style="font-weight:700" class="mono">${f(r.total)}</td>
+    <td style="font-weight:600" class="${r.incrShare>=30?'red':r.incrShare>=15?'amber':'green'}">${r.incrShare.toFixed(1)}%</td>
+  </tr>`).join('');
+  el.innerHTML=`<table><thead><tr><th>Sub-Channel</th>${BQL_SEGMENTS.map(x=>`<th style="white-space:normal;max-width:70px" title="${x.full}">${x.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  setTimeout(()=>autoSort(el),50);
 }
 
 // ??????????????????????????????????????
