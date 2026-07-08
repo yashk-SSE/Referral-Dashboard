@@ -847,6 +847,7 @@ function buildTab(t){
       case 'funnel': bFunnelTF(); rendered[t]=true; return;
       case 'm0funnel': bM0FunnelTF(); rendered[t]=true; return;
       case 'dod': bDoDTF(); rendered[t]=true; return;
+      case 'dodfunnel': bDoDFunnelTF(); rendered[t]=true; return;
       case 'mop':
         // MOP tab: show message
         document.getElementById('p-mop').innerHTML=`
@@ -4559,19 +4560,29 @@ function renderDoDFunnel(){
     return true;
   });
 
+  const anchor=new Date(curMo.y,curMo.m-1,1);
+  const totalDays=Math.min(daysInMonth,todayD);
+  el.innerHTML=buildDoDFunnelHtml(leads,anchor,totalDays);
+}
+
+// ── Shared core: builds the BQL→MS→MD→Order day-matrix HTML for any date window ──
+// anchor = the date that counts as "Day 1" (month start, or TF.from for Timeframe mode)
+// totalDays = how many day-columns to render (days in month capped at today, or TF range length)
+function buildDoDFunnelHtml(leads,anchor,totalDays){
+  const anchor0=new Date(anchor);anchor0.setHours(0,0,0,0);
+
   function dayOf(d){
     if(!d)return -1;
     const t=new Date(d);t.setHours(0,0,0,0);
-    if(t.getFullYear()===curMo.y&&t.getMonth()+1===curMo.m)return t.getDate();
-    return -1;
+    const diff=Math.round((t-anchor0)/86400000)+1;
+    return(diff>=1&&diff<=totalDays)?diff:-1;
   }
 
-  // Build 31x31 matrix (% of row total) plus D1-3 and D1-7 summaries
+  // Build 31x31-style matrix (% of row total) plus D1-3 and D1-7 summaries
   function buildDayMatrix(startFn,endFn){
-    // pct[startDay-1][endDay-1] = count → will be converted to %
-    const cnt=Array.from({length:31},()=>new Array(31).fill(0));
-    const rowTotals=new Array(31).fill(0);
-    const rowConv=new Array(31).fill(0);
+    const cnt=Array.from({length:totalDays},()=>new Array(totalDays).fill(0));
+    const rowTotals=new Array(totalDays).fill(0);
+    const rowConv=new Array(totalDays).fill(0);
 
     leads.forEach(l=>{
       const sd=startFn(l);
@@ -4583,16 +4594,13 @@ function renderDoDFunnel(){
       if(edDay>=sdDay){cnt[sdDay-1][edDay-1]++;rowConv[sdDay-1]++;}
     });
 
-    // Convert counts to % of row total
     const pct=cnt.map((row,ri)=>row.map(c=>rowTotals[ri]>0?c/rowTotals[ri]*100:0));
 
-    // D1-3: endDay - startDay <= 2 (converted within 3 days: 0,1,2 days lag)
     const d3=rowTotals.map((_,ri)=>{
       const n=rowTotals[ri];if(!n)return null;
       const s=cnt[ri].reduce((acc,c,ci)=>ci>=ri&&ci-ri<=2?acc+c:acc,0);
       return s/n*100;
     });
-    // D1-7: endDay - startDay <= 6
     const d7=rowTotals.map((_,ri)=>{
       const n=rowTotals[ri];if(!n)return null;
       const s=cnt[ri].reduce((acc,c,ci)=>ci>=ri&&ci-ri<=6?acc+c:acc,0);
@@ -4613,7 +4621,7 @@ function renderDoDFunnel(){
 
   function matrixTable(stg){
     const {pct,rowTotals,rowConv,d3,d7}=buildDayMatrix(stg.startFn,stg.endFn);
-    const maxDay=Math.min(daysInMonth,todayD);
+    const maxDay=totalDays;
     const col=stg.color;
 
     // RGB for color scaling
@@ -4695,7 +4703,45 @@ function renderDoDFunnel(){
     </table></div>`;
   }
 
-  el.innerHTML=stages.map(matrixTable).join('');
+  return stages.map(matrixTable).join('');
+}
+
+// ── DoD Funnel — Timeframe View ──────────────────────────────────────
+function bDoDFunnelTF(){
+  document.getElementById('p-dodfunnel').innerHTML=`
+<div class="ptitle">Day-on-Day Funnel Cohort — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · Day 1 = start of selected range · Row = day lead entered start stage · Column = day they converted</div>
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:8px 12px;font-size:11px;color:#1e40af;margin-bottom:12px">
+  <strong>How to read:</strong> Day 1 = the first day of your selected Timeframe. Each row = the day a lead entered the source stage. Each column = the day they converted. Cell shows <strong>%</strong> of that row's leads. Diagonal = same-day conversion.
+</div>
+<div class="fbar">
+  <select id="tfdodf-tier" onchange="renderDoDFunnelTF()">${tierOpts()}</select>
+  <select id="tfdodf-sc" onchange="renderDoDFunnelTF()">${scOpts()}</select>
+</div>
+<div id="tfdodf-body"></div>`;
+  renderDoDFunnelTF();
+}
+function renderDoDFunnelTF(){
+  const tf=document.getElementById('tfdodf-tier')?.value||'';
+  const sf=document.getElementById('tfdodf-sc')?.value||'';
+  const el=document.getElementById('tfdodf-body');
+  if(!el)return;
+
+  // Same leniency as the current-month version: only require l.created to exist —
+  // dayOf() (inside buildDoDFunnelHtml) independently decides per-stage whether a
+  // lead's row/column date actually falls inside the selected window.
+  const leads=LD.filter(l=>{
+    if(!l.created)return false;
+    if(sf&&l.sc!==sf)return false;
+    if(tf&&TIERS[l.city]!==tf)return false;
+    return true;
+  });
+
+  const fullRangeDays=Math.round((TF.to-TF.from)/86400000)+1;
+  const CAP=45;
+  const totalDays=Math.min(fullRangeDays,CAP);
+  const capNote=fullRangeDays>CAP?`<div class="tf-mop-banner" style="margin-bottom:10px">⚠️ Selected range is ${fullRangeDays} days — showing only the first ${CAP} (day-by-day matrices get unreadable beyond ~${CAP} columns). Narrow the Timeframe for a complete view of the rest.</div>`:'';
+  el.innerHTML=capNote+buildDoDFunnelHtml(leads,TF.from,totalDays);
 }
 
 // ================================================================
