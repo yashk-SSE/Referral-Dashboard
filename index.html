@@ -846,6 +846,7 @@ function buildTab(t){
       case 'sc': bSCTF(); rendered[t]=true; return;
       case 'funnel': bFunnelTF(); rendered[t]=true; return;
       case 'm0funnel': bM0FunnelTF(); rendered[t]=true; return;
+      case 'bqlq': bBQLQTF(); rendered[t]=true; return;
       case 'dod': bDoDTF(); rendered[t]=true; return;
       case 'dodfunnel': bDoDFunnelTF(); rendered[t]=true; return;
       case 'mop':
@@ -2850,6 +2851,124 @@ function renderBQLSCTable(cityArr,scArr){
   const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=scs.map(s=>{
     const seg=aggM0BySegment(ms,yd,cityArr,[s]);
+    const total=BQL_SEGMENTS.reduce((a,x)=>a+seg[x.key].BQL,0)+seg.Other.BQL;
+    const nonCoreBQL=sumSegKeys(seg,NON_CORE_KEYS).BQL;
+    const incrShare=total?(nonCoreBQL/total*100):0;
+    return{s,seg,total,nonCoreBQL,incrShare};
+  }).filter(r=>r.total>0).sort((a,b)=>b.incrShare-a.incrShare);
+  const rowsHtml=rows.map(r=>`<tr>
+    <td style="font-weight:600">${r.s}</td>
+    <td class="mono" style="font-weight:700">${f(r.seg.Core.BQL)}</td>
+    <td class="mono" style="font-weight:700;background:#fffbeb">${f(r.nonCoreBQL)}</td>
+    ${others.map(x=>`<td class="mono">${f(r.seg[x.key].BQL)}</td>`).join('')}
+    <td style="font-weight:700" class="mono">${f(r.total)}</td>
+    <td style="font-weight:600" class="${r.incrShare>=30?'red':r.incrShare>=15?'amber':'green'}">${r.incrShare.toFixed(1)}%</td>
+  </tr>`).join('');
+  el.innerHTML=`<table><thead><tr><th>Sub-Channel</th><th>Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(BQL_Old)</span></th><th style="background:#fffbeb">Non-Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(Extra BQL)</span></th>${others.map(x=>`<th style="white-space:normal;max-width:70px" title="${x.full}">${x.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  setTimeout(()=>autoSort(el),50);
+}
+
+// ── BQL Quality — Timeframe View ─────────────────────────────────────
+function bBQLQTF(){
+  document.getElementById('p-bqlq').innerHTML=`<div class="ptitle">BQL Quality — New-Definition Segments — Timeframe View</div>
+<div class="psub">📊 ${tfPeriodLabel()} · M0 (cohort) basis · Core = old BQL rule (Active Pin + Bill \u22651500) · vs ${tfCmpLabel()}</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:8px">
+  <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Core</span>
+  <span style="background:#fffbeb;color:#92400e;padding:2px 7px;border-radius:5px;font-weight:600">Non-Core = all 5 incremental segments combined</span>
+  <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">pp deltas = vs Core, same period · badges = vs prior period</span>
+</div>
+<div class="fbar"><select id="tfbq-tier" onchange="reFilterBQLQTF()">${tierOpts()}</select><select id="tfbq-sc" onchange="reFilterBQLQTF()">${scOpts()}</select></div>
+<div id="tfbq-banner"></div>
+<div class="stitle">Segment Scorecard — ${tfPeriodLabel()}</div>
+<div class="tw" id="tfbq-scorecard"></div>
+<div class="stitle" style="margin-top:14px">City × Segment <span style="font-weight:400;font-size:10px;color:var(--t3)">(BQL volume per segment, this period)</span></div>
+<div class="tw" id="tfbq-city-tbl"></div>
+<div class="stitle" style="margin-top:14px">Sub-Channel × Segment</div>
+<div class="tw" id="tfbq-sc-tbl"></div>`;
+  reFilterBQLQTF();
+}
+function reFilterBQLQTF(){
+  const tf=document.getElementById('tfbq-tier')?.value||'';
+  const sfv=document.getElementById('tfbq-sc')?.value||'';
+  const scArr=sfv?[sfv]:null;
+  const cityArr=tf?CITIES.filter(c=>TIERS[c]===tf):null;
+  renderBQLScorecardTF(cityArr,scArr);
+  renderBQLCityTableTF(tf,scArr);
+  renderBQLSCTableTF(cityArr,scArr);
+}
+function renderBQLScorecardTF(cityArr,scArr){
+  const el=document.getElementById('tfbq-scorecard'),bannerEl=document.getElementById('tfbq-banner');
+  if(!el)return;
+  const{cur:seg,prv,cmpAvailable}=aggM0BySegmentTF(cityArr,scArr);
+  if(bannerEl){
+    if(!cmpAvailable){
+      const{cmpFrom,cmpTo}=tfCmpWindow();
+      const fmt=d=>d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+      bannerEl.innerHTML=`<div class="tf-no-data-banner" style="margin-bottom:10px">⚠️ Prior comparison period (${fmt(cmpFrom)}–${fmt(cmpTo)}) is outside available data (from Oct'25). Showing current period only.</div>`;
+    }else bannerEl.innerHTML='';
+  }
+  const core=seg.Core,prvCore=prv?prv.Core:null;
+  const nonCore=sumSegKeys(seg,NON_CORE_KEYS),prvNonCore=prv?sumSegKeys(prv,NON_CORE_KEYS):null;
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core').sort((a,b)=>seg[b.key].BQL-seg[a.key].BQL);
+  const tagHtml=t=>t?`<span style="font-size:9px;color:var(--t3);font-weight:400;margin-left:3px">${t}</span>`:'';
+  const ppBadge=(cur,base,isCore)=>{
+    if(isCore)return'';
+    const d=(cur-base);
+    return `<span class="${d>=0?'green':'red'}" style="font-size:9px;margin-left:2px">(${d>=0?'+':''}${d.toFixed(1)}pp)</span>`;
+  };
+  const renderRow=(labelHtml,v,pv,isCore,rowStyle)=>{
+    const bMs=pN(v.MS,v.BQL),mMd=pN(v.MD,v.MS),mdo=pN(v.Order,v.MD),bOrd=pN(v.Order,v.BQL);
+    const cBMs=pN(core.MS,core.BQL),cMMd=pN(core.MD,core.MS),cMdo=pN(core.Order,core.MD),cBOrd=pN(core.Order,core.BQL);
+    return`<tr ${rowStyle?`style="${rowStyle}"`:''}>
+      <td>${labelHtml}</td>
+      <td>${pv?cv(v.BQL,pv.BQL):`<span class="mono">${f(v.BQL)}</span>`}</td>
+      <td class="mono">${f(v.MS)}</td>
+      <td>${bMs.toFixed(1)}%${ppBadge(bMs,cBMs,isCore)}</td>
+      <td class="mono">${f(v.MD)}</td>
+      <td>${mMd.toFixed(1)}%${ppBadge(mMd,cMMd,isCore)}</td>
+      <td>${pv?cv(v.Order,pv.Order):`<span class="mono">${f(v.Order)}</span>`}</td>
+      <td>${mdo.toFixed(1)}%${ppBadge(mdo,cMdo,isCore)}</td>
+      <td style="font-weight:600">${bOrd.toFixed(1)}%${ppBadge(bOrd,cBOrd,isCore)}</td>
+      <td class="mono">${f(v.HOTO)}</td>
+    </tr>`;
+  };
+  const coreRow=renderRow(`<strong>Core</strong>${tagHtml('(BQL_Old)')}`,core,prvCore,true,'font-weight:700;background:#eff6ff');
+  const nonCoreRow=renderRow(`<strong>Non-Core</strong>${tagHtml('(Extra BQL)')}`,nonCore,prvNonCore,false,'font-weight:700;background:#fffbeb;border-bottom:2px solid #fde68a');
+  const detailRows=others.map(s=>renderRow(`<span title="${s.full}">${s.label}</span>`,seg[s.key],prv?prv[s.key]:null,false,'')).join('');
+  el.innerHTML=`<table><thead><tr>
+    <th>Segment</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL\u2192MS%</th><th>MD</th><th style="white-space:normal">MS\u2192MD%</th><th>Order</th><th style="white-space:normal">MD\u2192Ord%</th><th style="white-space:normal">BQL\u2192Ord%</th><th>HOTO</th>
+</tr></thead><tbody>${coreRow}${nonCoreRow}${detailRows}</tbody></table>`;
+}
+function renderBQLCityTableTF(tf,scArr){
+  const el=document.getElementById('tfbq-city-tbl');if(!el)return;
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const cities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
+  const rows=cities.map(c=>{
+    const seg=aggM0BySegment(TF.from,TF.to,[c],scArr);
+    const total=BQL_SEGMENTS.reduce((s,x)=>s+seg[x.key].BQL,0)+seg.Other.BQL;
+    const nonCoreBQL=sumSegKeys(seg,NON_CORE_KEYS).BQL;
+    const incrShare=total?(nonCoreBQL/total*100):0;
+    return{c,tier:TIERS[c]||'',seg,total,nonCoreBQL,incrShare};
+  }).filter(r=>r.total>0)
+    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.incrShare-a.incrShare);
+  const rowsHtml=rows.map(r=>`<tr>
+    <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
+    <td class="mono" style="font-weight:700">${f(r.seg.Core.BQL)}</td>
+    <td class="mono" style="font-weight:700;background:#fffbeb">${f(r.nonCoreBQL)}</td>
+    ${others.map(s=>`<td class="mono">${f(r.seg[s.key].BQL)}</td>`).join('')}
+    <td style="font-weight:700" class="mono">${f(r.total)}</td>
+    <td style="font-weight:600" class="${r.incrShare>=30?'red':r.incrShare>=15?'amber':'green'}">${r.incrShare.toFixed(1)}%</td>
+  </tr>`).join('');
+  el.innerHTML=`<table><thead><tr><th>City</th><th>Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(BQL_Old)</span></th><th style="background:#fffbeb">Non-Core<br><span style="font-size:8px;font-weight:400;color:var(--t3)">(Extra BQL)</span></th>${others.map(s=>`<th style="white-space:normal;max-width:70px" title="${s.full}">${s.label}</th>`).join('')}<th>Total</th><th style="white-space:normal">Incremental Share%</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  setTimeout(()=>autoSort(el),50);
+}
+function renderBQLSCTableTF(cityArr,scArr){
+  const el=document.getElementById('tfbq-sc-tbl');if(!el)return;
+  const scs=scArr&&scArr.length?scArr:SCS;
+  const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
+  const rows=scs.map(s=>{
+    const seg=aggM0BySegment(TF.from,TF.to,cityArr,[s]);
     const total=BQL_SEGMENTS.reduce((a,x)=>a+seg[x.key].BQL,0)+seg.Other.BQL;
     const nonCoreBQL=sumSegKeys(seg,NON_CORE_KEYS).BQL;
     const incrShare=total?(nonCoreBQL/total*100):0;
@@ -5580,8 +5699,8 @@ const TF = {
 };
 
 // Referral tabs that show the view mode switcher
-const REFERRAL_TABS = ['exec','mop','india','city','sc','funnel','m0funnel','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep'];
-const TF_CAPABLE_TABS = ['exec','india','city','sc','funnel','m0funnel','vel','wow','act','dod','dodfunnel']; // tabs that re-render in TF mode
+const REFERRAL_TABS = ['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep'];
+const TF_CAPABLE_TABS = ['exec','india','city','sc','funnel','m0funnel','bqlq','vel','wow','act','dod','dodfunnel']; // tabs that re-render in TF mode
 
 function setViewMode(mode) {
   const isTimeframe = mode === 'timeframe';
@@ -5810,6 +5929,29 @@ function tfAggM0(cityFilter, scFilter) {
   const prv = cmpAvailable ? agg(cmpFrom, cmpTo) : {BQL:0,MS:0,MD:0,Order:0,HOTO:0};
 
   return { cur, prv, cmpFrom, cmpTo, cmpAvailable };
+}
+
+// Shared prior-period window calc (same logic tfAgg/tfAggM0 each compute inline)
+function tfCmpWindow(){
+  let cmpFrom,cmpTo;
+  const days=TF.to-TF.from;
+  if(TF.cmpMode==='prior'){
+    cmpTo=new Date(TF.from.getTime()-86400000);
+    cmpFrom=new Date(cmpTo.getTime()-days);
+  }else{
+    cmpFrom=new Date(TF.from);cmpFrom.setFullYear(cmpFrom.getFullYear()-1);
+    cmpTo=new Date(TF.to);cmpTo.setFullYear(cmpTo.getFullYear()-1);
+  }
+  const dataStart=new Date(2025,9,1);
+  const cmpAvailable=cmpTo>=dataStart;
+  return{cmpFrom,cmpTo,cmpAvailable};
+}
+// BQL Quality segment aggregation, current period vs prior period (Timeframe mode)
+function aggM0BySegmentTF(cityArr,scArr){
+  const cur=aggM0BySegment(TF.from,TF.to,cityArr,scArr);
+  const{cmpFrom,cmpTo,cmpAvailable}=tfCmpWindow();
+  const prv=cmpAvailable?aggM0BySegment(cmpFrom,cmpTo,cityArr,scArr):null;
+  return{cur,prv,cmpAvailable,cmpFrom,cmpTo};
 }
 
 function tfNoBanner() {
