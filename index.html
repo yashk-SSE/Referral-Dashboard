@@ -2532,6 +2532,7 @@ function renderM0Tables(cfOrArr,sf,tf){
       if(!l.created||l.created<ms||l.created>me)return;
       if(cfArr&&!cfArr.includes(l.city))return;
       if(sf&&l.sc!==sf)return;
+      if(METRIC_SEL.bql==='old'&&!l.bqlOld)return; // Old BQL definition = Core leads only
       r.BQL++;
       if(getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me)r.MS++;
       if(getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me)r.MD++;
@@ -2591,7 +2592,7 @@ function renderM0Tables(cfOrArr,sf,tf){
   const showCities=cfArr&&cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
   const cityRows=showCities.map(c=>{
     function m0city(city,ms,me){
-      const mL=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me&&l.city===city&&(!sf||l.sc===sf));
+      const mL=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me&&l.city===city&&(!sf||l.sc===sf)&&(METRIC_SEL.bql!=='old'||l.bqlOld));
       return{BQL:mL.length,MS:mL.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).length,MD:mL.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).length,Order:mL.filter(l=>l.ordD&&l.ordD>=ms&&l.ordD<=me).length,HOTO:mL.filter(l=>l.hotoD&&l.hotoD>=ms&&l.hotoD<=me).length};
     }
     const cur=m0city(c,curW.ms,curW.me),prv=m0city(c,prvW.ms,prvW.me);
@@ -4523,10 +4524,10 @@ function renderDoD(){
     ED.forEach(r=>{
       if(!applyFilter(r))return;
       if(r.year===curMo.y&&r.month===curMo.m&&r.date.getDate()===d){
-        cur.BQL+=r.BQL;cur.MS+=r.MS;cur.MD+=r.MD;cur.Order+=r.Order;cur.HOTO+=r.HOTO;
+        cur.BQL+=getBQL(r);cur.MS+=getMS(r);cur.MD+=getMD(r);cur.Order+=r.Order;cur.HOTO+=r.HOTO;
       }
       if(r.year===lmMo.y&&r.month===lmMo.m&&r.date.getDate()===Math.min(d,new Date(lmMo.y,lmMo.m,0).getDate())){
-        lm.BQL+=r.BQL;lm.MS+=r.MS;lm.MD+=r.MD;lm.Order+=r.Order;lm.HOTO+=r.HOTO;
+        lm.BQL+=getBQL(r);lm.MS+=getMS(r);lm.MD+=getMD(r);lm.Order+=r.Order;lm.HOTO+=r.HOTO;
       }
     });
     // Cumulative
@@ -4549,10 +4550,10 @@ function renderDoD(){
       if(sf&&r.sc!==sf)return;
       if(selCities.length>0&&!selCities.includes(r.city))return;
       if(r.year===curMo.y&&r.month===curMo.m&&r.date.getDate()===d&&rows[r.sc]){
-        rows[r.sc].BQL+=r.BQL;rows[r.sc].MS+=r.MS;rows[r.sc].MD+=r.MD;rows[r.sc].Order+=r.Order;rows[r.sc].HOTO+=r.HOTO;
+        rows[r.sc].BQL+=getBQL(r);rows[r.sc].MS+=getMS(r);rows[r.sc].MD+=getMD(r);rows[r.sc].Order+=r.Order;rows[r.sc].HOTO+=r.HOTO;
       }
       if(r.year===lmMo.y&&r.month===lmMo.m&&r.date.getDate()===lmDay&&rows[r.sc]){
-        rows[r.sc].lmBQL+=r.BQL;rows[r.sc].lmMS+=r.MS;rows[r.sc].lmMD+=r.MD;rows[r.sc].lmOrder+=r.Order;rows[r.sc].lmHOTO+=r.HOTO;
+        rows[r.sc].lmBQL+=getBQL(r);rows[r.sc].lmMS+=getMS(r);rows[r.sc].lmMD+=getMD(r);rows[r.sc].lmOrder+=r.Order;rows[r.sc].lmHOTO+=r.HOTO;
       }
     });
     return rows;
