@@ -2316,13 +2316,29 @@ function bFunnel(){
 <div class="tw" id="fn-mo-tbl"></div>
 <div class="stitle">Effort Funnel - MTD Table (apple-to-apple) <span style="font-weight:400;font-size:10px;color:var(--t3)">(each month till day ${mtdDay} . compared with LMTD)</span></div>
 <div class="tw" id="fn-mo-mtd-tbl"></div>
+<div class="stitle" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #e5e7eb">
+  <span>Funnel Impact Analysis - Rate Change → Order Impact <span style="font-weight:400;font-size:10px;color:var(--t3);text-transform:none;letter-spacing:0">(holds current month MTD volume constant, isolates the Order impact of each stage's rate change)</span></span>
+  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--t2);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:5px">Compare vs <select id="fn-impact-cmp" onchange="reFilterFunnel()" style="font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid var(--bd2);background:var(--sur);color:var(--tx);cursor:pointer;font-family:'DM Sans',sans-serif"></select></span>
+    <span style="display:flex;align-items:center;gap:5px">Cascade using <select id="fn-impact-cascade" onchange="reFilterFunnel()" style="font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid var(--bd2);background:var(--sur);color:var(--tx);cursor:pointer;font-family:'DM Sans',sans-serif"><option value="cur" selected>Current Month's Funnel</option><option value="cmp">Compared Month's Funnel</option></select></span>
+  </span>
+</div>
+<div class="tw" id="fn-impact-tbl"></div>
 <div class="stitle">City Funnel - Effort MTD <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with LMTD)</span></div><div id="fn-city-tbl"></div>`;
   // Init multi-city widget for Funnel tab
   const fnMCW=document.getElementById('fn-city-mc-wrap');
   if(fnMCW&&!fnMCW.dataset.init){fnMCW.dataset.init='1';const mc=buildMultiCity('fn-city',()=>reFilterFunnel());fnMCW.appendChild(mc);}
+  // Init compare-month dropdown for Funnel Impact Analysis (default = last month)
+  const impCmpSel=document.getElementById('fn-impact-cmp');
+  if(impCmpSel&&!impCmpSel.dataset.init){
+    impCmpSel.dataset.init='1';
+    const curIdx2=months.length-1;
+    impCmpSel.innerHTML=months.slice(0,curIdx2).map((mo,i)=>`<option value="${i}" ${i===curIdx2-1?'selected':''}>${mo.lbl}</option>`).join('');
+  }
   renderFunnelViz('','');
   renderFunnelMoTbl('','');
   renderFunnelMoMtdTbl('','');
+  renderFunnelImpactTbl('','');
   renderFunnelCityTbl('','');
   setTimeout(()=>renderFunnelChart('',''),100);
 }
@@ -2334,6 +2350,7 @@ function reFilterFunnel(){
   renderFunnelViz(effectiveCfArr,sf);
   renderFunnelMoTbl(effectiveCfArr,sf);
   renderFunnelMoMtdTbl(effectiveCfArr,sf);
+  renderFunnelImpactTbl(effectiveCfArr,sf);
   renderFunnelCityTbl(effectiveCfArr.length===1?effectiveCfArr[0]:'',sf,effectiveCfArr.length>1?effectiveCfArr:null,tf);
   renderFunnelChart(effectiveCfArr,sf);
 }
@@ -2423,6 +2440,123 @@ function renderFunnelMoMtdTbl(cfArr,sf){
     <td title="Current: ${mH}% | Prior: ${pMH}%"><span class="${isCur?(parseFloat(mH)>=parseFloat(pMH)?'green':'red'):''}">${mH}%</span></td><td><span class="${isCur?(parseFloat(mO)>=parseFloat(pMO)?'green':'red'):''}">${(r.Order/Math.max(r.BQL,1)*100).toFixed(1)}%</span></td></tr>`;
   }).join('');
   el.innerHTML=`<table><thead><tr><th style="white-space:normal;max-width:80px">Month (MTD)</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL→MS%</th><th>MD</th><th style="white-space:normal">MS→MD%</th><th>Order</th><th style="white-space:normal">MD→Ord%</th><th style="white-space:normal">MD→HOTO%</th><th style="white-space:normal">BQL→Ord%</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function renderFunnelImpactTbl(cfArr,sf){
+  const el=document.getElementById('fn-impact-tbl');if(!el)return;
+  if(!Array.isArray(cfArr))cfArr=cfArr?[cfArr]:[];
+  const months=C.months;
+  const mtdDay=C.yd.getDate();
+  const curIdx=months.length-1;
+  const selEl=document.getElementById('fn-impact-cmp');
+  let cmpIdx=selEl&&selEl.value!==''?parseInt(selEl.value,10):curIdx-1;
+  if(isNaN(cmpIdx)||cmpIdx<0||cmpIdx>=curIdx)cmpIdx=curIdx-1;
+  function aggMoMtd(mo){
+    let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
+    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(sf&&x.sc!==sf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});
+    return r;
+  }
+  const cur=aggMoMtd(months[curIdx]),cmp=aggMoMtd(months[cmpIdx]);
+  const curLbl=months[curIdx].lbl,cmpLbl=months[cmpIdx].lbl;
+  const rC={bqlMs:pN(cur.MS,cur.BQL),msMd:pN(cur.MD,cur.MS),mdOrd:pN(cur.Order,cur.MD),bqlOrd:pN(cur.Order,cur.BQL),mdHoto:pN(cur.HOTO,cur.MD),bqlHoto:pN(cur.HOTO,cur.BQL)};
+  const rP={bqlMs:pN(cmp.MS,cmp.BQL),msMd:pN(cmp.MD,cmp.MS),mdOrd:pN(cmp.Order,cmp.MD),bqlOrd:pN(cmp.Order,cmp.BQL),mdHoto:pN(cmp.HOTO,cmp.MD),bqlHoto:pN(cmp.HOTO,cmp.BQL)};
+  const ppBqlMs=rC.bqlMs-rP.bqlMs,ppMsMd=rC.msMd-rP.msMd,ppMdOrd=rC.mdOrd-rP.mdOrd,ppBqlOrd=rC.bqlOrd-rP.bqlOrd,ppMdHoto=rC.mdHoto-rP.mdHoto,ppBqlHoto=rC.bqlHoto-rP.bqlHoto;
+  // Cascade-rate switcher: which month's downstream conversion rates to propagate increments through.
+  // Default ('cur') = current month's rates (isolates one rate change at a time against what actually happened downstream).
+  // 'cmp' = compared month's rates (propagates as if the rest of the funnel also reverted to the compared month).
+  const cascSel=document.getElementById('fn-impact-cascade');
+  const cascMode=cascSel&&cascSel.value==='cmp'?'cmp':'cur';
+  const cascR=cascMode==='cmp'?rP:rC;
+  const cascLbl=cascMode==='cmp'?cmpLbl:curLbl;
+  // Stage 1: BQL->MS rate change, cascaded through msMd/mdOrd rates of the chosen cascade month
+  const incMS_1=cur.BQL*ppBqlMs/100;
+  const incMD_1=incMS_1*cascR.msMd/100;
+  const incOrd_1=incMD_1*cascR.mdOrd/100;
+  // Stage 2: MS->MD rate change, cascaded through mdOrd rate of the chosen cascade month
+  const incMD_2=cur.MS*ppMsMd/100;
+  const incOrd_2=incMD_2*cascR.mdOrd/100;
+  // Stage 3: MD->Order rate change (final stage - base volume only, no cascade rate needed)
+  const incOrd_3=cur.MD*ppMdOrd/100;
+  const totalOrdImpact=incOrd_1+incOrd_2+incOrd_3;
+  // Direct BQL->Order overall rate-change cross-check (base volume only, unaffected by cascade switcher)
+  const incOrd_direct=cur.BQL*ppBqlOrd/100;
+  // Reference only: MD->HOTO branch (parallel to MD->Order, off the same MD base; base-volume only, unaffected by cascade switcher)
+  const incHoto_3=cur.MD*ppMdHoto/100;
+  const incHoto_direct=cur.BQL*ppBqlHoto/100;
+  const ppSpan=pp=>{const s=pp>=0?'+':'',c=pp>0?'green':pp<0?'red':'';return`<span class="${c}" style="font-weight:600">${s}${pp.toFixed(1)}pp</span>`;};
+  const volSpan=(v,unit)=>{const s=v>=0?'+':'',c=v>0?'green':v<0?'red':'';return`<span class="mono ${c}" style="font-weight:600">${s}${f(v)}</span>${unit?` <span style="font-size:9px;color:var(--t3);font-weight:400">${unit}</span>`:''}`;};
+  const rows=`
+    <tr>
+      <td style="font-weight:600">BQL → MS</td>
+      <td class="mono">${rC.bqlMs.toFixed(1)}%</td>
+      <td class="mono">${rP.bqlMs.toFixed(1)}%</td>
+      <td>${ppSpan(ppBqlMs)}</td>
+      <td class="mono">${f(cur.BQL)}</td>
+      <td title="${f(cur.BQL)} BQL × ${ppBqlMs.toFixed(1)}pp">${volSpan(incMS_1,'MS')}</td>
+      <td title="Cascade: ${f(incMS_1)} MS × ${cascLbl} MS→MD (${cascR.msMd.toFixed(1)}%) → ${f(incMD_1)} MD → Order via ${cascLbl} MD→Ord (${cascR.mdOrd.toFixed(1)}%)">${volSpan(incOrd_1,'Order')}</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">MS → MD</td>
+      <td class="mono">${rC.msMd.toFixed(1)}%</td>
+      <td class="mono">${rP.msMd.toFixed(1)}%</td>
+      <td>${ppSpan(ppMsMd)}</td>
+      <td class="mono">${f(cur.MS)}</td>
+      <td title="${f(cur.MS)} MS × ${ppMsMd.toFixed(1)}pp">${volSpan(incMD_2,'MD')}</td>
+      <td title="Cascade: ${f(incMD_2)} MD × ${cascLbl} MD→Ord (${cascR.mdOrd.toFixed(1)}%)">${volSpan(incOrd_2,'Order')}</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">MD → Order</td>
+      <td class="mono">${rC.mdOrd.toFixed(1)}%</td>
+      <td class="mono">${rP.mdOrd.toFixed(1)}%</td>
+      <td>${ppSpan(ppMdOrd)}</td>
+      <td class="mono">${f(cur.MD)}</td>
+      <td title="Final stage - directly hits Order, no further cascade">${volSpan(incOrd_3,'Order')}</td>
+      <td>${volSpan(incOrd_3,'Order')}</td>
+    </tr>
+    <tr style="background:#f0f9ff">
+      <td style="font-weight:700">Combined Impact <span style="font-weight:400;font-size:9px;color:var(--t3)">(sum of all 3 stages above)</span></td>
+      <td colspan="4" style="color:var(--t3);font-size:10px">${curLbl} vs ${cmpLbl} . rate changes at BQL→MS, MS→MD & MD→Ord, cascaded through ${cascLbl}'s funnel</td>
+      <td></td>
+      <td style="font-weight:700">${volSpan(totalOrdImpact,'Order')}</td>
+    </tr>
+    <tr style="background:#fffbeb">
+      <td style="font-weight:600">BQL → Order <span style="font-weight:400;font-size:9px;color:var(--t3)">(direct, cross-check)</span></td>
+      <td class="mono">${rC.bqlOrd.toFixed(1)}%</td>
+      <td class="mono">${rP.bqlOrd.toFixed(1)}%</td>
+      <td>${ppSpan(ppBqlOrd)}</td>
+      <td class="mono">${f(cur.BQL)}</td>
+      <td style="color:var(--t3);font-size:10px">overall rate applied to BQL base directly</td>
+      <td>${volSpan(incOrd_direct,'Order')}</td>
+    </tr>
+    <tr><td colspan="7" style="background:#f1f3f6;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--t2);padding:6px 10px">For Reference Only — HOTO View <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--t3)">(Order remains the primary tracked metric per MOP; HOTO shown here for context)</span></td></tr>
+    <tr style="color:var(--t2)">
+      <td style="font-weight:600">MD → HOTO <span style="font-weight:400;font-size:9px;color:var(--t3)">(ref)</span></td>
+      <td class="mono">${rC.mdHoto.toFixed(1)}%</td>
+      <td class="mono">${rP.mdHoto.toFixed(1)}%</td>
+      <td>${ppSpan(ppMdHoto)}</td>
+      <td class="mono">${f(cur.MD)}</td>
+      <td title="Parallel branch off MD, separate from the MD→Order path above">${volSpan(incHoto_3,'HOTO')}</td>
+      <td>${volSpan(incHoto_3,'HOTO')}</td>
+    </tr>
+    <tr style="color:var(--t2)">
+      <td style="font-weight:600">BQL → HOTO <span style="font-weight:400;font-size:9px;color:var(--t3)">(direct, ref)</span></td>
+      <td class="mono">${rC.bqlHoto.toFixed(1)}%</td>
+      <td class="mono">${rP.bqlHoto.toFixed(1)}%</td>
+      <td>${ppSpan(ppBqlHoto)}</td>
+      <td class="mono">${f(cur.BQL)}</td>
+      <td style="color:var(--t3);font-size:10px">overall rate applied to BQL base directly</td>
+      <td>${volSpan(incHoto_direct,'HOTO')}</td>
+    </tr>`;
+  el.innerHTML=`<table><thead><tr>
+    <th style="white-space:normal;max-width:90px">Funnel Stage</th>
+    <th style="white-space:normal">${curLbl} Rate</th>
+    <th style="white-space:normal">${cmpLbl} Rate</th>
+    <th>pp Δ</th>
+    <th style="white-space:normal">Base Vol (${curLbl})</th>
+    <th style="white-space:normal">Incremental Volume</th>
+    <th style="white-space:normal">→ Order Impact</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  <div style="padding:8px 12px;font-size:10px;color:var(--t3);border-top:1px solid var(--bd)">Method: pp change in each stage's rate (${curLbl} vs ${cmpLbl}) × ${curLbl} MTD base volume at that stage = incremental volume at the next stage, then cascaded through <b>${cascLbl}'s</b> subsequent conversion rates to arrive at the resulting change in Orders. Use "Cascade using" above to switch between propagating through the current month's downstream rates (isolates one rate change at a time, default) vs the compared month's downstream rates (assumes the rest of the funnel also reverted to the compared month). "Combined Impact" sums the three isolated stage effects; "BQL→Order direct" is an independent overall check using the end-to-end rate change on the same BQL base — small differences vs Combined are expected due to compounding/interaction between stages. The two greyed HOTO rows at the bottom are shown for reference only (MD→HOTO and BQL→HOTO run parallel off the same MD/BQL base, not stacked on top of Order) — Order remains the metric used everywhere else in this dashboard per MOP tracking convention.</div>`;
 }
 
 // ??????????????????????????????????????
