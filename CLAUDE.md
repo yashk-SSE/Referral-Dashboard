@@ -44,8 +44,8 @@ performance for SolarSquare, a B2C solar company, across 29–32 Indian cities (
 | `scripts/` | folder | **Emptied** — `fetch_data.py` deleted (killed pipeline). |
 | `index.html` | 664 KB | The dashboard. 7,254 lines, single file, everything inline. Handles Referral **and** Digital channels plus a Ref-vs-Digital compare view (not Referral-only, despite Section 1's old framing). |
 | `README.md` | — | Was outdated 1-line stub; now kept in sync with this file (see Section 12). |
-| `Referral Dashboard.gs` | 32 KB | Apps Script v5. Queries BigQuery for **both** Referral and Digital (effort + lead-level), pushes each JSON straight to `main` via GitHub's API. This is the live, authoritative pipeline. |
-| `referral-dashboard` | 1 byte, no extension | Confirmed: a single newline, no content, no function. Not a config or script. Recommend deleting as dead weight — not yet done, flagging for your call (see Section 13). |
+| `Referral Dashboard.gs` | 32 KB | Apps Script v5. Queries BigQuery for **both** Referral and Digital (effort + lead-level), pushes each JSON straight to `main` via GitHub's API. This is the live, authoritative pipeline. **Was never committed to git before 2026-08-03** (existed only in the Apps Script editor / this local copy) — now tracked in the repo so the pipeline source has version history. |
+| `referral-dashboard` | 1 byte, no extension | Confirmed: a single newline, no content, no function. Not a config or script. Yash's call (2026-08-03): leave it as-is, no action needed. |
 
 **Note on Section 7 below:** the "Raw_Data_Effort" / "Raw_Lead_Data_updated" Google Sheets
 tabs described there are **not used anywhere in the current pipeline** — no Google Sheets
@@ -379,11 +379,11 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   now? Not touched yet.
 - Lead scoring implementation format (how it plugs into the main dashboard) —
   undecided, and the tool itself isn't in this repo (see Section 10).
-- `referral-dashboard` (empty, 1-byte, no-extension file at repo root) — recommend
-  deleting, not yet done. Confirm before removing since it's presumably already
-  tracked in the GitHub repo's history.
 - Possible future pipeline migration to Python/GitHub Actions + Metabase — see
   Section 1. Not scheduled, no timeline, don't build toward it yet.
+- `Referral MOP Aug'26_Final.xlsx` appeared in the local working folder mid-session
+  (2026-08-03), not yet explained by Yash. `.gitignore`'d for now, not pushed, not read.
+  Likely this month's MOP source file — ask before doing anything with it.
 
 ---
 
