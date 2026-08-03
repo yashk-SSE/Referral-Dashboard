@@ -12,7 +12,7 @@ and is kept in sync with the code. This README is just an orientation.
 ## Structure
 
 - `index.html` — the entire dashboard (single file, no build step). Open it directly
-  or serve it statically (e.g. via Netlify).
+  or serve it statically (currently GitHub Pages).
 - `Referral Dashboard.gs` — Google Apps Script (v5). Queries BigQuery
   (`presales-442917.leadcsv.Samagam`) for both Referral and Digital channels, effort-level
   and lead-level, and pushes the resulting JSON straight to this repo's `main` branch via
@@ -27,5 +27,6 @@ and is kept in sync with the code. This README is just an orientation.
 
 ## Deployment
 
-Deployed on Netlify from this repo (`yashk-SSE/Referral-Dashboard`). Pushing to `main`
+Deployed via **GitHub Pages** from this repo (`yashk-SSE/Referral-Dashboard`) — switched
+from Netlify due to its free-tier monthly production-deploy cap. Pushing to `main`
 (whether from the Apps Script or manually) triggers a redeploy.

@@ -16,7 +16,12 @@ A single-file HTML/JavaScript dashboard tracking the **Referral sales channel** 
 performance for SolarSquare, a B2C solar company, across 29–32 Indian cities (see
 **Section 6 — flagged discrepancy** on exact count/list).
 
-- Deployed on **Netlify**, sourced from this GitHub repo: `yashk-SSE/Referral-Dashboard`
+- Deployed via **GitHub Pages** (not Netlify — corrected 2026-08-03; Netlify's free-tier
+  monthly production-deploy limit was the reason for switching), sourced from this GitHub
+  repo: `yashk-SSE/Referral-Dashboard`. No `CNAME` file in the repo, so this is on the
+  default `github.io` domain, not a custom one — confirm the exact Pages URL and which
+  branch/folder it serves from (`main` root vs. `gh-pages` vs. `/docs`) if it matters for
+  a task.
 - Data flow (confirmed from code, 2026-08-03): **BigQuery → Google Apps Script
   (`Referral Dashboard.gs`, v5) → JSON files pushed directly to this repo's `main` branch
   via the GitHub Git Data API** (uses a PAT stored in Apps Script Properties). This is the
