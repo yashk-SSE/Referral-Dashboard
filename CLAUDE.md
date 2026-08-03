@@ -539,11 +539,19 @@ independent pipeline from everything else in this file.
   specifically (their install/commission sequence can't be trusted to place a login in
   the right window) but **are still counted** in the "% of base logged in" stats — the
   anomaly is about stage *ordering*, not about whether the project/login is real.
-  Observed rate: ~1.6% of projects (1,161 / 73,636 in the corrected, project-anchored
-  pull) — if this rate ever climbs much higher, that's worth a second look, not just
+  Observed rate: ~2.0% of projects (1,160 / 58,313 after the `project_state` filter
+  below) — if this rate ever climbs much higher, that's worth a second look, not just
   filtering. **UI note (2026-08-03):** don't surface this anomaly count at the top of
   the tab — a prominent red banner up front reads as "the data is wrong." It's now a
   small muted note near the bottom instead, alongside the Phase-2-scope note.
+- **`project_state` filter, added 2026-08-03:** only `'active'` and `'completed'`
+  projects are included (lowercase, confirmed against the actual data) — excludes
+  `'cancelled'`, `'on-hold'`, `'seeking-cancellation'`, and null-state rows. Per Yash.
+  Dropped the total base from ~73,600 to ~58,300 projects.
+- **No red/green coloring on the "% of base logged in" cards, added 2026-08-03:** per
+  Yash, 50% isn't a meaningful benchmark for this yet. Don't reintroduce a color
+  threshold here without asking first — unlike the rest of the dashboard (95% vs MOP,
+  etc.) this metric doesn't have an established target.
 - **`capp_logged_in` boolean** (directly on `project`) can be used as a sanity-check
   cross-reference (e.g. does its count roughly match distinct logged-in SSEIDs) but
   **cannot** drive milestone bucketing — it has no timestamp.
@@ -576,23 +584,43 @@ independent pipeline from everything else in this file.
   applies the city merge + null-city drop, writes `data/customer_app.json`.
   Run manually for now (`python3 scripts/pull_customer_app.py`) — not yet automated
   via any scheduled job; that's a separate future decision, not assumed.
-- `data/customer_app.json` — ~73,600 rows as of 2026-08-03 (one per project, not per
-  login — row count moves slightly between pulls, live production data), ~19.5 MB.
-  Contains real customer-level data (`sseid`, `lead_id`, login timestamp) — consistent
-  with the existing `referral_leads.json` already doing the same in this public repo,
-  not a new category of exposure.
+- `data/customer_app.json` — ~58,300 rows as of 2026-08-03 (one per active/completed
+  project, not per login — row count moves slightly between pulls, live production
+  data), ~15.9 MB. Contains real customer-level data (`sseid`, `lead_id`, login
+  timestamp) — consistent with the existing `referral_leads.json` already doing the
+  same in this public repo, not a new category of exposure.
 - **Phase 2 (2026-08-03, pending Yash's review — built in `index.preview.html`, not
   yet merged to `index.html`):** a 4th channel switcher button ("Customer App",
   `ACTIVE_CH='capp'`) alongside Referral/Digital/Ref vs Digital, its own sidebar
   section (`data-ch="capp"`, same show/hide mechanism as Digital's `data-ch="digital"`
-  items), and one tab (`capp` → `bCApp()`) with:
-  - Three top-line cards: % of Commissioned/Installed/HOTO base that has ever logged
-    in (each base counted independently — a commissioned project is also installed
-    and HOTO'd, these are not mutually exclusive groups).
+  items), and **two tabs**:
+
+  **`capp` → `bCApp()` — Overview:**
+  - Three top-line cards (no color coding, see above): % of Commissioned/Installed/
+    HOTO base that has ever logged in (each base counted independently — a
+    commissioned project is also installed and HOTO'd, not mutually exclusive groups).
   - A City × Milestone table classifying each project's *first* login into one of the
-    5 windows, tier-sorted, India total row. Only projects with a login and without
-    `date_anomaly` appear here (see the `date_anomaly` note above).
+    5 windows, tier-sorted, India total row, PLUS 3 more columns per city/India:
+    % of that city's own Total HOTOs/Installations/Commissionings that have logged in
+    (same stat as the top cards, just computed per-city instead of India-wide —
+    `CAC.cityBaseStats[city]`). Only projects with a login and without `date_anomaly`
+    appear in the 5 milestone columns (see the `date_anomaly` note above) — the 3 new
+    %-of-total columns are independent of that and use the full per-city base.
   - The anomaly-count note near the bottom, deliberately not at the top (per Yash).
+
+  **`capptrend` → `bCAppTrend()` — MoM Trend:**
+  - A base selector (HOTO / Installed / Commissioned) driving a trailing-12-month line
+    chart + data table: cumulative base size reaching that milestone by each month,
+    and the login rate against that cumulative base shown **two ways** (per Yash,
+    2026-08 — build both rather than pick one, resolving the earlier open question):
+    - **% by month end** — of everyone reaching this milestone by month M, how many
+      had logged in by M's own close (a freshness/decay view).
+    - **% by now** — of that same cumulative base, how many have logged in as of
+      today (the data-pull time).
+    In practice these visibly converge for older cohorts (they've had more time to
+    log in since their month closed) and stay close together for recent cohorts —
+    confirmed this shows clearly in the first real chart, 2026-08-03.
+    `precomputeCApp()`'s `momTrend()` computes this per base into `CAC.momTrend`.
 
   `precomputeCApp()` / `capMilestone()` do the actual bucketing — a project's first
   login falls into the first milestone window it hadn't passed yet as of that login; a
@@ -601,11 +629,6 @@ independent pipeline from everything else in this file.
   with no tier tag, sorted after all known tiers. `CAPP`/`CAC` are the new global
   arrays (raw rows / precomputed aggregates), following the same `ED`/`C` and
   `DED`/`DC` naming convention already used for Referral and Digital.
-- **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, and a
-  month-over-month view of the login rate against the cumulative commissioned base
-  (e.g. "of the 40,000 commissioned as of end of July, how many have logged in, and
-  how has that trended month to month"). **Open question, not yet resolved:** does
-  "how many were logged in" for a given month mean logged in *by that month's end*
-  (a decay/freshness view — do newer cohorts log in slower?), or logged in *by now*
-  (today's cumulative status against each month's commissioned base)? These produce
-  materially different charts — confirm with Yash before building this piece.
+- **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, and custom
+  date-range cohort filtering (per the original ask). Everything else from the
+  original request is now built.

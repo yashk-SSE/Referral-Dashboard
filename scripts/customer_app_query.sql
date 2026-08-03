@@ -19,6 +19,10 @@
 -- Yash, 2026-08). These rows are still returned (not dropped) so the
 -- dashboard can display them as flagged anomalies rather than silently
 -- bucketing them into a nonsensical negative-duration milestone window.
+--
+-- Only project_state IN ('active','completed') is included -- excludes
+-- 'cancelled', 'on-hold', 'seeking-cancellation', and null-state projects.
+-- Confirmed exact lowercase values against the actual data, per Yash, 2026-08.
 
 WITH login_data AS (
     SELECT
@@ -56,4 +60,5 @@ SELECT
 FROM project p
 LEFT JOIN login_data ld
     ON ld.sseid = p.sseid
+WHERE p.project_state IN ('active', 'completed')
 ORDER BY p.sseid;

@@ -8,11 +8,13 @@ against the SolarSquare Postgres database via Metabase's API, and writes the
 per-project rows to data/customer_app.json for the dashboard.
 
 One row per PROJECT (not per login event, and not just projects with a
-login) -- includes every project in `project`, with first_login_at = null
-for the ones that have never logged in. This is required to compute "% of
-commissioned/installed/HOTO base that has logged in" against the full base,
-not just the subset that ever logged in. Only the FIRST login per project is
-tracked, not every login -- confirmed with Yash, 2026-08.
+login) -- includes every project with project_state IN ('active','completed')
+(cancelled/on-hold/seeking-cancellation excluded, per Yash 2026-08), with
+first_login_at = null for the ones that have never logged in. This is
+required to compute "% of commissioned/installed/HOTO base that has logged
+in" against the full base, not just the subset that ever logged in. Only the
+FIRST login per project is tracked, not every login -- confirmed with Yash,
+2026-08.
 
 Milestone-window bucketing and P50/P90/P95/Avg stats are computed downstream
 in the dashboard's JavaScript, not here -- this script only pulls raw data.
