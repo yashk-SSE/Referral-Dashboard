@@ -563,6 +563,20 @@ independent pipeline from everything else in this file.
   (`sseid`, `lead_id`,
   login timestamps) — consistent with the existing `referral_leads.json` already
   doing the same in this public repo, not a new category of exposure.
-- **Not yet built:** the dashboard UI itself (channel switcher entry, tabs, milestone
-  tables, P50/P90/P95/Avg stats, month-level summary cards, custom date-range cohort
-  view). Phase 1 (this pipeline) is done; Phases 2+ (the actual tabs) haven't started.
+- **Phase 2 done (2026-08-03, pending Yash's review — built in `index.preview.html`,
+  not yet merged to `index.html`):** a 4th channel switcher button ("Customer App",
+  `ACTIVE_CH='capp'`) alongside Referral/Digital/Ref vs Digital, its own sidebar
+  section (`data-ch="capp"`, same show/hide mechanism as Digital's `data-ch="digital"`
+  items), and one skeleton tab (`capp` → `bCApp()`) showing raw login counts by
+  City × Milestone, tier-sorted, with an India total row and a separate anomaly-count
+  callout (not merged into the milestone counts). `precomputeCApp()` /
+  `capMilestone()` do the actual bucketing — a login falls into the first milestone
+  window it hasn't passed yet; a missing (null) milestone date is treated as "not
+  reached yet," not skipped over. Cities not in the Referral dashboard's own `TIERS`
+  list (`Raipur`, `Surat`) render with no tier tag, sorted after all known tiers.
+  `CAPP`/`CAC` are the new global arrays (raw rows / precomputed aggregates),
+  following the same `ED`/`C` and `DED`/`DC` naming convention already used for
+  Referral and Digital.
+- **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, the
+  month-level summary cards (Order Booked/HOTO/Installation/Commissioned this
+  month), and the custom date-range cohort view. Phase 2 is raw counts only.
