@@ -474,3 +474,95 @@ Do this **before** making any code changes:
    Section 13 (open items) against what you actually find in the code. Report
    discrepancies — don't silently trust either source.
 5. Do not make changes yet. Summarize current state first and wait for direction.
+
+---
+
+## 15. Customer App branch — new, in progress (started 2026-08-03)
+
+A completely new, separate branch of this dashboard, tracking Customer App logins
+against 5 lifecycle milestones. Not a Referral-channel feature — its own switcher
+alongside Referral / Digital / Ref vs Digital (not yet added to the UI as of this
+writing — see status below). Sourced from **Metabase**, not BigQuery — an entirely
+independent pipeline from everything else in this file.
+
+### Data source
+- Metabase instance: `https://metabase-lighthouse.solarsquare.in/`, database id `2`
+  ("SolarSquare", Postgres). Read-only API key access — **no write/create permission
+  in Metabase**; any new saved Question must be guided for Yash to create himself,
+  never created by Claude directly.
+- API key lives in `.metabase_key/metabase_key.txt` (gitignored, never committed,
+  never printed/read directly into a chat transcript — scripts read it from disk at
+  runtime only).
+- **Metabase's `/api/dataset` silently caps results at ~2,000 rows** even for a plain
+  unaggregated `SELECT` — confirmed 2026-08 (a 116,666-row query came back as exactly
+  2,000 with no error). Fix: pass `"constraints": {"max-results": 1000000,
+  "max-results-bare-rows": 1000000}` in the query payload. Already baked into
+  `scripts/pull_customer_app.py` — don't drop this if the script is ever rewritten.
+
+### Business logic (confirmed with Yash, 2026-08)
+- **Login definition:** `otps` table, `"isVerified" = 'True'` AND `source IN
+  ('CONSUMER', 'CUSTOMER_JOURNEY_TRACKER')`. **Not** `consumer_analytics` /
+  `capp_login_successful` (an earlier, wrong guess — that table tracks Customer App
+  UI events generally, but Yash's own established query uses `otps`).
+- **Attribution chain:** `otps.mobile → customer.phone → customer.projects →
+  customer_projects (index_=0) → projects_sseid → project.sseid`.
+- **All 5 milestone dates + city come from the `project` table** (NOT `lead` — a
+  correction from an earlier sample query that pulled some of these from `lead`):
+  - Order Booked = `project.order_closure_datetime`
+  - HOTO = `project.cx_approval_timestamp`
+  - Installation = `project.installation_date`
+  - Commissioning = `project.commissioning_date`
+  - City = `project.site_address_cluster`
+  - Lead ID = `project.lead_id` (directly on `project` — no `lead` join needed at all
+    for this feature)
+- **5 milestone windows** (per the original request): Before Order Booked · Order
+  Booked→HOTO · HOTO→Installation · Installation→Commissioning · After Commissioning.
+  Bucketing a login into a window, and computing days-elapsed-since-window-start, is
+  done **client-side in the dashboard's JavaScript** — deliberately not pre-aggregated
+  in SQL — because "custom date range cohort" filtering (per the original ask) needs
+  raw per-login-event data to re-slice on the fly, the same reason the existing
+  Velocity tab computes P75/P90 client-side rather than in a query.
+- **`date_anomaly` flag:** `TRUE` when `commissioning_date < installation_date` for a
+  project — confirmed by Yash as a rare, genuine data anomaly (not normal sequencing).
+  Rows are **not dropped**, just flagged, so the dashboard can surface them separately
+  rather than silently bucketing them into a nonsensical negative-duration window.
+  Observed rate: ~0.6% of rows (684 / 116,693 in the initial pull) — if this rate ever
+  climbs much higher, that's worth a second look, not just filtering.
+- **`capp_logged_in` boolean** (directly on `project`) can be used as a sanity-check
+  cross-reference (e.g. does its count roughly match distinct logged-in SSEIDs) but
+  **cannot** drive milestone bucketing — it has no timestamp.
+- **City merge map** (confirmed 2026-08, applied in the puller script's
+  `CITY_MERGE_MAP`): `Bengaluru→Bangalore` (same rename already used for Referral
+  data), `Ajmer→Jaipur`, `Baroda→Ahmedabad`, `Mysuru→Bangalore`, `Salem→Bangalore`.
+  **Not merged, kept as their own distinct cities:** `Raipur` (new city, expected to
+  be added to the Referral dashboard's own tier list next month) and `Surat`
+  (discontinued city, kept separate/inactive rather than folded elsewhere).
+  Rows with no real city (true SQL NULL, or the literal 4-character string `"None"`
+  found in at least one source row — a genuine source-data quirk, not a NULL) are
+  **dropped entirely**, not shown as a fake blank-city bucket.
+- **`Ghaziabad`/`Faridabad`/`Ahilyanagar` — resolved 2026-08:** none of the three
+  appear anywhere in `project` under those exact names or any close variant checked
+  (`%ahmed%`, `%ahilya%`, `%ghaz%`, `%farid%`, `%delhi%`, `%ncr%` all came back empty).
+  Per Yash: `Ghaziabad→Noida` and `Faridabad→Gurgaon` are added to `CITY_MERGE_MAP` as
+  forward-looking/defensive mappings in case either ever shows up in a future pull
+  (neither does as of the 2026-08-03 data). `Ahilyanagar` gets no mapping at all —
+  intentionally left out for now, not a bug if it stays absent.
+
+### Pipeline status
+- `scripts/customer_app_query.sql` — the finalized query (one row per login event +
+  that project's milestone dates + city + `date_anomaly`). This is the **single
+  source of truth**, also meant to be pasted into a standalone Metabase SQL question
+  for Yash's own independent use — keep both in sync if this ever changes.
+- `scripts/pull_customer_app.py` — the puller script. Reads the API key from
+  `.metabase_key/`, runs the query above via Metabase's API (with the row-cap fix),
+  applies the city merge + null-city drop, writes `data/customer_app.json`.
+  Run manually for now (`python3 scripts/pull_customer_app.py`) — not yet automated
+  via any scheduled job; that's a separate future decision, not assumed.
+- `data/customer_app.json` — ~116,600 rows as of 2026-08-03 (row count moves slightly
+  between pulls — live production data), ~32.7 MB. Contains real customer-level data
+  (`sseid`, `lead_id`,
+  login timestamps) — consistent with the existing `referral_leads.json` already
+  doing the same in this public repo, not a new category of exposure.
+- **Not yet built:** the dashboard UI itself (channel switcher entry, tabs, milestone
+  tables, P50/P90/P95/Avg stats, month-level summary cards, custom date-range cohort
+  view). Phase 1 (this pipeline) is done; Phases 2+ (the actual tabs) haven't started.
