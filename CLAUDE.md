@@ -132,7 +132,7 @@ Order→HOTO timing as a structural lag, not an anomaly, when doing month-end an
 
 ---
 
-## 4. Referral sub-channels (6 today — 5 planned, see flagged change below)
+## 4. Referral sub-channels (6 today — still 6 planned, attribution is changing, see flagged change below)
 
 | Sub-channel | Source |
 |---|---|
@@ -143,29 +143,34 @@ Order→HOTO timing as a structural lag, not an anomaly, when doing month-end an
 | **Customer_App** | Leads generated directly by customers via the Customer App |
 | **Referral_Others** | Other sources — HO team, self-employees, etc. |
 
-**⚠️ Planned change (flagged 2026-08-03, not yet implemented — future work, don't
-build toward this until explicitly asked):** Per Yash, `Customer_App` as a distinct
-sub-channel is **mis-attributed** — those leads are actually part of `Online`, which
-will be bifurcated (split into sub-parts) in the near future. The eventual end state
-is to **remove `Customer_App` entirely** — no mention anywhere, top to bottom:
+**⚠️ Planned change (flagged 2026-08-03, corrected 2026-08-03, not yet implemented —
+future work, don't build toward this until explicitly asked):** Per Yash, this is a
+**reclassification, not a removal.** The *current* `Customer_App` sub-channel
+attribution is wrong and that current logic will be removed — but a **new, correctly
+attributed `Customer_App`** sub-channel will be added back, carved out of what's
+today lumped into `Online` (`Online` is getting bifurcated, and one of the resulting
+pieces is the real `Customer_App`). End state still has a `Customer_App` sub-channel
+— it just comes from a different, corrected source classification. Do **not** treat
+this as "delete all mentions of Customer_App" — that was my first (wrong) read of
+this; the name survives, only its underlying attribution logic changes. Touches:
 - `Referral Dashboard.gs` — the `Source_Sub_Class_final` CASE logic that currently
-  maps `Source_Class LIKE '%Customer App%'` to `'Customer_App'`
-- `index.html` — the `SCS` constant (currently 6 entries), every sub-channel
-  breakdown table/chart/filter that iterates it, and the new BTL-style multi-select
-  sub-channel widgets added 2026-08-03 (same mechanism, just one fewer option)
-  once Online's bifurcation lands, `SCS` likely needs to gain the new Online-split
-  names in the same change that removes `Customer_App`
+  maps `Source_Class LIKE '%Customer App%'` to `'Customer_App'` (this specific rule
+  is the wrong one being replaced) and whatever rule currently produces `'Online'`
+  (needs to split, with the correct Customer_App slice breaking out of it)
+- `index.html` — the `SCS` constant and every sub-channel breakdown table/chart/filter
+  that iterates it; `Customer_App` stays in the list, `Online` may need to become
+  two entries depending on how the bifurcation is named
 - `data/referral_effort.json` / `referral_leads.json` — sourced from BigQuery via the
   Apps Script, so this is fundamentally a **source-data reclassification**, not just a
-  dashboard filter change — the BigQuery query logic itself needs to fold former
-  Customer_App leads into Online (or its new bifurcated split) before anything
-  downstream changes
+  dashboard filter change — the BigQuery query logic itself needs the corrected split
+  before anything downstream changes
 - `referral_mop.json` if/when Sub-Channel MOP targets get built (Section 13)
 
 Don't start this without explicit confirmation on: exact bifurcation of `Online`
-(what the new sub-channel name(s) will be), and whether historical
-`referral_effort.json`/`referral_leads.json` rows need to be backfilled/relabeled or
-only new data goes forward under the corrected attribution.
+(what the new sub-channel name(s) will be, and which existing rows move to the
+corrected `Customer_App`), and whether historical `referral_effort.json`/
+`referral_leads.json` rows need to be backfilled/relabeled or only new data goes
+forward under the corrected attribution.
 
 ---
 
@@ -441,9 +446,11 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   now? Not touched yet.
 - Lead scoring implementation format (how it plugs into the main dashboard) —
   undecided, and the tool itself isn't in this repo (see Section 10).
-- **Remove `Customer_App` sub-channel entirely, fold into a bifurcated `Online`** —
-  flagged 2026-08-03, future work, not started. Full detail in Section 4. Touches the
-  Apps Script's BigQuery source-data classification, not just the dashboard.
+- **Reclassify `Customer_App` sub-channel** — current attribution is wrong and gets
+  replaced with a corrected `Customer_App` carved out of `Online`'s bifurcation
+  (not a removal — the name stays). Flagged 2026-08-03, future work, not started.
+  Full detail in Section 4. Touches the Apps Script's BigQuery source-data
+  classification, not just the dashboard.
 - Possible future pipeline migration to Python/GitHub Actions + Metabase — see
   Section 1. Not scheduled, no timeline, don't build toward it yet.
 - `Referral MOP Aug'26_Final.xlsx` appeared in the local working folder mid-session
