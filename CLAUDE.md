@@ -10,11 +10,58 @@
 
 ---
 
+## 0. CURRENT STATUS — read this first, before anything else
+
+**This section is a living snapshot, not history.** Keep it updated as work progresses —
+when you finish a task or hand off, update this section before anything else in this file.
+Detailed history lives in the numbered sections below and in `git log`; this is just
+"what's true right now."
+
+**As of 2026-08-03, end of session:**
+
+- **⚠️ `index.preview.html` exists in this folder and is AHEAD of `index.html`.**
+  It's gitignored (`*.preview.html` in `.gitignore`), so `git status` will look
+  completely clean even though it holds real, tested, unmerged work — **don't assume
+  `index.html` reflects the latest dashboard state just because git shows nothing
+  pending.** Always check for `index.preview.html` first.
+  - What's in it but NOT yet in `index.html`: the entire **Customer App branch**
+    (Phase 2) — a 4th channel switcher button, two tabs (`capp` Overview,
+    `capptrend` MoM Trend). Built and browser-tested (see Section 15 for full detail),
+    but **Yash has not yet reviewed/approved it** as of this snapshot.
+  - **Do not merge it into `index.html` or commit/push it yourself.** Per the standing
+    workflow (Section 12): show Yash the preview, wait for explicit approval, only then
+    copy preview → `index.html`, commit, and separately wait for an explicit "push it"
+    before pushing. Reviewing ≠ approving the merge; approving the merge ≠ approving
+    the push. Each is its own confirmation.
+  - If Yash says to keep building (Phase 3: P50/P90/P95/Avg stats, custom date-range
+    cohort filtering), keep building in `index.preview.html`, not `index.html` directly.
+- **Everything else is committed and pushed** — `origin/main` and local `HEAD` matched
+  as of the last check this session (confirm again with `git fetch && git log --oneline
+  origin/main..HEAD` — should be empty, or only show commits from a review round that
+  hasn't been pushed yet).
+- **Two credential/data files exist locally, both gitignored, never committed:**
+  - `.metabase_key/metabase_key.txt` — the Metabase API key. Read it only by having a
+    script load it at runtime (see `scripts/pull_customer_app.py`) — never `Read` this
+    file directly yourself, never print/echo its contents, never put it in a chat reply.
+  - `Referral MOP Aug'26_Final.xlsx` (and Office's `~$...xlsx` lock file next to it) —
+    this month's MOP source file, already consumed into `data/referral_mop.json`.
+    Nothing further to do with it unless Yash provides a new one next month.
+- **No hard-blocking open questions right now.** Section 13 has the standing list of
+  soft/pending items (Stage Aging nav entry, Funnel MOP %, Customer_App reclassification
+  not started, etc.) — none are blocking, they're just undecided/unscheduled.
+- **Quick orientation for a fresh session:** read this file in full (as instructed above),
+  then check `git log --oneline -15` for the recent narrative, then check whether
+  `index.preview.html` exists before touching `index.html`. Section 15 has everything
+  about the new Customer App/Metabase branch; Sections 1–14 cover the original
+  Referral/Digital dashboard.
+
+---
+
 ## 1. What this project is
 
 A single-file HTML/JavaScript dashboard tracking the **Referral sales channel** funnel
-performance for SolarSquare, a B2C solar company, across 29–32 Indian cities (see
-**Section 6 — flagged discrepancy** on exact count/list).
+performance for SolarSquare, a B2C solar company, across **32 Indian cities** (resolved,
+see Section 6 for the exact list — no longer an open discrepancy).
 
 - Deployed via **GitHub Pages** at `https://yashk-sse.github.io/Referral-Dashboard/`
   (not Netlify — corrected 2026-08-03; Netlify's free-tier monthly production-deploy
@@ -33,10 +80,13 @@ performance for SolarSquare, a B2C solar company, across 29–32 Indian cities (
   "Possible future direction" below).
 - BigQuery source table: `presales-442917.leadcsv.Samagam` — confirmed, used by
   `Referral Dashboard.gs`.
-- **Possible future direction (not scheduled, no timeline):** Yash may eventually move the
-  data pipeline back to Python/GitHub Actions, and separately connect this project to
-  **Metabase**. Neither is happening now — flagged here so a future session doesn't have
-  to rediscover the context. Don't build toward this speculatively.
+- **Possible future direction for THIS (Referral) pipeline specifically (not scheduled,
+  no timeline):** Yash may eventually move it back to Python/GitHub Actions. Still not
+  happening — don't build toward this speculatively.
+- **Metabase IS now connected (2026-08-03) — but for a separate, independent branch,
+  not this pipeline.** See Section 15: a brand new "Customer App" branch sources from
+  Metabase entirely independently of BigQuery/Apps Script. Don't confuse the two — the
+  Referral/Digital pipeline above is untouched by this.
 - **Digital channel is being gradually removed (2026-08-03, no timeline yet):** Yash's
   plan is to eventually drop the Digital-channel JSONs (`digital_effort.json`,
   `digital_leads.json`) and the Ref-vs-Digital compare view entirely, narrowing this
