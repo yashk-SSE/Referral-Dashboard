@@ -2,3 +2,6 @@
 *.xlsx
 *.xls
 *.preview.html
+.metabase_key
+.env
+.env.*
