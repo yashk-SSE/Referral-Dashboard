@@ -24,6 +24,13 @@ and is kept in sync with the code. This README is just an orientation.
   edit this file directly in GitHub each month; it won't have every city, and that's
   expected for Expansion-tier cities without a monthly MOP).
 - `.github/workflows/test.yml` — placeholder, does not run tests.
+- `preview-local.bat` — double-click to preview the dashboard locally on Windows.
+  Starts a local server on `http://localhost:8743` and opens it in your browser.
+  Opens `index.preview.html` if one exists (a work-in-progress copy under review),
+  otherwise `index.html`. Necessary because opening the file directly (double-click,
+  no server) makes it fall back to fetching data from the live GitHub Pages site
+  instead of your local files — this script is what lets you actually preview local
+  changes, including data files, before they're pushed.
 
 ## Deployment
 

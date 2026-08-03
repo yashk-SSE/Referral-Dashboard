@@ -352,6 +352,12 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
         <button class="metric-sw-btn active" id="sw-md-first" onclick="setMetricDef('md','first',this)">First</button>
         <button class="metric-sw-btn" id="sw-md-total" onclick="setMetricDef('md','total',this)">Total</button>
       </div>
+      <div class="metric-sw-sep"></div>
+      <div class="metric-sw-group">
+        <span class="metric-sw-label">BTL</span>
+        <button class="metric-sw-btn active" id="sw-btl-on" onclick="setBtlSwitch(true,this)">On</button>
+        <button class="metric-sw-btn" id="sw-btl-off" onclick="setBtlSwitch(false,this)">Off</button>
+      </div>
     </div>
     <div class="fy-pill" id="fy-mini">FY27: –</div>
     <div class="upd" id="upd-lbl">–</div>
@@ -509,8 +515,17 @@ const FY_T=40000;
 const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp',Meerut:'Exp',Bareilly:'Exp',Vijayawada:'Exp',Kota:'Exp',Ahilyanagar:'Exp'};
 // City is shown in MOP-target tables only once referral_mop.json actually has an entry for it
 // (checked live via hasMop() below — no manual list to maintain as new cities get added to MOP)
-const MOP={India:{BQL:4880,MS:3906,MD:3515,HOTO:1831},Ahmedabad:{BQL:80,MS:71,MD:64,HOTO:36},Nagpur:{BQL:814,MS:738,MD:664,HOTO:361},Amravati:{BQL:110,MS:92,MD:83,HOTO:44},Aurangabad:{BQL:91,MS:86,MD:77,HOTO:47},Nashik:{BQL:137,MS:141,MD:127,HOTO:68},Pune:{BQL:699,MS:628,MD:565,HOTO:315},Kolhapur:{BQL:69,MS:64,MD:58,HOTO:33},Bhopal:{BQL:367,MS:263,MD:237,HOTO:119},Gwalior:{BQL:447,MS:212,MD:191,HOTO:70},Indore:{BQL:289,MS:223,MD:201,HOTO:79},Jabalpur:{BQL:403,MS:247,MD:222,HOTO:126},Jaipur:{BQL:102,MS:68,MD:61,HOTO:32},Delhi:{BQL:105,MS:82,MD:74,HOTO:36},Gurgaon:{BQL:37,MS:31,MD:28,HOTO:15},Ghaziabad:{BQL:63,MS:50,MD:45,HOTO:22},Noida:{BQL:25,MS:18,MD:16,HOTO:8},Kanpur:{BQL:180,MS:183,MD:165,HOTO:94},Lucknow:{BQL:406,MS:323,MD:291,HOTO:146},Varanasi:{BQL:38,MS:36,MD:32,HOTO:20},Hyderabad:{BQL:145,MS:132,MD:119,HOTO:71},Bangalore:{BQL:131,MS:94,MD:85,HOTO:36},Chennai:{BQL:142,MS:122,MD:110,HOTO:50}};
-const SCS=['Sales','Online','BTL','Ops / AMC','Customer_App','Referral_Others'];
+// ── BTL switch: MOP now has two parallel target tables — Combined (all sub-channels,
+// used when BTL is included) and W/O BTL (used when BTL is excluded). Both start from
+// the same seed values as a pre-fetch fallback; referral_mop.json overwrites both
+// separately once loaded. `MOP` itself just points at whichever is currently active.
+const MOP_SEED={India:{BQL:4880,MS:3906,MD:3515,HOTO:1831},Ahmedabad:{BQL:80,MS:71,MD:64,HOTO:36},Nagpur:{BQL:814,MS:738,MD:664,HOTO:361},Amravati:{BQL:110,MS:92,MD:83,HOTO:44},Aurangabad:{BQL:91,MS:86,MD:77,HOTO:47},Nashik:{BQL:137,MS:141,MD:127,HOTO:68},Pune:{BQL:699,MS:628,MD:565,HOTO:315},Kolhapur:{BQL:69,MS:64,MD:58,HOTO:33},Bhopal:{BQL:367,MS:263,MD:237,HOTO:119},Gwalior:{BQL:447,MS:212,MD:191,HOTO:70},Indore:{BQL:289,MS:223,MD:201,HOTO:79},Jabalpur:{BQL:403,MS:247,MD:222,HOTO:126},Jaipur:{BQL:102,MS:68,MD:61,HOTO:32},Delhi:{BQL:105,MS:82,MD:74,HOTO:36},Gurgaon:{BQL:37,MS:31,MD:28,HOTO:15},Ghaziabad:{BQL:63,MS:50,MD:45,HOTO:22},Noida:{BQL:25,MS:18,MD:16,HOTO:8},Kanpur:{BQL:180,MS:183,MD:165,HOTO:94},Lucknow:{BQL:406,MS:323,MD:291,HOTO:146},Varanasi:{BQL:38,MS:36,MD:32,HOTO:20},Hyderabad:{BQL:145,MS:132,MD:119,HOTO:71},Bangalore:{BQL:131,MS:94,MD:85,HOTO:36},Chennai:{BQL:142,MS:122,MD:110,HOTO:50}};
+let MOP_NOBTL=JSON.parse(JSON.stringify(MOP_SEED));
+let MOP_COMBINED=JSON.parse(JSON.stringify(MOP_SEED));
+let BTL_INCLUDE=true;   // default: BTL included (matches pre-switch behavior)
+let MOP=MOP_COMBINED;   // active table — reassigned by setBtlSwitch()
+const SCS_ALL=['Sales','Online','BTL','Ops / AMC','Customer_App','Referral_Others'];
+let SCS=SCS_ALL.slice();
 // True once referral_mop.json actually has a (nonzero) entry for this city — used to
 // auto-include/exclude cities from MOP-target tables without a manually maintained list.
 function hasMop(c){const m=MOP[c];return!!m&&(m.BQL||m.MS||m.MD||m.HOTO||m.ORDER);}
@@ -527,7 +542,11 @@ const BIG=['Indore','Jabalpur','Chennai','Bhopal','Delhi','Nashik','Kanpur'];
 const MID=['Gwalior','Aurangabad','Hyderabad','Bangalore','Amravati','Jaipur','Ahmedabad','Kolhapur','Varanasi'];
 const EXP=CITIES.filter(c=>TIERS[c]==='Exp');
 
-let ED=[],LD=[],C={},rendered={},chartInst={},curTab='exec';
+// ED_ALL/LD_ALL = every row, never filtered. ED/LD = the active view every tab actually
+// reads — all rows when BTL is included, BTL-excluded when not. setBtlSwitch() below
+// reassigns ED/LD/MOP/SCS together and re-triggers the same precompute()+redraw cycle
+// setMetricDef() already uses for the BQL/MS/MD definition toggles.
+let ED_ALL=[],LD_ALL=[],ED=[],LD=[],C={},rendered={},chartInst={},curTab='exec';
 let DED=[],DLD=[],DC={},ACTIVE_CH='referral',dataLoaded=false;
 
 // ?? DATE UTILS ??
@@ -622,6 +641,28 @@ function setMetricDef(metric,val,btn){
   }
 }
 
+// ── Global BTL sub-channel switch ──────────────────────────────────────────
+// ON (include) = every tab's numbers include BTL, same as before this switch existed.
+// OFF (exclude) = BTL rows are dropped from ED/LD entirely (not zeroed, removed), the
+// MOP comparison switches from the Combined target to the W/O-BTL target, and 'BTL'
+// disappears from every Sub-Channel breakdown table instead of showing as a zero row.
+// FY27 40K tracker is intentionally NOT affected — it always stays BTL-inclusive
+// (see the comment on C.ytdHoto in precompute()).
+function setBtlSwitch(on,btn){
+  BTL_INCLUDE=on;
+  const pairs=['sw-btl-on','sw-btl-off'];
+  pairs.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',el===btn);});
+  ED=on?ED_ALL:ED_ALL.filter(r=>r.sc!=='BTL');
+  LD=on?LD_ALL:LD_ALL.filter(l=>l.sc!=='BTL');
+  MOP=on?MOP_COMBINED:MOP_NOBTL;
+  SCS=on?SCS_ALL.slice():SCS_ALL.filter(s=>s!=='BTL');
+  if(dataLoaded&&ACTIVE_CH==='referral'){
+    precompute();
+    rendered={};
+    sw(curTab);
+  }
+}
+
 // Helper: get BQL value from an effort row based on current selection
 function getBQL(r){return METRIC_SEL.bql==='new'?(r.BQL_New||0):(r.BQL_Old||0);}
 function getMS(r){return METRIC_SEL.ms==='total'?(r.MS_Total||0):(r.MS_First||0);}
@@ -687,11 +728,18 @@ function aggM0BySegment(ms,me,cityArr,scArr){
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
 async function fetchJSON(filename){
-  const isLocal=window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'||window.location.protocol==='file:';
-  const base=isLocal?'https://yashk-sse.github.io/Referral-Dashboard/data/':'data/';
-  const r=await fetch(base+filename);
-  if(!r.ok)throw new Error(`Failed to load ${filename}: ${r.status}`);
-  return await r.json();
+  // Always try the local/relative data/ folder first — this is what makes local
+  // testing of unpushed data changes (like a new MOP file) actually work. Only fall
+  // back to the live GitHub Pages copy if the local fetch genuinely fails, which
+  // happens when the dashboard is opened directly via file:// (no server), where
+  // the browser blocks fetch() of local files entirely.
+  try{
+    const r=await fetch('data/'+filename);
+    if(r.ok)return await r.json();
+  }catch(e){/* fall through to production fallback below */}
+  const r2=await fetch('https://yashk-sse.github.io/Referral-Dashboard/data/'+filename);
+  if(!r2.ok)throw new Error(`Failed to load ${filename}: ${r2.status}`);
+  return await r2.json();
 }
 
 // ?? PRE-COMPUTE (runs once after fetch) ??
@@ -713,7 +761,9 @@ function precompute(){
 
   C.india=agg(edCur);
   C.indiaL=agg(edLm);
-  C.ytdHoto=ED.filter(r=>r.date>=new Date(2026,3,1)&&r.date<=yd).reduce((s,r)=>s+r.HOTO,0);
+  // FY27 40K tracker always stays BTL-inclusive regardless of the switch (Yash's call:
+  // it's a fixed company-wide target, same reasoning as it already ignoring the tier filter).
+  C.ytdHoto=ED_ALL.filter(r=>r.date>=new Date(2026,3,1)&&r.date<=yd).reduce((s,r)=>s+r.HOTO,0);
   C.mopMTD=(city,m)=>{const mp=MOP[city||'India'];if(!mp)return 0;return Math.round((mp[m]||0)*yd.getDate()/dim(yd));};
 
   // Monthly india
@@ -1107,6 +1157,132 @@ function insertMCWidget(containerId,widgetId,onchange){
   placeholder.appendChild(w);
 }
 
+// ── Generic multi-select widget (Tier / Sub-Channel) ───────────────────────
+// Same interaction model as buildMultiCity above (pending state + Apply/Clear),
+// parameterized by an arbitrary options list instead of hardcoded CITIES, reusing
+// the exact same .multi-city-* / .mc-* CSS since it's purely presentational.
+// No search box — tier/sub-channel lists are short enough not to need one.
+const _msState={},_msPending={};
+function buildMultiSelect(id,options,cfg,onchange){
+  const allLabel=cfg.allLabel,noun=cfg.noun,nounPlural=cfg.nounPlural||(noun+'s'),labelFn=cfg.labelFn||(o=>o);
+  if(!_msState[id])_msState[id]=new Set();
+  if(!_msPending[id])_msPending[id]=new Set();
+
+  const wrap=document.createElement('div');
+  wrap.className='multi-city-wrap';
+  wrap.dataset.mcId=id;
+
+  wrap.innerHTML=
+    `<div class="multi-city-btn" id="mc-btn-${id}">
+       <span id="mc-lbl-${id}">${allLabel}</span>
+       <span class="mc-arrow">▾</span>
+     </div>
+     <div class="multi-city-dropdown" id="mc-dd-${id}">
+       <div class="mc-list" id="mc-list-${id}">
+         <label class="mc-all-row" id="mc-allrow-${id}">
+           <input type="checkbox" id="mc-allchk-${id}" checked> ${allLabel}
+         </label>
+         <div class="mc-sep"></div>
+         ${options.map(o=>`<label class="mc-opt" data-opt="${o}"><input type="checkbox" class="mc-chk-${id}" value="${o}"> ${labelFn(o)}</label>`).join('')}
+       </div>
+       <div class="mc-footer">
+         <span class="mc-count" id="mc-cnt-${id}">All selected</span>
+         <div style="display:flex;gap:6px">
+           <button class="mc-clear" id="mc-clr-${id}">Clear</button>
+           <button class="mc-apply" id="mc-apl-${id}">Apply ✓</button>
+         </div>
+       </div>
+     </div>`;
+
+  const btn=wrap.querySelector('#mc-btn-'+id);
+  const dd=wrap.querySelector('#mc-dd-'+id);
+  const allChk=wrap.querySelector('#mc-allchk-'+id);
+  const applyBtn=wrap.querySelector('#mc-apl-'+id);
+  const clearBtn=wrap.querySelector('#mc-clr-'+id);
+
+  function openDD(){
+    _msPending[id]=new Set(_msState[id]);
+    syncCheckboxesToPending();
+    btn.classList.add('open');
+    dd.classList.add('open');
+  }
+  function closeDD(){
+    btn.classList.remove('open');
+    dd.classList.remove('open');
+  }
+  btn.addEventListener('click',e=>{e.stopPropagation();dd.classList.contains('open')?closeDD():openDD();});
+  document.addEventListener('click',e=>{if(dd.classList.contains('open')&&!wrap.contains(e.target))closeDD();});
+  dd.addEventListener('click',e=>e.stopPropagation());
+
+  allChk.addEventListener('change',()=>{
+    const chks=wrap.querySelectorAll('.mc-chk-'+id);
+    chks.forEach(c=>{c.checked=allChk.checked;});
+    _msPending[id]=new Set(); // both all-checked and all-unchecked mean "no filter" here
+    updateCount();
+  });
+
+  wrap.querySelectorAll('.mc-chk-'+id).forEach(chk=>{
+    chk.addEventListener('change',()=>{
+      const all=wrap.querySelectorAll('.mc-chk-'+id);
+      const checked=[...all].filter(c=>c.checked).map(c=>c.value);
+      _msPending[id]=checked.length===0||checked.length===options.length?new Set():new Set(checked);
+      allChk.checked=checked.length===options.length||checked.length===0;
+      updateCount();
+    });
+  });
+
+  applyBtn.addEventListener('click',()=>{
+    _msState[id]=new Set(_msPending[id]);
+    updateBtn();
+    closeDD();
+    onchange(getMSVal(id,options));
+  });
+
+  clearBtn.addEventListener('click',()=>{
+    _msPending[id]=new Set();
+    wrap.querySelectorAll('.mc-chk-'+id).forEach(c=>{c.checked=false;});
+    allChk.checked=false;
+    updateCount();
+  });
+
+  function syncCheckboxesToPending(){
+    const pending=_msPending[id];
+    const isAll=pending.size===0;
+    wrap.querySelectorAll('.mc-chk-'+id).forEach(c=>{c.checked=isAll||pending.has(c.value);});
+    allChk.checked=isAll;
+    updateCount();
+  }
+  function updateCount(){
+    const el=wrap.querySelector('#mc-cnt-'+id);if(!el)return;
+    const n=_msPending[id].size;
+    el.textContent=n===0?`All ${nounPlural.toLowerCase()} selected`:`${n} ${n===1?noun.toLowerCase():nounPlural.toLowerCase()} selected`;
+  }
+  function updateBtn(){
+    const lbl=wrap.querySelector('#mc-lbl-'+id);if(!lbl)return;
+    const sel=getMSVal(id,options);
+    lbl.textContent=sel.length===0?allLabel:sel.length===1?labelFn(sel[0]):`${sel.length} ${nounPlural}`;
+  }
+
+  return wrap;
+}
+function getMSVal(id,options){
+  const s=_msState[id];
+  return(!s||s.size===0||s.size===options.length)?[]:([...s]);
+}
+function insertMSWidget(containerId,widgetId,options,cfg,onchange){
+  const placeholder=document.getElementById(containerId);
+  if(!placeholder)return;
+  const w=buildMultiSelect(widgetId,options,cfg,onchange);
+  placeholder.appendChild(w);
+}
+// Tier options (order matches existing tierOpts() dropdown) + array-membership helpers.
+const TIER_OPTIONS=['Focus','Big','Mid','Small','Exp'];
+const TIER_LABELS={Focus:'Focus',Big:'Big',Mid:'Mid',Small:'Small',Exp:'Expansion'};
+const TIER_CFG={allLabel:'All Tiers',noun:'Tier',nounPlural:'Tiers',labelFn:o=>TIER_LABELS[o]||o};
+const SC_CFG={allLabel:'All Sub-Channels',noun:'Sub-Channel',nounPlural:'Sub-Channels'};
+function tierOk(tfArr,tier){return !tfArr||!tfArr.length||tfArr.includes(tier);}
+function scOk(sfArr,sc){return !sfArr||!sfArr.length||sfArr.includes(sc);}
+
 // ?? INIT ??
 // Now reads from /data/*.json files (updated daily by GitHub Actions)
 // No Google Sheets, no API key, no CORS issues — works locally too
@@ -1143,36 +1319,41 @@ async function init(){
     setLoad('Processing data…');
 
     // ── MOP: read from referral_mop.json ─────────────────────────────────
-    // To update MOP each month: edit data/referral_mop.json in your GitHub repo
+    // Schema (since the Aug'26 BTL split): each row has noBtl/btl/combined blocks,
+    // each {BQL,MS,MD,ORDER,HOTO}. We only need noBtl + combined for the switch —
+    // the btl-only block is kept in the file for reference but not consumed here.
+    // To update MOP each month: edit data/referral_mop.json in your GitHub repo.
+    function applyMopBlock(target,city,blk){
+      if(!blk)return false;
+      const b=parseFloat(blk.BQL)||0,ms=parseFloat(blk.MS)||0,md=parseFloat(blk.MD)||0,
+            o=parseFloat(blk.ORDER)||0,h=parseFloat(blk.HOTO)||0;
+      if(!(b||ms||md||o||h))return false;
+      if(!target[city])target[city]={BQL:0,MS:0,MD:0,ORDER:0,HOTO:0};
+      if(b)target[city].BQL=b;
+      if(ms)target[city].MS=ms;
+      if(md)target[city].MD=md;
+      if(o)target[city].ORDER=o;
+      if(h)target[city].HOTO=h;
+      return true;
+    }
     if(mopR&&mopR.length>0){
-      let updated=0;
+      let updNoBtl=0,updCombined=0;
       mopR.forEach(row=>{
         if(!row.city)return;
         let city=String(row.city).trim();
         if(city==='Bengaluru')city='Bangalore';
-        const b=parseFloat(row.BQL)||0;
-        const ms=parseFloat(row.MS)||0;
-        const md=parseFloat(row.MD)||0;
-        const o=parseFloat(row.ORDER)||0;
-        const h=parseFloat(row.HOTO)||0;
-        if(b||ms||md||o||h){
-          if(!MOP[city])MOP[city]={BQL:0,MS:0,MD:0,ORDER:0,HOTO:0};
-          if(b)MOP[city].BQL=b;
-          if(ms)MOP[city].MS=ms;
-          if(md)MOP[city].MD=md;
-          if(o)MOP[city].ORDER=o;
-          if(h)MOP[city].HOTO=h;
-          updated++;
-        }
+        if(applyMopBlock(MOP_NOBTL,city,row.noBtl))updNoBtl++;
+        if(applyMopBlock(MOP_COMBINED,city,row.combined))updCombined++;
       });
-      console.log(`MOP loaded from referral_mop.json: ${updated} cities`);
+      console.log(`MOP loaded from referral_mop.json: ${updNoBtl} cities (W/O BTL), ${updCombined} cities (Combined)`);
     }
+    MOP=BTL_INCLUDE?MOP_COMBINED:MOP_NOBTL;
 
     // ── Effort data: JSON rows → ED[] ─────────────────────────────────────
     // Fields: action_date, month, year, city, sub_channel,
     //         BQL_Old, BQL_New, First_MS, First_MD, Total_MS, Total_MD, Order, HOTO
     const cityFix=c=>c==='Bengaluru'?'Bangalore':c;
-    ED=eR.map(r=>({
+    ED_ALL=eR.map(r=>({
       date:     pd(r.action_date),
       year:     num(r.year),
       month:    num(r.month),
@@ -1196,7 +1377,7 @@ async function init(){
     // Fields: city, sub_channel, created, first_ms_date, first_md_date,
     //         total_ms_date, total_md_date, ordD, hotoD,
     //         pincode_status, monthly_bill_value, BQL_Old, BQL_New (for segmentation)
-    LD=lR.map(r=>({
+    LD_ALL=lR.map(r=>({
       city:     cityFix((r.city||'').trim()),
       sc:       (r.sub_channel||'').trim(),
       created:  pd(r.created),
@@ -1212,7 +1393,12 @@ async function init(){
       bqlNew:   r.BQL_New==='Yes'
     })).filter(r=>r.city);
 
-    console.log(`Loaded: ED=${ED.length} rows, LD=${LD.length} rows`);
+    // ── BTL switch: derive the active ED/LD view from the full ED_ALL/LD_ALL ──
+    ED=BTL_INCLUDE?ED_ALL:ED_ALL.filter(r=>r.sc!=='BTL');
+    LD=BTL_INCLUDE?LD_ALL:LD_ALL.filter(l=>l.sc!=='BTL');
+    SCS=BTL_INCLUDE?SCS_ALL.slice():SCS_ALL.filter(s=>s!=='BTL');
+
+    console.log(`Loaded: ED_ALL=${ED_ALL.length} rows (active ED=${ED.length}), LD_ALL=${LD_ALL.length} rows (active LD=${LD.length})`);
 
     // ── Digital Effort data → DED[] ──────────────────────────────
     DED=deR.map(r=>({
@@ -1287,17 +1473,18 @@ async function init(){
 // ??????????????????????????????????????
 function bExec(){
   const yd=C.yd;
-  const tf=document.getElementById('exec-tier')?.value||'';
-  const scopeCities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
-  const ind=tf?sumCityMTD(C.cMTD,scopeCities):C.india;
-  const indL=tf?sumCityMTD(C.cLMTD,scopeCities):C.indiaL;
+  const tf=getMSVal('exec-tier',TIER_OPTIONS);
+  const tfLbl=tf.map(t=>TIER_LABELS[t]||t).join(', ');
+  const scopeCities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
+  const ind=tf.length?sumCityMTD(C.cMTD,scopeCities):C.india;
+  const indL=tf.length?sumCityMTD(C.cLMTD,scopeCities):C.indiaL;
   const fyP=Math.min(Math.round(C.ytdHoto/FY_T*100),100);
   const rr=Math.round(C.ytdHoto/moEl()),rem=FY_T-C.ytdHoto;
   const moN=Math.ceil(rem/Math.max(12-moEl()+1,1));
   const cols={BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
   const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'ORDER',HOTO:'HOTO'};
   const cards=['BQL','MS','MD','Order','HOTO'].map(m=>{
-    const v=ind[m],pv=indL[m],mop=tf?scopeCities.reduce((s,c)=>s+C.mopMTD(c,mK[m]),0):C.mopMTD(null,mK[m]);
+    const v=ind[m],pv=indL[m],mop=tf.length?scopeCities.reduce((s,c)=>s+C.mopMTD(c,mK[m]),0):C.mopMTD(null,mK[m]);
     const ach=mop?Math.min(Math.round(v/mop*100),150):0;
     const achColor=ach>=95?'var(--gn)':ach>=75?'var(--am)':'var(--rd)';
     return`<div class="mc">
@@ -1325,10 +1512,10 @@ function bExec(){
   const mdOrdPct=pN(ind.Order,ind.MD).toFixed(1),pMdOrdPct=pN(indL.Order,indL.MD).toFixed(1);
   const mdHotoPct=pN(ind.HOTO,ind.MD).toFixed(1),pMdHotoPct=pN(indL.HOTO,indL.MD).toFixed(1);
   document.getElementById('p-exec').innerHTML=`
-<div class="ptitle">Executive Summary${tf?` <span style="font-size:12px;font-weight:600;color:#92400e">— ${tf} tier only</span>`:''}</div>
+<div class="ptitle">Executive Summary${tf.length?` <span style="font-size:12px;font-weight:600;color:#92400e">— ${tfLbl} tier only</span>`:''}</div>
 <div class="psub">Referral Channel . MTD as of ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
-<div class="fbar"><select id="exec-tier" onchange="bExec()">${tierOpts()}</select></div>
-${tf?`<div class="tf-mop-banner" style="margin-bottom:10px">Showing ${scopeCities.length} ${tf} city${scopeCities.length===1?'':'ies'} only — MTD cards below are summed across just these cities. FY27 tracker stays company-wide (it's a national target, not tier-specific).</div>`:''}
+<div class="fbar"><span id="exec-tier-mc-wrap"></span></div>
+${tf.length?`<div class="tf-mop-banner" style="margin-bottom:10px">Showing ${scopeCities.length} ${tfLbl} city${scopeCities.length===1?'':'ies'} only — MTD cards below are summed across just these cities. FY27 tracker stays company-wide (it's a national target, not tier-specific).</div>`:''}
 <div class="fy"><div class="fy-top">
   <div><div class="fy-lbl">FY27 HOTO Tracker</div><div class="fy-num">${f(C.ytdHoto)} <span>/ ${f(FY_T)}</span></div><div class="fy-sub">${fyP}% achieved . ${f(rem)} remaining . Apr'26-Mar'27</div></div>
   <div class="fy-stats"><div><div class="fys-v">${moEl()}/12</div><div class="fys-l">Months</div></div><div><div class="fys-v">${f(rr)}</div><div class="fys-l">Run rate/mo</div></div><div><div class="fys-v">${f(moN)}</div><div class="fys-l">Needed/mo</div></div></div>
@@ -1360,12 +1547,12 @@ ${tf?`<div class="tf-mop-banner" style="margin-bottom:10px">Showing ${scopeCitie
 <div class="stitle">⚡ Key Callouts</div>
 ${(()=>{
   const d=buildInsData();
-  if(tf) d.cities=d.cities.filter(cd=>cd.tier===tf);
+  if(tf.length) d.cities=d.cities.filter(cd=>tierOk(tf,cd.tier));
   const chips=[];
   const METS=['BQL','MS','MD','Order','HOTO'];
 
   // ── India metric chips (skipped when a tier filter is active — these are always company-wide) ──
-  if(!tf) METS.forEach(m=>{
+  if(!tf.length) METS.forEach(m=>{
     const x=d.india[m];
     if(!x.mop||x.mop<=0) return;
     const def=(x.mop-x.cur)/x.mop*100;
@@ -1388,7 +1575,7 @@ ${(()=>{
   // ── Funnel health chips (India-wide — skipped under a tier filter) ──
   const fn=d.india.funnel;
   const fnMap={bqlMs:'BQL→MS',msMd:'MS→MD',mdOrd:'MD→Order',mdHoto:'MD→HOTO'};
-  if(!tf) Object.entries(fn).forEach(([k,x])=>{
+  if(!tf.length) Object.entries(fn).forEach(([k,x])=>{
     if(x.alert==='crit'||x.alert==='warn'){
       const c=IAC[x.alert];
       const pp=x.cur-x.lmtd;
@@ -1452,6 +1639,7 @@ ${(()=>{
     </div>`;
   }).join('');
 })()}`;
+  insertMSWidget('exec-tier-mc-wrap','exec-tier',TIER_OPTIONS,TIER_CFG,()=>bExec());
 }
 
 // ??????????????????????????????????????
@@ -1519,7 +1707,7 @@ function bMop(){
   <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600">Green = surplus</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 8px;border-radius:6px">Hover cells for detail</span>
 </div>
-<div class="fbar"><select id="mop-tier" onchange="filterMopTable()">${tierOpts()}</select><span id="mop-city-mc-wrap"></span></div>
+<div class="fbar"><span id="mop-tier-mc-wrap"></span><span id="mop-city-mc-wrap"></span></div>
 <div class="tw" id="mop-tbl"><table>
   <thead>
     <tr>
@@ -1540,8 +1728,13 @@ function bMop(){
   </thead>
   <tbody>${tableRows}</tbody>
 </table></div>`;
+  // NOTE: initMopMC() was previously defined but never called anywhere — the MOP
+  // tab's city filter widget was dead code and never actually rendered. Wiring both
+  // widgets up here now.
+  initMopMC();
+  insertMSWidget('mop-tier-mc-wrap','mop-tier',TIER_OPTIONS,TIER_CFG,()=>filterMopTable());
 }
-function filterMop(cf,tf){
+function filterMop(cfArr,tf){
   const yd=C.yd,doneD=yd.getDate();
   const metrics=['BQL','MS','MD','HOTO'];
   function cityRowHtml(city,isIndia){
@@ -1567,7 +1760,7 @@ function filterMop(cf,tf){
     return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${baseCells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${ordFullCell}${hotoCell?`<td class="neu" style="font-weight:600">${f(hotoCell.mopFull)}</td>`:''}${baseCells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${ordMtdCell}${hotoCell?`<td class="neu">${f(hotoCell.mopMtd)}</td>`:''}${baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):''}${baseCells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}${ordPctCell}${(()=>{if(!hotoCell)return'';const hm=hotoCell.mopMtd,hd=hotoCell.actual-hm,hp=hm?Math.round(hd/hm*100):0,hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`;})()}${baseCells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td>${hotoCell?`<td>${mb(hotoCell.actual,hotoCell.prevActual)}</td>`:''}</tr>`;
   }
   const mopCities=CITIES.filter(hasMop);
-  const cities=cf?[cf]:tf?mopCities.filter(c=>TIERS[c]===tf):mopCities;
+  const cities=cfArr.length?mopCities.filter(c=>cfArr.includes(c)):(tf.length?mopCities.filter(c=>tierOk(tf,TIERS[c])):mopCities);
   const tbody=document.querySelector('#mop-tbl tbody');
   if(tbody)tbody.innerHTML=cityRowHtml(null,true)+cities.map(c=>cityRowHtml(c,false)).join('');
 }
@@ -1579,19 +1772,29 @@ function filterMop(cf,tf){
 function bIndia(){
   const p=document.getElementById('p-india');
   p.innerHTML=`<div class="ptitle">India Summary</div><div class="psub">All cities . Referral Channel</div>
-<div class="fbar"><select id="i-tier" onchange="rebuildIndia()">${tierOpts()}</select><select id="i-city" onchange="rebuildIndia()">${cityOpts()}</select><select id="i-sc" onchange="rebuildIndia()">${scOpts()}</select></div>
+<div class="fbar"><span id="i-tier-mc-wrap"></span><span id="i-city-mc-wrap"></span><span id="i-sc-mc-wrap"></span></div>
 <div id="i-body"></div>`;
-  renderIndia('','');
+  insertMSWidget('i-tier-mc-wrap','i-tier',TIER_OPTIONS,TIER_CFG,()=>rebuildIndia());
+  insertMCWidget('i-city-mc-wrap','i-city',()=>rebuildIndia());
+  insertMSWidget('i-sc-mc-wrap','i-sc',SCS,SC_CFG,()=>rebuildIndia());
+  rebuildIndia();
 }
-function rebuildIndia(){const t=document.getElementById('i-tier')?.value||'';const cities=t?CITIES.filter(c=>TIERS[c]===t):null;renderIndia(document.getElementById('i-city')?.value||'',document.getElementById('i-sc')?.value||'',cities);}
-function renderIndia(cf,sf,tierCities){
+function rebuildIndia(){
+  const tf=getMSVal('i-tier',TIER_OPTIONS);
+  const tierCities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):null;
+  renderIndia(getMCVal('i-city'),getMSVal('i-sc',SCS),tierCities);
+}
+function renderIndia(cfArr,sfArr,tierCities){
   const yd=C.yd,months=C.months;
-  const inScope=(c)=>!tierCities||tierCities.includes(c);
+  cfArr=cfArr||[];sfArr=sfArr||[];
+  // Scope = selected cities directly, else selected tiers' cities, else everything.
+  const scopeCities=cfArr.length?cfArr:tierCities;
+  const inScope=(c)=>!scopeCities||scopeCities.includes(c);
   function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   const cur=MS0(yd),lmS=new Date(yd.getFullYear(),yd.getMonth()-1,1),lmE=new Date(yd.getFullYear(),yd.getMonth()-1,yd.getDate());
-  const v=agg(ED.filter(r=>r.date>=cur&&r.date<=yd&&(!cf||r.city===cf)&&(!sf||r.sc===sf)&&inScope(r.city)));
-  const pv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&(!cf||r.city===cf)&&(!sf||r.sc===sf)&&inScope(r.city)));
-  const mop=cf?MOP[cf]:(tierCities?{BQL:tierCities.reduce((s,c)=>s+(MOP[c]?.BQL||0),0),MS:tierCities.reduce((s,c)=>s+(MOP[c]?.MS||0),0),MD:tierCities.reduce((s,c)=>s+(MOP[c]?.MD||0),0),ORDER:tierCities.reduce((s,c)=>s+(MOP[c]?.ORDER||0),0),HOTO:tierCities.reduce((s,c)=>s+(MOP[c]?.HOTO||0),0)}:MOP.India);
+  const v=agg(ED.filter(r=>r.date>=cur&&r.date<=yd&&inScope(r.city)&&scOk(sfArr,r.sc)));
+  const pv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&inScope(r.city)&&scOk(sfArr,r.sc)));
+  const mop=scopeCities?{BQL:scopeCities.reduce((s,c)=>s+(MOP[c]?.BQL||0),0),MS:scopeCities.reduce((s,c)=>s+(MOP[c]?.MS||0),0),MD:scopeCities.reduce((s,c)=>s+(MOP[c]?.MD||0),0),ORDER:scopeCities.reduce((s,c)=>s+(MOP[c]?.ORDER||0),0),HOTO:scopeCities.reduce((s,c)=>s+(MOP[c]?.HOTO||0),0)}:MOP.India;
   const metrics=['BQL','MS','MD','Order','HOTO'];
   const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'ORDER',HOTO:'HOTO'};
   const mopRows=metrics.map(m=>{
@@ -1601,8 +1804,8 @@ function renderIndia(cf,sf,tierCities){
   }).join('');
 
   const moRows=months.map((mo,i)=>{
-    const r=agg(ED.filter(x=>x.year===mo.y&&x.month===mo.m&&(!cf||x.city===cf)&&(!sf||x.sc===sf)&&inScope(x.city)));
-    const pr=i>0?agg(ED.filter(x=>x.year===months[i-1].y&&x.month===months[i-1].m&&(!cf||x.city===cf)&&(!sf||x.sc===sf)&&inScope(x.city))):{BQL:0,MS:0,MD:0,Order:0};
+    const r=agg(ED.filter(x=>x.year===mo.y&&x.month===mo.m&&inScope(x.city)&&scOk(sfArr,x.sc)));
+    const pr=i>0?agg(ED.filter(x=>x.year===months[i-1].y&&x.month===months[i-1].m&&inScope(x.city)&&scOk(sfArr,x.sc))):{BQL:0,MS:0,MD:0,Order:0};
     const isCur=i===months.length-1;
     const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),pBMs=(pr.MS/Math.max(pr.BQL,1)*100).toFixed(1),mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),pMMd=(pr.MD/Math.max(pr.MS,1)*100).toFixed(1),mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1),pMO=(pr.Order/Math.max(pr.MD,1)*100).toFixed(1);
     const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1),pMH=(pr.HOTO||0/Math.max(pr.MD||1,1)*100).toFixed(1);
@@ -1610,8 +1813,8 @@ function renderIndia(cf,sf,tierCities){
   }).join('');
 
   const scRows=SCS.map(s=>{
-    const cur2=MS0(yd),sv=agg(ED.filter(r=>r.date>=cur2&&r.date<=yd&&(!cf||r.city===cf)&&r.sc===s&&inScope(r.city)));
-    const spv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&(!cf||r.city===cf)&&r.sc===s&&inScope(r.city)));
+    const cur2=MS0(yd),sv=agg(ED.filter(r=>r.date>=cur2&&r.date<=yd&&inScope(r.city)&&r.sc===s));
+    const spv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&inScope(r.city)&&r.sc===s));
     const tot=v.BQL;return{s,sv,spv,share:tot?pN(sv.BQL,tot):0};
   }).filter(r=>r.sv.BQL>0||r.sv.HOTO>0);
 
@@ -1619,8 +1822,8 @@ function renderIndia(cf,sf,tierCities){
   const mtdDay=yd.getDate();
   const moMtdRows=months.map((mo,i)=>{
     const mStart=new Date(mo.y,mo.m-1,1),mEnd=new Date(mo.y,mo.m-1,mtdDay);
-    const r2=agg(ED.filter(x=>x.date>=mStart&&x.date<=mEnd&&(!cf||x.city===cf)&&(!sf||x.sc===sf)&&inScope(x.city)));
-    const pr2=i>0?agg(ED.filter(x=>{const ps=new Date(months[i-1].y,months[i-1].m-1,1),pe=new Date(months[i-1].y,months[i-1].m-1,mtdDay);return x.date>=ps&&x.date<=pe&&(!cf||x.city===cf)&&(!sf||x.sc===sf)&&inScope(x.city);})):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    const r2=agg(ED.filter(x=>x.date>=mStart&&x.date<=mEnd&&inScope(x.city)&&scOk(sfArr,x.sc)));
+    const pr2=i>0?agg(ED.filter(x=>{const ps=new Date(months[i-1].y,months[i-1].m-1,1),pe=new Date(months[i-1].y,months[i-1].m-1,mtdDay);return x.date>=ps&&x.date<=pe&&inScope(x.city)&&scOk(sfArr,x.sc);})):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     const isCur=i===months.length-1;
     const bMs2=(r2.MS/Math.max(r2.BQL,1)*100).toFixed(1),pBMs2=(pr2.MS/Math.max(pr2.BQL,1)*100).toFixed(1),mMd2=(r2.MD/Math.max(r2.MS,1)*100).toFixed(1),pMMd2=(pr2.MD/Math.max(pr2.MS,1)*100).toFixed(1),mO2=(r2.Order/Math.max(r2.MD,1)*100).toFixed(1),pMO2=(pr2.Order/Math.max(pr2.MD,1)*100).toFixed(1),mH2=(r2.HOTO/Math.max(r2.MD,1)*100).toFixed(1),pMH2=(pr2.HOTO/Math.max(pr2.MD,1)*100).toFixed(1);
     return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">Current</span>':` <span style="font-size:9px;color:var(--t3)">till ${mtdDay}</span>`}</td><td>${isCur?cv(r2.BQL,pr2.BQL):`<span class="mono">${f(r2.BQL)}</span>`}</td><td>${isCur?cv(r2.MS,pr2.MS):`<span class="mono">${f(r2.MS)}</span>`}</td><td title="Cur: ${bMs2}% | Prior MTD: ${pBMs2}%"><span class="${isCur?(parseFloat(bMs2)>=parseFloat(pBMs2)?'green':'red'):''}">${bMs2}%</span></td><td>${isCur?cv(r2.MD,pr2.MD):`<span class="mono">${f(r2.MD)}</span>`}</td><td title="Cur: ${mMd2}% | Prior MTD: ${pMMd2}%"><span class="${isCur?(parseFloat(mMd2)>=parseFloat(pMMd2)?'green':'red'):''}">${mMd2}%</span></td><td>${isCur?cv(r2.Order,pr2.Order):`<span class="mono">${f(r2.Order)}</span>`}</td><td title="Cur: ${mO2}% | Prior MTD: ${pMO2}%"><span class="${isCur?(parseFloat(mO2)>=parseFloat(pMO2)?'green':'red'):''}">${mO2}%</span></td><td>${isCur?cv(r2.HOTO,pr2.HOTO||0):`<span class="mono">${f(r2.HOTO)}</span>`}</td><td title="Cur: ${mH2}% | Prior MTD: ${pMH2}%"><span class="${isCur?(parseFloat(mH2)>=parseFloat(pMH2)?'green':'red'):''}">${mH2}%</span></td></tr>`;
@@ -1837,7 +2040,7 @@ function bCity(){
     </tbody></table></div></div></div>`;
   }).join('');
   document.getElementById('p-city').innerHTML=`<div class="ptitle">City Summary</div><div class="psub">India row at top . Cities sorted by Order drop vs LMTD (worst first) . MTD vs MOP &amp; LMTD</div>
-<div class="fbar"><select id="city-tier" onchange="filterCityTable()">${tierOpts()}</select><span id="city-city-mc-wrap"></span><select id="city-sc-f" onchange="filterCityTable()">${scOpts()}</select></div>
+<div class="fbar"><span id="city-tier-mc-wrap"></span><span id="city-city-mc-wrap"></span><span id="city-sc-f-mc-wrap"></span></div>
 <div class="stitle">Performance - Absolute vs MOP MTD &amp; LMTD . Funnel % vs LMTD</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:8px">
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Absolute: Actual / MOP MTD / LMTD</span>
@@ -1864,20 +2067,29 @@ function bCity(){
 </thead>
 <tbody id="city-tbody">${tbl}</tbody></table></div>
 <div class="stitle">City ? Sub-Channel - Click to expand</div>${drills}`;
+  // NOTE: initCityMC() was previously defined but never called — the City Summary
+  // tab's city filter widget was dead code and never actually rendered. Wiring all
+  // three widgets up here now.
+  initCityMC();
+  insertMSWidget('city-tier-mc-wrap','city-tier',TIER_OPTIONS,TIER_CFG,()=>filterCityTable());
+  insertMSWidget('city-sc-f-mc-wrap','city-sc-f',SCS,SC_CFG,()=>filterCityTable());
 }
 function initCityMC(){
   const w=document.getElementById('city-city-mc-wrap');
   if(w&&!w.dataset.init){w.dataset.init='1';const mc=buildMultiCity('city-city',()=>filterCityTable());w.appendChild(mc);}
 }
 function filterCityTable(){
-  const sf=document.getElementById('city-sc-f')?.value||'';
-  const tf=document.getElementById('city-tier')?.value||'';
+  const sf=getMSVal('city-sc-f',SCS);
+  const tf=getMSVal('city-tier',TIER_OPTIONS);
+  const tfLbl=tf.map(t=>TIER_LABELS[t]||t).join(', ');
   const cityFArr=getMCVal('city-city');
   const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
   // Determine cities: explicit multi-select > tier filter > all
-  const allCities=cityFArr.length>0?cityFArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
+  const allCities=cityFArr.length>0?cityFArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
+  // Sum across every selected sub-channel (was a single-key lookup, only supported one at a time)
+  function scAgg(cache,c,list){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};list.forEach(s=>{const x=cache[c][s];if(x)['BQL','MS','MD','Order','HOTO'].forEach(m=>r[m]+=x[m]||0);});return r;}
   const rows=allCities.map(c=>{
-    const v=sf?C.cscMTD[c][sf]:C.cMTD[c],pv=sf?C.cscLMTD[c][sf]:C.cLMTD[c];
+    const v=sf.length?scAgg(C.cscMTD,c,sf):C.cMTD[c],pv=sf.length?scAgg(C.cscLMTD,c,sf):C.cLMTD[c];
     return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mO:C.mopMTD(c,'ORDER'),mB:C.mopMTD(c,'BQL'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
   }).sort((a,b)=>(tierOrd[a.tier]||5)-(tierOrd[b.tier]||5)||b.v.HOTO-a.v.HOTO);
   // Aggregate India row from filtered cities
@@ -1901,8 +2113,8 @@ function filterCityTable(){
     return`<span title="Current: ${c2}% | LMTD: ${p2??'-'}%">${c2}%${ppBadge}</span>`;
   };
   // Build India aggregated row
-  const indRow=(tf||cityFArr.length>0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)">
-    <td><strong>India (filtered)</strong><span class="ctag" style="background:#1a56db;color:#fff">${tf||cityFArr.length+' cities'}</span></td>
+  const indRow=(tf.length||cityFArr.length>0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)">
+    <td><strong>India (filtered)</strong><span class="ctag" style="background:#1a56db;color:#fff">${cityFArr.length>0?cityFArr.length+' cities':tfLbl}</span></td>
     <td>${vM2(aggV.BQL,indMB)}</td><td>${vM2(aggV.MS,indMMS)}</td><td>${vM2(aggV.MD,indMMD)}</td>
     <td>${vM2(aggV.Order,indMO)}</td><td>${vM2(aggV.HOTO,indMH)}</td>
     <td style="background:#e5e7eb;padding:0"></td>
@@ -1912,7 +2124,7 @@ function filterCityTable(){
     </tr>`:''
   +(()=>{
     const iV=C.india,iPV=C.indiaL,iMH=C.mopMTD(null,'HOTO'),iMO=C.mopMTD(null,'ORDER'),iMB=C.mopMTD(null,'BQL'),iMMS=C.mopMTD(null,'MS'),iMMD=C.mopMTD(null,'MD');
-    return(!tf&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td><td>${fP2(iV.Order,iV.BQL,iPV.Order,iPV.BQL)}</td><td>${fP2(iV.HOTO,iV.BQL,iPV.HOTO,iPV.BQL)}</td></tr>`:'';
+    return(!tf.length&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td><td>${fP2(iV.Order,iV.BQL,iPV.Order,iPV.BQL)}</td><td>${fP2(iV.HOTO,iV.BQL,iPV.HOTO,iPV.BQL)}</td></tr>`:'';
   })();
   if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mO||C.mopMTD(r.c,'ORDER'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fP2(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td><td>${fP2(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td><td>${fP2(r.v.HOTO,r.v.BQL,r.pv.HOTO,r.pv.BQL)}</td></tr>`).join('');
   setTimeout(()=>autoSort(document.querySelector('#city-tbody')?.closest('table')),50);
@@ -2212,7 +2424,7 @@ ${SCS.map(s=>{
   }).join('');
 
   document.getElementById('p-sc').innerHTML=`<div class="ptitle">Sub-Channel Analysis</div><div class="psub">MoM trend . Growing vs declining . City breakdown</div>
-<div class="fbar"><select id="sc-tier" onchange="reFilterSC()">${tierOpts()}</select><span id="sc-city-mc-wrap"></span></div>
+<div class="fbar"><span id="sc-tier-mc-wrap"></span><span id="sc-city-mc-wrap"></span></div>
 <div class="stitle">Full Month Trend vs LMTD - BQL, Order, HOTO . Green=grew, Red=dropped <span style="font-weight:400;font-size:10px;color:var(--t3)">(Full month values . compared with prior full month)</span></div><div id="sc-trend-full"></div>
 <div class="stitle">MTD Comparison vs LMTD - Each month till Day ${mtdDay} only <span style="font-weight:400;font-size:10px;color:var(--t3)">(apple-to-apple . compared with LMTD)</span></div><div id="sc-trend-mtd"></div>
 <div class="stitle">MTD Funnel by Sub-Channel <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with LMTD)</span></div>
@@ -2255,6 +2467,7 @@ ${(()=>{
   // Init multi-city widget for SC tab
   const scMCW=document.getElementById('sc-city-mc-wrap');
   if(scMCW&&!scMCW.dataset.init){scMCW.dataset.init='1';const mc=buildMultiCity('sc-city',()=>reFilterSC());scMCW.appendChild(mc);}
+  insertMSWidget('sc-tier-mc-wrap','sc-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterSC());
   refreshSCTrendTables('');
 }
 function filterSC(cfArr){
@@ -2302,7 +2515,7 @@ function bFunnel(){
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Effort: BQL = current month created . MS/MD/Ord = any lead, action in that month</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">Arrows = vs LMTD (hover for values)</span>
 </div>
-<div class="fbar"><select id="fn-tier" onchange="reFilterFunnel()">${tierOpts()}</select><span id="fn-city-mc-wrap"></span><select id="fn-sc" onchange="reFilterFunnel()">${scOpts()}</select></div>
+<div class="fbar"><span id="fn-tier-mc-wrap"></span><span id="fn-city-mc-wrap"></span><span id="fn-sc-mc-wrap"></span></div>
 <div id="fn-viz"></div>
 <div class="stitle">Effort Funnel - Full Month Trend (6M) <span style="font-weight:400;font-size:10px;color:var(--t3)">(full month values)</span></div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--t2);margin-bottom:6px">
@@ -2328,6 +2541,8 @@ function bFunnel(){
   // Init multi-city widget for Funnel tab
   const fnMCW=document.getElementById('fn-city-mc-wrap');
   if(fnMCW&&!fnMCW.dataset.init){fnMCW.dataset.init='1';const mc=buildMultiCity('fn-city',()=>reFilterFunnel());fnMCW.appendChild(mc);}
+  insertMSWidget('fn-tier-mc-wrap','fn-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterFunnel());
+  insertMSWidget('fn-sc-mc-wrap','fn-sc',SCS,SC_CFG,()=>reFilterFunnel());
   // Init compare-month dropdown for Funnel Impact Analysis (default = last month)
   const impCmpSel=document.getElementById('fn-impact-cmp');
   if(impCmpSel&&!impCmpSel.dataset.init){
@@ -2343,10 +2558,10 @@ function bFunnel(){
   setTimeout(()=>renderFunnelChart('',''),100);
 }
 function reFilterFunnel(){
-  const cfArr=getMCVal('fn-city'),sf=document.getElementById('fn-sc')?.value||'';
-  const tf=document.getElementById('fn-tier')?.value||'';
+  const cfArr=getMCVal('fn-city'),sf=getMSVal('fn-sc',SCS);
+  const tf=getMSVal('fn-tier',TIER_OPTIONS);
   // Apply tier filter to city list if no explicit city selected
-  const effectiveCfArr=cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):[]);
+  const effectiveCfArr=cfArr.length>0?cfArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):[]);
   renderFunnelViz(effectiveCfArr,sf);
   renderFunnelMoTbl(effectiveCfArr,sf);
   renderFunnelMoMtdTbl(effectiveCfArr,sf);
@@ -2357,6 +2572,7 @@ function reFilterFunnel(){
 function renderFunnelChart(cfArr,sf){
   const cv2=document.getElementById('fn-chart');if(!cv2)return;
   if(!Array.isArray(cfArr))cfArr=cfArr?[cfArr]:[];
+  if(!Array.isArray(sf))sf=sf?[sf]:[];
   if(chartInst.fn)chartInst.fn.destroy();
   const months=C.months;
   // Aggregate per month with city+sc filter from ED
@@ -2365,7 +2581,7 @@ function renderFunnelChart(cfArr,sf){
     ED.forEach(x=>{
       if(x.year!==mo.y||x.month!==mo.m)return;
       if(cfArr.length&&!cfArr.includes(x.city))return;
-      if(sf&&x.sc!==sf)return;
+      if(!scOk(sf,x.sc))return;
       r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;
     });
     return r;
@@ -2377,16 +2593,20 @@ function renderFunnelChart(cfArr,sf){
     {label:'MD->HOTO%',data:moData.map(r=>pN(r.HOTO,r.MD)),borderColor:'#7c3aed',tension:.3,pointRadius:3,borderDash:[4,2],backgroundColor:'rgba(124,58,237,.04)'}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0}}}});
 }
+// sf may be a single string (legacy call) or an array (multi-select) — normalize once.
+function scArr(sf){return Array.isArray(sf)?sf:(sf?[sf]:[]);}
 function getVArr(cfArr,sf,m){
-  if(cfArr.length===0){if(!sf)return C.india[m];return C.scMTD[sf]?.[m]||0;}
-  return cfArr.reduce((s,c)=>s+(sf?C.cscMTD[c]?.[sf]?.[m]||0:C.cMTD[c]?.[m]||0),0);
+  sf=scArr(sf);
+  if(cfArr.length===0){if(!sf.length)return C.india[m];return sf.reduce((s,sc)=>s+(C.scMTD[sc]?.[m]||0),0);}
+  return cfArr.reduce((s,c)=>s+(sf.length?sf.reduce((s2,sc)=>s2+(C.cscMTD[c]?.[sc]?.[m]||0),0):C.cMTD[c]?.[m]||0),0);
 }
 function getPVArr(cfArr,sf,m){
-  if(cfArr.length===0){if(!sf)return C.indiaL[m];return C.scLMTD[sf]?.[m]||0;}
-  return cfArr.reduce((s,c)=>s+(sf?C.cscLMTD[c]?.[sf]?.[m]||0:C.cLMTD[c]?.[m]||0),0);
+  sf=scArr(sf);
+  if(cfArr.length===0){if(!sf.length)return C.indiaL[m];return sf.reduce((s,sc)=>s+(C.scLMTD[sc]?.[m]||0),0);}
+  return cfArr.reduce((s,c)=>s+(sf.length?sf.reduce((s2,sc)=>s2+(C.cscLMTD[c]?.[sc]?.[m]||0),0):C.cLMTD[c]?.[m]||0),0);
 }
-function getV(cf,sf,m){if(!cf&&!sf)return C.india[m];if(cf&&!sf)return C.cMTD[cf]?.[m]||0;if(!cf&&sf)return C.scMTD[sf]?.[m]||0;return C.cscMTD[cf]?.[sf]?.[m]||0;}
-function getPV(cf,sf,m){if(!cf&&!sf)return C.indiaL[m];if(cf&&!sf)return C.cLMTD[cf]?.[m]||0;if(!cf&&sf)return C.scLMTD[sf]?.[m]||0;return C.cscLMTD[cf]?.[sf]?.[m]||0;}
+function getV(cf,sf,m){sf=scArr(sf);if(!cf&&!sf.length)return C.india[m];if(cf&&!sf.length)return C.cMTD[cf]?.[m]||0;if(!cf&&sf.length)return sf.reduce((s,sc)=>s+(C.scMTD[sc]?.[m]||0),0);return sf.reduce((s,sc)=>s+(C.cscMTD[cf]?.[sc]?.[m]||0),0);}
+function getPV(cf,sf,m){sf=scArr(sf);if(!cf&&!sf.length)return C.indiaL[m];if(cf&&!sf.length)return C.cLMTD[cf]?.[m]||0;if(!cf&&sf.length)return sf.reduce((s,sc)=>s+(C.scLMTD[sc]?.[m]||0),0);return sf.reduce((s,sc)=>s+(C.cscLMTD[cf]?.[sc]?.[m]||0),0);}
 function renderFunnelViz(cfArr,sf){
   const el=document.getElementById('fn-viz');if(!el)return;
   if(!Array.isArray(cfArr))cfArr=cfArr?[cfArr]:[];
@@ -2396,8 +2616,9 @@ function renderFunnelViz(cfArr,sf){
 function renderFunnelMoTbl(cfArr,sf){
   const el=document.getElementById('fn-mo-tbl');if(!el)return;
   if(!Array.isArray(cfArr))cfArr=cfArr?[cfArr]:[];
+  sf=scArr(sf);
   const months=C.months;
-  function aggMo(mo){let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(sf&&x.sc!==sf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
+  function aggMo(mo){let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(!scOk(sf,x.sc))return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   const moData=months.map(aggMo);
   const rows=moData.map((r,i)=>{
     const p=i>0?moData[i-1]:{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
@@ -2414,12 +2635,13 @@ function renderFunnelMoTbl(cfArr,sf){
 function renderFunnelMoMtdTbl(cfArr,sf){
   const el=document.getElementById('fn-mo-mtd-tbl');if(!el)return;
   if(!Array.isArray(cfArr))cfArr=cfArr?[cfArr]:[];
+  sf=scArr(sf);
   const months=C.months;
   const mtdDay=C.yd.getDate();
   function aggMoMtd(mo){
     let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
-    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(sf&&x.sc!==sf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;
+    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(!scOk(sf,x.sc))return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;
   }
   const moData=months.map(aggMoMtd);
   const rows=moData.map((r,i)=>{
@@ -2444,6 +2666,7 @@ function renderFunnelMoMtdTbl(cfArr,sf){
 function renderFunnelImpactTbl(cfArr,sf){
   const el=document.getElementById('fn-impact-tbl');if(!el)return;
   if(!Array.isArray(cfArr))cfArr=cfArr?[cfArr]:[];
+  sf=scArr(sf);
   const months=C.months;
   const mtdDay=C.yd.getDate();
   const curIdx=months.length-1;
@@ -2453,7 +2676,7 @@ function renderFunnelImpactTbl(cfArr,sf){
   function aggMoMtd(mo){
     let r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
-    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(sf&&x.sc!==sf)return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});
+    ED.forEach(x=>{if(x.year!==mo.y||x.month!==mo.m||x.date<ms||x.date>me)return;if(cfArr.length&&!cfArr.includes(x.city))return;if(!scOk(sf,x.sc))return;r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});
     return r;
   }
   const cur=aggMoMtd(months[curIdx]),cmp=aggMoMtd(months[cmpIdx]);
@@ -2631,7 +2854,7 @@ function bM0Funnel(){
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">M0 MTD: BQL created 1->day ${mtdDay} . MS/MD/Ord also 1->day ${mtdDay} of same month</span>
   <span style="background:#f0fdf4;color:#166534;padding:2px 7px;border-radius:5px">Current month: Full Month = MTD (month not yet complete)</span>
 </div>
-<div class="fbar"><select id="m0-tier" onchange="reFilterM0()">${tierOpts()}</select><span id="m0-city-mc-wrap"></span><select id="m0-sc" onchange="reFilterM0()">${scOpts()}</select></div>
+<div class="fbar"><span id="m0-tier-mc-wrap"></span><span id="m0-city-mc-wrap"></span><span id="m0-sc-mc-wrap"></span></div>
 <div class="stitle">M0 Full Month Funnel <span style="font-weight:400;font-size:10px;color:var(--t3)">(past months: full 1->30/31 . current month: 1->yesterday, same as MTD)</span></div>
 <div class="tw" id="m0-full-tbl"></div>
 <div class="stitle">M0 MTD Funnel - Apple-to-Apple <span style="font-weight:400;font-size:10px;color:var(--t3)">(each month: BQL created 1->${mtdDay}, actions also 1->${mtdDay} of same month . current month 1->yesterday)</span></div>
@@ -2641,14 +2864,16 @@ function bM0Funnel(){
   // Init multi-city widget for M0 tab
   const m0MCW=document.getElementById('m0-city-mc-wrap');
   if(m0MCW&&!m0MCW.dataset.init){m0MCW.dataset.init='1';const mc=buildMultiCity('m0-city',()=>reFilterM0());m0MCW.appendChild(mc);}
+  insertMSWidget('m0-tier-mc-wrap','m0-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterM0());
+  insertMSWidget('m0-sc-mc-wrap','m0-sc',SCS,SC_CFG,()=>reFilterM0());
   renderM0Tables('','');
 
 }
 // ---- M0 filter helpers ----
 function reFilterM0(){
-  const cfArr=getMCVal('m0-city'),tf=document.getElementById('m0-tier')?.value||'';
-  const sf=document.getElementById('m0-sc')?.value||'';
-  const tierCities=tf?CITIES.filter(c=>TIERS[c]===tf):null;
+  const cfArr=getMCVal('m0-city'),tf=getMSVal('m0-tier',TIER_OPTIONS);
+  const sf=getMSVal('m0-sc',SCS);
+  const tierCities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):null;
   const effectiveCfArr=cfArr.length>0?cfArr:(tierCities||[]);
   renderM0Tables(effectiveCfArr.length>0?effectiveCfArr:null,sf,tf);
 }
@@ -2656,6 +2881,7 @@ function renderM0Tables(cfOrArr,sf,tf){
   // cfOrArr can be a string (single city), array, or null (all)
   const cf=Array.isArray(cfOrArr)?cfOrArr.length===1?cfOrArr[0]:'':cfOrArr||'';
   const cfArr=Array.isArray(cfOrArr)?(cfOrArr.length===0?null:cfOrArr):(cfOrArr?[cfOrArr]:null);
+  sf=scArr(sf);tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
   const yd=C.yd,months=C.months,mtdDay=yd.getDate();
   const th=`<thead><tr><th style="white-space:normal;max-width:80px">Month</th><th>BQL</th><th>MS</th><th style="white-space:normal">BQL→MS%</th><th>MD</th><th style="white-space:normal">MS→MD%</th><th>Order</th><th style="white-space:normal">MD→Ord%</th><th style="white-space:normal">MD→HOTO%</th><th style="white-space:normal">BQL→Ord%</th></tr></thead>`;
 
@@ -2665,7 +2891,7 @@ function renderM0Tables(cfOrArr,sf,tf){
     LD.forEach(l=>{
       if(!l.created||l.created<ms||l.created>me)return;
       if(cfArr&&!cfArr.includes(l.city))return;
-      if(sf&&l.sc!==sf)return;
+      if(!scOk(sf,l.sc))return;
       if(METRIC_SEL.bql==='old'&&!l.bqlOld)return; // Old BQL definition = Core leads only
       r.BQL++;
       if(getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me)r.MS++;
@@ -2723,10 +2949,10 @@ function renderM0Tables(cfOrArr,sf,tf){
   }
   const curW=m0cityWindow(curMo),prvW=m0cityWindow(prevMo);
   // Which cities to show
-  const showCities=cfArr&&cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
+  const showCities=cfArr&&cfArr.length>0?cfArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
   const cityRows=showCities.map(c=>{
     function m0city(city,ms,me){
-      const mL=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me&&l.city===city&&(!sf||l.sc===sf)&&(METRIC_SEL.bql!=='old'||l.bqlOld));
+      const mL=LD.filter(l=>l.created&&l.created>=ms&&l.created<=me&&l.city===city&&scOk(sf,l.sc)&&(METRIC_SEL.bql!=='old'||l.bqlOld));
       return{BQL:mL.length,MS:mL.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).length,MD:mL.filter(l=>getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).length,Order:mL.filter(l=>l.ordD&&l.ordD>=ms&&l.ordD<=me).length,HOTO:mL.filter(l=>l.hotoD&&l.hotoD>=ms&&l.hotoD<=me).length};
     }
     const cur=m0city(c,curW.ms,curW.me),prv=m0city(c,prvW.ms,prvW.me);
@@ -2758,10 +2984,13 @@ function renderM0Tables(cfOrArr,sf,tf){
 }
 function renderFunnelCityTbl(cf,sf,cityArr,tf){
   const el=document.getElementById('fn-city-tbl');if(!el)return;
-  const cities=cityArr?cityArr:cf?[cf]:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
+  tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
+  sf=scArr(sf);
+  function scAggC(cache,c){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};sf.forEach(s=>{const x=cache[c]?.[s];if(x)['BQL','MS','MD','Order','HOTO'].forEach(m=>r[m]+=x[m]||0);});return r;}
+  const cities=cityArr?cityArr:cf?[cf]:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
   const rows=cities.map(c=>{
-    const v=sf?C.cscMTD[c]?.[sf]||{BQL:0,MS:0,MD:0,Order:0,HOTO:0}:C.cMTD[c];
-    const pv=sf?C.cscLMTD[c]?.[sf]||{BQL:0,MS:0,MD:0,Order:0,HOTO:0}:C.cLMTD[c];
+    const v=sf.length?scAggC(C.cscMTD,c):C.cMTD[c];
+    const pv=sf.length?scAggC(C.cscLMTD,c):C.cLMTD[c];
     return{c,v,pv};
   }).filter(r=>r.v.BQL>0);
   const mL=(v,pv)=>`<span class="mono ${v>pv?'green':v<pv?'red':''}">${f(v)}</span><span style="font-size:9px;color:var(--t3)" title="LMTD: ${f(pv)}"> / ${f(pv)}</span>`;
@@ -2806,7 +3035,7 @@ function bBQLQ(){
   <span style="background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:5px;font-weight:600">Red = both fields missing/low (worst expected funnel)</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">pp deltas are vs Core, same period</span>
 </div>
-<div class="fbar"><select id="bq-tier" onchange="reFilterBQLQ()">${tierOpts()}</select><span id="bq-city-mc-wrap"></span><select id="bq-sc" onchange="reFilterBQLQ()">${scOpts()}</select></div>
+<div class="fbar"><span id="bq-tier-mc-wrap"></span><span id="bq-city-mc-wrap"></span><span id="bq-sc-mc-wrap"></span></div>
 <div class="stitle">Segment Scorecard — Current Month (M0) <span style="font-weight:400;font-size:10px;color:var(--t3)">(BQL created this month, MS/MD/Order/HOTO also this month)</span></div>
 <div class="tw" id="bq-scorecard"></div>
 <div class="stitle" style="margin-top:14px">Composition Trend — Full Month (6M) <span style="font-weight:400;font-size:10px;color:var(--t3)">(is the incremental pool growing as a share of total BQL_New?)</span></div>
@@ -2822,24 +3051,26 @@ function bBQLQ(){
 <div class="tw" id="bq-sc-tbl"></div>`;
   const bqMCW=document.getElementById('bq-city-mc-wrap');
   if(bqMCW&&!bqMCW.dataset.init){bqMCW.dataset.init='1';const mc=buildMultiCity('bq-city',()=>reFilterBQLQ());bqMCW.appendChild(mc);}
+  insertMSWidget('bq-tier-mc-wrap','bq-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterBQLQ());
+  insertMSWidget('bq-sc-mc-wrap','bq-sc',SCS,SC_CFG,()=>reFilterBQLQ());
   reFilterBQLQ();
   reFilterBQLQTrend();
 }
 function reFilterBQLQ(){
-  const cfArr=getMCVal('bq-city'),tf=document.getElementById('bq-tier')?.value||'';
-  const sfv=document.getElementById('bq-sc')?.value||'';
-  const scArr=sfv?[sfv]:null;
-  const effectiveCfArr=cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):null);
+  const cfArr=getMCVal('bq-city'),tf=getMSVal('bq-tier',TIER_OPTIONS);
+  const scSel=getMSVal('bq-sc',SCS);
+  const scArr=scSel.length?scSel:null;
+  const effectiveCfArr=cfArr.length>0?cfArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):null);
   renderBQLScorecard(effectiveCfArr,scArr);
   renderBQLComposition(effectiveCfArr,scArr);
   renderBQLCityTable(effectiveCfArr,tf,scArr);
   renderBQLSCTable(effectiveCfArr,scArr);
 }
 function reFilterBQLQTrend(){
-  const cfArr=getMCVal('bq-city'),tf=document.getElementById('bq-tier')?.value||'';
-  const sfv=document.getElementById('bq-sc')?.value||'';
-  const scArr=sfv?[sfv]:null;
-  const effectiveCfArr=cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):null);
+  const cfArr=getMCVal('bq-city'),tf=getMSVal('bq-tier',TIER_OPTIONS);
+  const scSel=getMSVal('bq-sc',SCS);
+  const scArr=scSel.length?scSel:null;
+  const effectiveCfArr=cfArr.length>0?cfArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):null);
   const segKey=document.getElementById('bq-seg-sel')?.value||'';
   renderBQLSegmentTrend(effectiveCfArr,scArr,segKey);
 }
@@ -2957,7 +3188,7 @@ function renderBQLCityTable(cityArr,tf,scArr){
   const el=document.getElementById('bq-city-tbl');if(!el)return;
   const yd=C.yd,ms=MS0(yd);
   const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const cities=cityArr&&cityArr.length?cityArr:(tf?CITIES.filter(c=>TIERS[c]===tf):CITIES);
+  const cities=cityArr&&cityArr.length?cityArr:(tf&&tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
   const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=cities.map(c=>{
     const seg=aggM0BySegment(ms,yd,[c],scArr);
@@ -3012,7 +3243,7 @@ function bBQLQTF(){
   <span style="background:#fffbeb;color:#92400e;padding:2px 7px;border-radius:5px;font-weight:600">Non-Core = all 5 incremental segments combined</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">pp deltas = vs Core, same period · badges = vs prior period</span>
 </div>
-<div class="fbar"><select id="tfbq-tier" onchange="reFilterBQLQTF()">${tierOpts()}</select><select id="tfbq-sc" onchange="reFilterBQLQTF()">${scOpts()}</select></div>
+<div class="fbar"><span id="tfbq-tier-mc-wrap"></span><span id="tfbq-sc-mc-wrap"></span></div>
 <div id="tfbq-banner"></div>
 <div class="stitle">Segment Scorecard — ${tfPeriodLabel()}</div>
 <div class="tw" id="tfbq-scorecard"></div>
@@ -3020,13 +3251,15 @@ function bBQLQTF(){
 <div class="tw" id="tfbq-city-tbl"></div>
 <div class="stitle" style="margin-top:14px">Sub-Channel × Segment</div>
 <div class="tw" id="tfbq-sc-tbl"></div>`;
+  insertMSWidget('tfbq-tier-mc-wrap','tfbq-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterBQLQTF());
+  insertMSWidget('tfbq-sc-mc-wrap','tfbq-sc',SCS,SC_CFG,()=>reFilterBQLQTF());
   reFilterBQLQTF();
 }
 function reFilterBQLQTF(){
-  const tf=document.getElementById('tfbq-tier')?.value||'';
-  const sfv=document.getElementById('tfbq-sc')?.value||'';
-  const scArr=sfv?[sfv]:null;
-  const cityArr=tf?CITIES.filter(c=>TIERS[c]===tf):null;
+  const tf=getMSVal('tfbq-tier',TIER_OPTIONS);
+  const scSel=getMSVal('tfbq-sc',SCS);
+  const scArr=scSel.length?scSel:null;
+  const cityArr=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):null;
   renderBQLScorecardTF(cityArr,scArr);
   renderBQLCityTableTF(tf,scArr);
   renderBQLSCTableTF(cityArr,scArr);
@@ -3076,8 +3309,9 @@ function renderBQLScorecardTF(cityArr,scArr){
 }
 function renderBQLCityTableTF(tf,scArr){
   const el=document.getElementById('tfbq-city-tbl');if(!el)return;
+  tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
   const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const cities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const cities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=cities.map(c=>{
     const seg=aggM0BySegment(TF.from,TF.to,[c],scArr);
@@ -3142,7 +3376,7 @@ function bVel(){
     <strong>Green ? = improving (fewer days = faster) . Red ? = degrading (more days = slower)</strong>
   </div>
 </div>
-<div class="fbar"><select id="vel-tier" onchange="reFilterVel()">${tierOpts()}</select><select id="vel-sc" onchange="reFilterVel()">${scOpts()}</select></div>
+<div class="fbar"><span id="vel-tier-mc-wrap"></span><span id="vel-sc-mc-wrap"></span></div>
 <div id="vel-body"></div>
 <div class="stitle">India Level - This vs Last Month <span style="font-weight:400;font-size:10px;color:var(--t3)">(compared with last month same-cohort velocity)</span></div>
 <div class="tw"><table><tr><th>Period</th><th colspan="2">BQL->MS</th><th colspan="2">MS->MD</th><th colspan="2">MD->Order</th><th>Leads</th></tr>
@@ -3161,27 +3395,29 @@ ${scRows.map(r=>`<tr><td style="font-weight:600">${r.s}</td><td>${velC(r.cur.b75
 <tr><th></th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th style="font-size:9px">This</th><th style="font-size:9px">Last</th><th></th></tr>
 ${cityRows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${velC(r.cur.b75,r.prv.b75)}</td><td>${dSafe(r.prv.b75)}</td><td>${velC(r.cur.m75,r.prv.m75)}</td><td>${dSafe(r.prv.m75)}</td><td>${velC(r.cur.o75,r.prv.o75)}</td><td>${dSafe(r.prv.o75)}</td><td style="color:var(--t3)">${r.cur.n}</td></tr>`).join('')}
 </table></div>`;
+  insertMSWidget('vel-tier-mc-wrap','vel-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterVel());
+  insertMSWidget('vel-sc-mc-wrap','vel-sc',SCS,SC_CFG,()=>reFilterVel());
 }
 
 
 // ?? FILTER HELPERS ??
 function reFilterSC(){
-  const cfArr=getMCVal('sc-city'),tf=document.getElementById('sc-tier')?.value||'';
-  const effectiveCfArr=cfArr.length>0?cfArr:(tf?CITIES.filter(c=>TIERS[c]===tf):[]);
+  const cfArr=getMCVal('sc-city'),tf=getMSVal('sc-tier',TIER_OPTIONS);
+  const effectiveCfArr=cfArr.length>0?cfArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):[]);
   filterSC(effectiveCfArr);
   refreshSCTrendTables(effectiveCfArr);
 }
 function reFilterVel(){
-  const tf=document.getElementById('vel-tier')?.value||'',sf=document.getElementById('vel-sc')?.value||'';
+  const tf=getMSVal('vel-tier',TIER_OPTIONS),sf=getMSVal('vel-sc',SCS);
   const prevS3=new Date(D0().getFullYear(),D0().getMonth()-1,1),prevE3=new Date(D0().getFullYear(),D0().getMonth(),0);
   const curMS3=MS0(YD());
-  const allC=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const allC=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   function vDS(leads,ms,me){const bms=leads.filter(l=>getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me).map(l=>dD(l.created,getLeadMS(l))).filter(d=>d!=null&&d>=0&&d<=31);const mmd=leads.filter(l=>getLeadMS(l)&&getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me).map(l=>dD(getLeadMS(l),getLeadMD(l))).filter(d=>d!=null&&d>=0&&d<=31);const mo3=leads.filter(l=>getLeadMD(l)&&l.ordD&&l.ordD>=ms&&l.ordD<=me).map(l=>dD(getLeadMD(l),l.ordD)).filter(d=>d!=null&&d>=0&&d<=31);return{b75:perc(bms,75),b90:perc(bms,90),m75:perc(mmd,75),m90:perc(mmd,90),o75:perc(mo3,75),o90:perc(mo3,90),n:leads.length};}
-  const curL2=LD.filter(l=>l.created&&sameMonth(l.created)&&(!sf||l.sc===sf)&&(!tf||TIERS[l.city]===tf));
-  const prvL2=LD.filter(l=>l.created&&l.created>=prevS3&&l.created<=prevE3&&(!sf||l.sc===sf)&&(!tf||TIERS[l.city]===tf));
+  const curL2=LD.filter(l=>l.created&&sameMonth(l.created)&&scOk(sf,l.sc)&&tierOk(tf,TIERS[l.city]));
+  const prvL2=LD.filter(l=>l.created&&l.created>=prevS3&&l.created<=prevE3&&scOk(sf,l.sc)&&tierOk(tf,TIERS[l.city]));
   const ci2=vDS(curL2,curMS3,YD()),pi2=vDS(prvL2,prevS3,prevE3);
   const cityRows2=allC.map(c=>{const cl2=curL2.filter(l=>l.city===c),pl2=prvL2.filter(l=>l.city===c);return{c,cur:vDS(cl2,curMS3,YD()),prv:vDS(pl2,prevS3,prevE3),tier:TIERS[c]||''};}).filter(r=>r.cur.n>1);
-  const scRows2=SCS.map(s=>{const cl3=LD.filter(l=>l.created&&sameMonth(l.created)&&l.sc===s&&(!tf||TIERS[l.city]===tf)),pl3=LD.filter(l=>l.created&&l.created>=prevS3&&l.created<=prevE3&&l.sc===s&&(!tf||TIERS[l.city]===tf));return{s,cur:vDS(cl3,curMS3,YD()),prv:vDS(pl3,prevS3,prevE3)};}).filter(r=>r.cur.n>0);
+  const scRows2=SCS.map(s=>{const cl3=LD.filter(l=>l.created&&sameMonth(l.created)&&l.sc===s&&tierOk(tf,TIERS[l.city])),pl3=LD.filter(l=>l.created&&l.created>=prevS3&&l.created<=prevE3&&l.sc===s&&tierOk(tf,TIERS[l.city]));return{s,cur:vDS(cl3,curMS3,YD()),prv:vDS(pl3,prevS3,prevE3)};}).filter(r=>r.cur.n>0);
   const d2=n=>n!=null?`<span class="mono">${n.toFixed(1)}d</span>`:`<span style="color:var(--t3)">-</span>`;
   document.getElementById('vel-body').innerHTML=`
 <div class="stitle">India Level - This vs Last Month <span style="font-weight:400;font-size:10px;color:var(--t3)">(filtered by tier/sub-channel . compared with last month)</span></div>
@@ -3208,8 +3444,10 @@ function initMopMC(){
 }
 function filterMopTable(){
   setTimeout(()=>autoSort(document.getElementById('mop-tbody')?.closest('table')),80);
-  const cfArr=getMCVal('mop-city'),cf=cfArr.length===1?cfArr[0]:'',tf=document.getElementById('mop-tier')?.value||'';const cfFilter=(c)=>cfArr.length===0||cfArr.includes(c);
-  filterMop(cf,tf);
+  // NOTE: this used to collapse a multi-city selection down to a single city (or none),
+  // so selecting 2+ cities silently showed every city — fixed to honor the full array.
+  const cfArr=getMCVal('mop-city'),tf=getMSVal('mop-tier',TIER_OPTIONS);
+  filterMop(cfArr,tf);
 }
 // ??????????????????????????????????????
 // WoW COHORT
@@ -3233,9 +3471,9 @@ function bWoW(){
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">TOTAL = cumulative % ever converted</span>
 </div>
 <div class="fbar">
-  <select id="wow-city" onchange="renderWoW()"><option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}</select>
-  <select id="wow-tier" onchange="renderWoW()">${tierOpts()}</select>
-  <select id="wow-sc" onchange="renderWoW()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
+  <span id="wow-city-mc-wrap"></span>
+  <span id="wow-tier-mc-wrap"></span>
+  <span id="wow-sc-mc-wrap"></span>
 </div>
 <div class="stitle" style="font-size:13px;font-weight:800;color:#1f2937;border-left:4px solid #374151;padding-left:8px">BQL → Meeting Scheduled <span style="font-weight:400;font-size:10px;color:var(--t3)">(week-wise % of creation-week BQL that got MS in each subsequent week)</span></div>
 <div id="wow-bms" style="overflow-x:auto"></div>
@@ -3263,13 +3501,19 @@ function bWoW(){
   <span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:5px;font-weight:600">Cumul % = running total ever converted up to that month</span>
 </div>
 <div class="fbar">
-  <select id="wow-cumm-city" onchange="renderWoWCumm()"><option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}</select>
-  <select id="wow-cumm-tier" onchange="renderWoWCumm()">${tierOpts()}</select>
-  <select id="wow-cumm-sc" onchange="renderWoWCumm()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
+  <span id="wow-cumm-city-mc-wrap"></span>
+  <span id="wow-cumm-tier-mc-wrap"></span>
+  <span id="wow-cumm-sc-mc-wrap"></span>
 </div>
 <div id="wow-cumm-body"></div>
 </div><!-- end wow-section-cumm -->
 `;
+  insertMCWidget('wow-city-mc-wrap','wow-city',()=>renderWoW());
+  insertMSWidget('wow-tier-mc-wrap','wow-tier',TIER_OPTIONS,TIER_CFG,()=>renderWoW());
+  insertMSWidget('wow-sc-mc-wrap','wow-sc',SCS,SC_CFG,()=>renderWoW());
+  insertMCWidget('wow-cumm-city-mc-wrap','wow-cumm-city',()=>renderWoWCumm());
+  insertMSWidget('wow-cumm-tier-mc-wrap','wow-cumm-tier',TIER_OPTIONS,TIER_CFG,()=>renderWoWCumm());
+  insertMSWidget('wow-cumm-sc-mc-wrap','wow-cumm-sc',SCS,SC_CFG,()=>renderWoWCumm());
   switchWoWSubtab('week');
   renderWoW();
   renderWoWExtra();
@@ -3295,8 +3539,11 @@ function switchWoWSubtab(tab){
 
 // Month Cumm. renderer
 function renderWoWCumm(){
-  const cf=document.getElementById('wow-cumm-city')?.value||'';
-  const sf=document.getElementById('wow-cumm-sc')?.value||'';
+  const cf=getMCVal('wow-cumm-city');
+  const sf=getMSVal('wow-cumm-sc',SCS);
+  // NOTE: wow-cumm-tier existed in the UI but was never actually read — this table
+  // never respected the tier filter at all. Fixed to match the other filters.
+  const tf=getMSVal('wow-cumm-tier',TIER_OPTIONS);
   const yd=C.yd;
   const el=document.getElementById('wow-cumm-body');
   if(!el)return;
@@ -3315,8 +3562,9 @@ function renderWoWCumm(){
   // Filter leads
   const leads=LD.filter(l=>{
     if(!l.created)return false;
-    if(cf&&l.city!==cf)return false;
-    if(sf&&l.sc!==sf)return false;
+    if(cf.length&&!cf.includes(l.city))return false;
+    if(!scOk(sf,l.sc))return false;
+    if(!tierOk(tf,TIERS[l.city]))return false;
     return true;
   });
 
@@ -3682,14 +3930,14 @@ function toggleColMo(safeMo, tId){
 }
 
 function renderWoW(){
-  const cf=document.getElementById('wow-city')?.value||'';
-  const sf=document.getElementById('wow-sc')?.value||'';
-  const tf=document.getElementById('wow-tier')?.value||'';
+  const cf=getMCVal('wow-city');
+  const sf=getMSVal('wow-sc',SCS);
+  const tf=getMSVal('wow-tier',TIER_OPTIONS);
   const weeks=getWoWWeeks();
   let leads=LD.filter(l=>l.created);
-  if(cf)leads=leads.filter(l=>l.city===cf);
-  if(sf)leads=leads.filter(l=>l.sc===sf);
-  if(tf)leads=leads.filter(l=>TIERS[l.city]===tf);
+  if(cf.length)leads=leads.filter(l=>cf.includes(l.city));
+  if(sf.length)leads=leads.filter(l=>scOk(sf,l.sc));
+  if(tf.length)leads=leads.filter(l=>tierOk(tf,TIERS[l.city]));
 
   const cutoff=new Date(C.yd.getFullYear(),C.yd.getMonth()-4,1);
   leads=leads.filter(l=>l.created>=cutoff);
@@ -3718,14 +3966,18 @@ function renderWoW(){
 }
 
 function renderWoWExtra(){
-  const cf=document.getElementById('wow-city')?.value||'';
-  const sf=document.getElementById('wow-sc')?.value||'';
+  const cf=getMCVal('wow-city');
+  const sf=getMSVal('wow-sc',SCS);
+  const tf=getMSVal('wow-tier',TIER_OPTIONS);
   const mode=document.getElementById('wow-extra')?.value||'mdhoto';
   const weeks=getWoWWeeks();
   const cutoff=new Date(C.yd.getFullYear(),C.yd.getMonth()-4,1);
   let leads=LD.filter(l=>l.created&&l.created>=cutoff);
-  if(cf)leads=leads.filter(l=>l.city===cf);
-  if(sf)leads=leads.filter(l=>l.sc===sf);
+  if(cf.length)leads=leads.filter(l=>cf.includes(l.city));
+  if(sf.length)leads=leads.filter(l=>scOk(sf,l.sc));
+  // NOTE: the tier filter was previously ignored here (only applied in renderWoW,
+  // not this "extra cohort" section) — fixed to match.
+  if(tf.length)leads=leads.filter(l=>tierOk(tf,TIERS[l.city]));
 
   let cohort, rowLabel, stitle;
   if(mode==='mdhoto'){
@@ -4463,18 +4715,20 @@ function renderLocalInsights(d){
 function bIns(){
   const el=document.getElementById('p-ins');
   if(!el) return;
-  const tf=document.getElementById('ins-tier')?.value||'';
+  const tf=getMSVal('ins-tier',TIER_OPTIONS);
+  const tfLbl=tf.map(t=>TIER_LABELS[t]||t).join(', ');
   const d=buildInsData();
-  if(tf) d.cities=d.cities.filter(cd=>cd.tier===tf);
-  el.innerHTML=`<div class="ptitle">📊 Insights Dashboard — ${d.date} · Day ${d.doneD}/${d.doneD+d.dl}${tf?` <span style="font-size:12px;font-weight:600;color:#92400e">— ${tf} tier only</span>`:''}</div>
+  if(tf.length) d.cities=d.cities.filter(cd=>tierOk(tf,cd.tier));
+  el.innerHTML=`<div class="ptitle">📊 Insights Dashboard — ${d.date} · Day ${d.doneD}/${d.doneD+d.dl}${tf.length?` <span style="font-size:12px;font-weight:600;color:#92400e">— ${tfLbl} tier only</span>`:''}</div>
   <div class="psub">L1: Absolute metrics (BQL→HOTO) vs MOP MTD · L2: Funnel rates vs LMTD · Alert: Critical / Warning / Positive / Appreciative</div>
-  <div class="fbar"><select id="ins-tier" onchange="bIns()">${tierOpts()}</select></div>
-  ${tf?`<div class="tf-mop-banner" style="margin-bottom:10px">Showing ${d.cities.length} ${tf} city${d.cities.length===1?'':'ies'} only. India-wide metric/funnel chips are hidden in this view — city-level alerts below are scoped to ${tf}.</div>`:''}
+  <div class="fbar"><span id="ins-tier-mc-wrap"></span></div>
+  ${tf.length?`<div class="tf-mop-banner" style="margin-bottom:10px">Showing ${d.cities.length} ${tfLbl} city${d.cities.length===1?'':'ies'} only. India-wide metric/funnel chips are hidden in this view — city-level alerts below are scoped to ${tfLbl}.</div>`:''}
   ${renderAlertBanner(d)}
   <div style="margin-top:4px">${renderLocalInsights(d)}</div>
-  <div class="stitle" style="margin:20px 0 8px">📋 Quick Alert Matrix — ${tf?tf+' Cities':'All Cities'} × All Metrics</div>
+  <div class="stitle" style="margin:20px 0 8px">📋 Quick Alert Matrix — ${tf.length?tfLbl+' Cities':'All Cities'} × All Metrics</div>
   <div style="font-size:10px;color:var(--t3);margin-bottom:8px">Sorted worst→best · Blue cols = absolute vs MOP MTD · Amber cols = funnel vs LMTD · Orders benchmarked vs their own Order MOP MTD</div>
   ${renderInsAlertTable(d)}`;
+  insertMSWidget('ins-tier-mc-wrap','ins-tier',TIER_OPTIONS,TIER_CFG,()=>bIns());
 }
 
 window.insGenAI=function(){
@@ -4556,20 +4810,25 @@ function bAct(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${[{l:'BQL',v:v.BQL,pv:pv.BQL,t:hasMop(city)?C.mopMTD(city,'BQL'):null},{l:'MS',v:v.MS,pv:null,t:null},{l:'MD',v:v.MD,pv:null,t:null},{l:'HOTO',v:v.HOTO,pv:pv.HOTO,t:mF||null}].map(s=>`<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">${s.l}</div><div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:${s.pv!=null?(s.v>=s.pv?'var(--gn)':'var(--rd)'):'var(--tx)'}">${f(s.v)}</div>${s.t?`<div style="font-size:9px;color:var(--t3)">MOP: ${f(s.t)}</div>`:''}${s.pv!=null?mb(s.v,s.pv):''}</div>`).join('')}</div></div>`;
   }).join('');
 
-  const expOnly=document.getElementById('act-tier')?.value==='Exp';
+  // NOTE: this used to be a single boolean (expOnly, true only when tier==='Exp') that
+  // could only isolate Expansion — every other tier selection did nothing. Generalized so
+  // each of the 4 sections independently shows/hides based on the multi-select.
+  const tf=getMSVal('act-tier',TIER_OPTIONS);
+  const showFocus=!tf.length||tf.includes('Focus'),showBig=!tf.length||tf.includes('Big'),showMid=!tf.length||tf.includes('Mid'),showExp=!tf.length||tf.includes('Exp');
   document.getElementById('p-act').innerHTML=`<div class="ptitle">Recommended Actions</div><div class="psub">${dl} days remaining in May . Prioritised by tier and impact</div>
-  <div class="fbar"><select id="act-tier" onchange="bAct()">${tierOpts()}</select></div>
+  <div class="fbar"><span id="act-tier-mc-wrap"></span></div>
   ${acts.filter(a=>a.pl==='Immediate').length?`<div class="stitle" style="color:var(--rd)">[WARN] Immediate - Execute This Week</div>${acts.filter(a=>a.pl==='Immediate').map(actCard).join('')}`:''}
-  ${!expOnly?`<div class="stitle">Focus Cities - Nagpur, Lucknow, Pune</div>
+  ${showFocus?`<div class="stitle">Focus Cities - Nagpur, Lucknow, Pune</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">${focusCards}</div>
-  ${acts.filter(a=>a.pl==='Focus City').length?acts.filter(a=>a.pl==='Focus City').map(actCard).join(''):'<div style="font-size:12px;color:var(--t2);padding:6px 0">All focus cities on or near track.</div>'}
-  ${acts.filter(a=>a.pl==='Big City').length?`<div class="stitle">Big Cities - Action Required</div>${acts.filter(a=>a.pl==='Big City').map(actCard).join('')}`:''}
-  ${acts.filter(a=>a.pl==='Mid City').length?`<div class="stitle">Mid Cities - Watch List</div>${acts.filter(a=>a.pl==='Mid City').map(actCard).join('')}`:''}`:''}
-  <div class="stitle">Expansion Cities - ${EXP.join(', ')}</div>
+  ${acts.filter(a=>a.pl==='Focus City').length?acts.filter(a=>a.pl==='Focus City').map(actCard).join(''):'<div style="font-size:12px;color:var(--t2);padding:6px 0">All focus cities on or near track.</div>'}`:''}
+  ${showBig&&acts.filter(a=>a.pl==='Big City').length?`<div class="stitle">Big Cities - Action Required</div>${acts.filter(a=>a.pl==='Big City').map(actCard).join('')}`:''}
+  ${showMid&&acts.filter(a=>a.pl==='Mid City').length?`<div class="stitle">Mid Cities - Watch List</div>${acts.filter(a=>a.pl==='Mid City').map(actCard).join('')}`:''}
+  ${showExp?`<div class="stitle">Expansion Cities - ${EXP.join(', ')}</div>
   <div style="font-size:10px;color:var(--t3);margin-bottom:6px">Cities without a set MOP target yet show actuals only — no achievement badge until MOP is added.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">${expCards}</div>
-  ${acts.filter(a=>a.pl==='Expansion City').length?acts.filter(a=>a.pl==='Expansion City').map(actCard).join(''):'<div style="font-size:12px;color:var(--t2);padding:6px 0">No expansion-city actions triggered (or MOP not yet set for any).</div>'}
+  ${acts.filter(a=>a.pl==='Expansion City').length?acts.filter(a=>a.pl==='Expansion City').map(actCard).join(''):'<div style="font-size:12px;color:var(--t2);padding:6px 0">No expansion-city actions triggered (or MOP not yet set for any).</div>'}`:''}
   ${acts.filter(a=>a.pl==='Sub-Channel').length?`<div class="stitle">Sub-Channel Actions</div>${acts.filter(a=>a.pl==='Sub-Channel').map(actCard).join('')}`:''}`;
+  insertMSWidget('act-tier-mc-wrap','act-tier',TIER_OPTIONS,TIER_CFG,()=>bAct());
 }
 
 // ================================================================
@@ -4592,8 +4851,8 @@ function bDoD(){
   <strong>Column structure:</strong> Daily Metric / LMTD same day &nbsp;|&nbsp; Cum = cumulative MTD &nbsp;|&nbsp; vs MOP = achievement % vs prorated MOP
 </div>
 <div class="fbar" id="dod-filters">
-  <select id="dod-sc" onchange="renderDoD()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
-  <select id="dod-tier" onchange="renderDoD()">${tierOpts()}</select>
+  <span id="dod-sc-mc-wrap"></span>
+  <span id="dod-tier-mc-wrap"></span>
   <span id="dod-city-mc-wrap"></span>
   <select id="dod-metric" onchange="renderDoD()">
     <option value="all">All Metrics</option>
@@ -4610,12 +4869,14 @@ function bDoD(){
     const w=buildMultiCity('dod',()=>renderDoD());
     mcWrap.appendChild(w);
   }
+  insertMSWidget('dod-sc-mc-wrap','dod-sc',SCS,SC_CFG,()=>renderDoD());
+  insertMSWidget('dod-tier-mc-wrap','dod-tier',TIER_OPTIONS,TIER_CFG,()=>renderDoD());
   renderDoD();
 }
 
 function renderDoD(){
-  const sf=document.getElementById('dod-sc')?.value||'';
-  const tf=document.getElementById('dod-tier')?.value||'';
+  const sf=getMSVal('dod-sc',SCS);
+  const tf=getMSVal('dod-tier',TIER_OPTIONS);
   const selCities=getMCVal('dod'); // [] means all
   const metricF=document.getElementById('dod-metric')?.value||'all';
   const yd=C.yd;
@@ -4630,9 +4891,9 @@ function renderDoD(){
 
   // Filter function
   const applyFilter=(r)=>{
-    if(sf&&r.sc!==sf)return false;
+    if(!scOk(sf,r.sc))return false;
     if(selCities.length>0&&!selCities.includes(r.city))return false;
-    if(tf&&TIERS[r.city]!==tf)return false;
+    if(!tierOk(tf,TIERS[r.city]))return false;
     return true;
   };
 
@@ -4681,8 +4942,9 @@ function renderDoD(){
     SCS.forEach(s=>{rows[s]={BQL:0,MS:0,MD:0,Order:0,HOTO:0,lmBQL:0,lmMS:0,lmMD:0,lmOrder:0,lmHOTO:0};});
     const lmDay=Math.min(d,new Date(lmMo.y,lmMo.m,0).getDate());
     ED.forEach(r=>{
-      if(sf&&r.sc!==sf)return;
+      if(!scOk(sf,r.sc))return;
       if(selCities.length>0&&!selCities.includes(r.city))return;
+      if(!tierOk(tf,TIERS[r.city]))return;
       if(r.year===curMo.y&&r.month===curMo.m&&r.date.getDate()===d&&rows[r.sc]){
         rows[r.sc].BQL+=getBQL(r);rows[r.sc].MS+=getMS(r);rows[r.sc].MD+=getMD(r);rows[r.sc].Order+=r.Order;rows[r.sc].HOTO+=r.HOTO;
       }
@@ -4786,18 +5048,21 @@ function bDoDFunnel(){
   <strong>How to read:</strong> Each row = the day a lead entered the source stage in the current month. Each column = the day they converted to the next stage. Cell shows <strong>count</strong> of leads that made that journey. Diagonal = same-day conversion. Right = days later.
 </div>
 <div class="fbar">
-  <select id="dodf-city" onchange="renderDoDFunnel()"><option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}</select>
-  <select id="dodf-tier" onchange="renderDoDFunnel()">${tierOpts()}</select>
-  <select id="dodf-sc" onchange="renderDoDFunnel()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
+  <span id="dodf-city-mc-wrap"></span>
+  <span id="dodf-tier-mc-wrap"></span>
+  <span id="dodf-sc-mc-wrap"></span>
 </div>
 <div id="dodf-body"></div>`;
+  insertMCWidget('dodf-city-mc-wrap','dodf-city',()=>renderDoDFunnel());
+  insertMSWidget('dodf-tier-mc-wrap','dodf-tier',TIER_OPTIONS,TIER_CFG,()=>renderDoDFunnel());
+  insertMSWidget('dodf-sc-mc-wrap','dodf-sc',SCS,SC_CFG,()=>renderDoDFunnel());
   renderDoDFunnel();
 }
 
 function renderDoDFunnel(){
-  const cf=document.getElementById('dodf-city')?.value||'';
-  const sf=document.getElementById('dodf-sc')?.value||'';
-  const tf=document.getElementById('dodf-tier')?.value||'';
+  const cf=getMCVal('dodf-city');
+  const sf=getMSVal('dodf-sc',SCS);
+  const tf=getMSVal('dodf-tier',TIER_OPTIONS);
   const yd=C.yd;
   const curMo={y:yd.getFullYear(),m:yd.getMonth()+1};
   const daysInMonth=new Date(curMo.y,curMo.m,0).getDate();
@@ -4808,9 +5073,9 @@ function renderDoDFunnel(){
   // Filter leads
   const leads=LD.filter(l=>{
     if(!l.created)return false;
-    if(cf&&l.city!==cf)return false;
-    if(sf&&l.sc!==sf)return false;
-    if(tf&&TIERS[l.city]!==tf)return false;
+    if(cf.length&&!cf.includes(l.city))return false;
+    if(!scOk(sf,l.sc))return false;
+    if(!tierOk(tf,TIERS[l.city]))return false;
     return true;
   });
 
@@ -4969,15 +5234,17 @@ function bDoDFunnelTF(){
   <strong>How to read:</strong> Day 1 = the first day of your selected Timeframe. Each row = the day a lead entered the source stage. Each column = the day they converted. Cell shows <strong>%</strong> of that row's leads. Diagonal = same-day conversion.
 </div>
 <div class="fbar">
-  <select id="tfdodf-tier" onchange="renderDoDFunnelTF()">${tierOpts()}</select>
-  <select id="tfdodf-sc" onchange="renderDoDFunnelTF()">${scOpts()}</select>
+  <span id="tfdodf-tier-mc-wrap"></span>
+  <span id="tfdodf-sc-mc-wrap"></span>
 </div>
 <div id="tfdodf-body"></div>`;
+  insertMSWidget('tfdodf-tier-mc-wrap','tfdodf-tier',TIER_OPTIONS,TIER_CFG,()=>renderDoDFunnelTF());
+  insertMSWidget('tfdodf-sc-mc-wrap','tfdodf-sc',SCS,SC_CFG,()=>renderDoDFunnelTF());
   renderDoDFunnelTF();
 }
 function renderDoDFunnelTF(){
-  const tf=document.getElementById('tfdodf-tier')?.value||'';
-  const sf=document.getElementById('tfdodf-sc')?.value||'';
+  const tf=getMSVal('tfdodf-tier',TIER_OPTIONS);
+  const sf=getMSVal('tfdodf-sc',SCS);
   const el=document.getElementById('tfdodf-body');
   if(!el)return;
 
@@ -4986,8 +5253,8 @@ function renderDoDFunnelTF(){
   // lead's row/column date actually falls inside the selected window.
   const leads=LD.filter(l=>{
     if(!l.created)return false;
-    if(sf&&l.sc!==sf)return false;
-    if(tf&&TIERS[l.city]!==tf)return false;
+    if(!scOk(sf,l.sc))return false;
+    if(!tierOk(tf,TIERS[l.city]))return false;
     return true;
   });
 
@@ -5010,10 +5277,7 @@ function bCityMoM(){
 <div class="psub">Month-on-month performance for every city and India row . Each metric shown as a separate table . Last 6 months + current . Green = increase from last month, Red = decrease</div>
 <div class="fbar">
   <span id="citymom-city-mc-wrap"></span>
-  <select id="citymom-sc" onchange="renderCityMoM()">
-    <option value="">All Sub-Channels</option>
-    ${SCS.map(s=>`<option>${s}</option>`).join('')}
-  </select>
+  <span id="citymom-sc-mc-wrap"></span>
 </div>
 <div id="citymom-body"></div>`;
 
@@ -5023,23 +5287,24 @@ function bCityMoM(){
     const w=buildMultiCity('citymom',()=>renderCityMoM());
     mcWrap.appendChild(w);
   }
+  insertMSWidget('citymom-sc-mc-wrap','citymom-sc',SCS,SC_CFG,()=>renderCityMoM());
   renderCityMoM();
 }
 
 function renderCityMoM(){
   const months=C.months;
-  const sf=document.getElementById('citymom-sc')?.value||'';
+  const sf=getMSVal('citymom-sc',SCS);
   const selCities=getMCVal('citymom');
   const cityList=selCities.length>0?selCities:CITIES;
   const mtdDay=C.yd.getDate();
 
-  // Helper: get full month agg for a city (or null=India) and sub-channel
+  // Helper: get full month agg for a city (or null=India) and sub-channel(s)
   function aggMo(city,mo,sc){
     const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     ED.forEach(x=>{
       if(x.year!==mo.y||x.month!==mo.m)return;
       if(city&&x.city!==city)return;
-      if(sc&&x.sc!==sc)return;
+      if(!scOk(sc,x.sc))return;
       r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;
     });
     return r;
@@ -5223,7 +5488,7 @@ function bCohort(){
   <span style="background:var(--s2);color:var(--t2);padding:2px 7px;border-radius:5px">Total = cumulative across all months tracked</span>
 </div>
 <div class="fbar">
-  <select id="cohort-sc" onchange="renderCohort()"><option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}</select>
+  <span id="cohort-sc-mc-wrap"></span>
   <span id="cohort-city-mc-wrap"></span>
 </div>
 <div id="cohort-body"></div>`;
@@ -5234,11 +5499,12 @@ function bCohort(){
     const w=buildMultiCity('cohort',()=>renderCohort());
     mcWrap.appendChild(w);
   }
+  insertMSWidget('cohort-sc-mc-wrap','cohort-sc',SCS,SC_CFG,()=>renderCohort());
   renderCohort();
 }
 
 function renderCohort(){
-  const sf=document.getElementById('cohort-sc')?.value||'';
+  const sf=getMSVal('cohort-sc',SCS);
   const selCities=getMCVal('cohort');
   const yd=C.yd;
   const cohortStart=new Date(2026,0,1); // Jan 2026
@@ -5260,7 +5526,7 @@ function renderCohort(){
     const me=new Date(cohortMo.y,cohortMo.m,0);
     const cohortLeads=LD.filter(l=>{
       if(!l.created||l.created<ms||l.created>me)return false;
-      if(sf&&l.sc!==sf)return false;
+      if(!scOk(sf,l.sc))return false;
       if(selCities.length>0&&!selCities.includes(l.city))return false;
       return true;
     });
@@ -6066,6 +6332,33 @@ function tfAggM0(cityFilter, scFilter) {
   return { cur, prv, cmpFrom, cmpTo, cmpAvailable };
 }
 
+// ── Multi-sub-channel wrappers ──────────────────────────────────────────────
+// tfAgg/tfAggM0 only ever took a single sub-channel value (or null/all). Rather than
+// rewrite their internals (shared by every Timeframe-view tab), sum across one call
+// per selected sub-channel — equivalent to an "any of these" filter, same result shape.
+function tfAggMulti(cityFilter,scArrList){
+  if(!scArrList||!scArrList.length)return tfAgg(cityFilter,null);
+  const cur={BQL:0,MS:0,MD:0,Order:0,HOTO:0},prv={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+  let cmpAvailable,cmpFrom,cmpTo;
+  scArrList.forEach(sc=>{
+    const r=tfAgg(cityFilter,sc);
+    ['BQL','MS','MD','Order','HOTO'].forEach(m=>{cur[m]+=r.cur[m]||0;prv[m]+=r.prv[m]||0;});
+    cmpAvailable=r.cmpAvailable;cmpFrom=r.cmpFrom;cmpTo=r.cmpTo;
+  });
+  return{cur,prv,cmpFrom,cmpTo,cmpAvailable};
+}
+function tfAggM0Multi(cityFilter,scArrList){
+  if(!scArrList||!scArrList.length)return tfAggM0(cityFilter,null);
+  const cur={BQL:0,MS:0,MD:0,Order:0,HOTO:0},prv={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+  let cmpAvailable,cmpFrom,cmpTo;
+  scArrList.forEach(sc=>{
+    const r=tfAggM0(cityFilter,sc);
+    ['BQL','MS','MD','Order','HOTO'].forEach(m=>{cur[m]+=r.cur[m]||0;prv[m]+=r.prv[m]||0;});
+    cmpAvailable=r.cmpAvailable;cmpFrom=r.cmpFrom;cmpTo=r.cmpTo;
+  });
+  return{cur,prv,cmpFrom,cmpTo,cmpAvailable};
+}
+
 // Shared prior-period window calc (same logic tfAgg/tfAggM0 each compute inline)
 function tfCmpWindow(){
   let cmpFrom,cmpTo;
@@ -6432,22 +6725,25 @@ function bFunnelTF() {
 <div class="psub">📊 ${tfPeriodLabel()} · Action date based${cmpAvailable?' · vs '+tfCmpLabel():''}</div>
 ${tfNoBanner()}
 <div class="card"><div class="ctitle">India Overall Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
-<div class="fbar"><select id="tffn-tier" onchange="reFilterFunnelTF()">${tierOpts()}</select><select id="tffn-sc" onchange="reFilterFunnelTF()">${scOpts()}</select></div>
+<div class="fbar"><span id="tffn-tier-mc-wrap"></span><span id="tffn-sc-mc-wrap"></span></div>
 <div class="stitle">City-wise Funnel — ${tfPeriodLabel()} <span style="font-size:10px;font-weight:400;color:var(--t3)">(filter by tier / sub-channel above)</span></div>
 <div class="tw" id="tffn-city-tbl"></div>`;
-  renderFunnelCityTblTF('','');
+  insertMSWidget('tffn-tier-mc-wrap','tffn-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterFunnelTF());
+  insertMSWidget('tffn-sc-mc-wrap','tffn-sc',SCS,SC_CFG,()=>reFilterFunnelTF());
+  renderFunnelCityTblTF([],[]);
 }
 function reFilterFunnelTF(){
-  const tf=document.getElementById('tffn-tier')?.value||'';
-  const sf=document.getElementById('tffn-sc')?.value||'';
+  const tf=getMSVal('tffn-tier',TIER_OPTIONS);
+  const sf=getMSVal('tffn-sc',SCS);
   renderFunnelCityTblTF(sf,tf);
 }
 function renderFunnelCityTblTF(sf,tf){
   const el=document.getElementById('tffn-city-tbl');if(!el)return;
+  sf=scArr(sf);tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
   const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const cities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const cities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   const rows=cities.map(c=>{
-    const {cur:v,prv:pv,cmpAvailable:ca}=tfAgg(c,sf||null);
+    const {cur:v,prv:pv,cmpAvailable:ca}=tfAggMulti(c,sf);
     return{c,v,pv,ca,tier:TIERS[c]||''};
   }).filter(r=>r.v.BQL>0)
     .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.v.HOTO-a.v.HOTO);
@@ -6518,22 +6814,25 @@ ${(()=>{ if(cmpAvailable) return ''; const fmt=d=>d.toLocaleDateString('en-IN',{
   const {cmpFrom,cmpTo}=tfAggM0(null,null);
   return`<div class="tf-no-data-banner">⚠️ Prior comparison period (${fmt(cmpFrom)}–${fmt(cmpTo)}) is outside available data (from Oct'25). Showing current period only.</div>`; })()}
 <div class="card"><div class="ctitle">India Overall M0 Funnel — ${tfPeriodLabel()}</div>${stagesHtml}</div>
-<div class="fbar"><select id="tfm0-tier" onchange="reFilterM0TF()">${tierOpts()}</select><select id="tfm0-sc" onchange="reFilterM0TF()">${scOpts()}</select></div>
+<div class="fbar"><span id="tfm0-tier-mc-wrap"></span><span id="tfm0-sc-mc-wrap"></span></div>
 <div class="stitle">City-wise M0 Funnel — ${tfPeriodLabel()} <span style="font-size:10px;font-weight:400;color:var(--t3)">(filter by tier / sub-channel above)</span></div>
 <div class="tw" id="tfm0-city-tbl"></div>`;
-  renderM0CityTblTF('','');
+  insertMSWidget('tfm0-tier-mc-wrap','tfm0-tier',TIER_OPTIONS,TIER_CFG,()=>reFilterM0TF());
+  insertMSWidget('tfm0-sc-mc-wrap','tfm0-sc',SCS,SC_CFG,()=>reFilterM0TF());
+  renderM0CityTblTF([],[]);
 }
 function reFilterM0TF(){
-  const tf=document.getElementById('tfm0-tier')?.value||'';
-  const sf=document.getElementById('tfm0-sc')?.value||'';
+  const tf=getMSVal('tfm0-tier',TIER_OPTIONS);
+  const sf=getMSVal('tfm0-sc',SCS);
   renderM0CityTblTF(sf,tf);
 }
 function renderM0CityTblTF(sf,tf){
   const el=document.getElementById('tfm0-city-tbl');if(!el)return;
+  sf=scArr(sf);tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
   const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const cities=tf?CITIES.filter(c=>TIERS[c]===tf):CITIES;
+  const cities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   const rows=cities.map(c=>{
-    const {cur:v,prv:pv,cmpAvailable:ca}=tfAggM0(c,sf||null);
+    const {cur:v,prv:pv,cmpAvailable:ca}=tfAggM0Multi(c,sf);
     return{c,v,pv,ca,tier:TIERS[c]||''};
   }).filter(r=>r.v.BQL>0)
     .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.v.HOTO-a.v.HOTO);

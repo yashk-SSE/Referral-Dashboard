@@ -1,226 +1,674 @@
 [
-    {
-        "city": "India",
-        "BQL": 6177,
-        "MS": 4711,
-        "MD": 4318,
-        "ORDER": 2372,
-        "HOTO": 2208
+  {
+    "city": "India",
+    "noBtl": {
+      "BQL": 5270,
+      "MS": 4058,
+      "MD": 3368,
+      "ORDER": 1839,
+      "HOTO": 1626
     },
-    {
-        "city": "Ahmedabad",
-        "BQL": 106,
-        "MS": 100,
-        "MD": 94,
-        "ORDER": 51,
-        "HOTO": 50
+    "btl": {
+      "BQL": 1019,
+      "MS": 937,
+      "MD": 759,
+      "ORDER": 354,
+      "HOTO": 322
     },
-    {
-        "city": "Nagpur",
-        "BQL": 973,
-        "MS": 801,
-        "MD": 733,
-        "ORDER": 431,
-        "HOTO": 374
-    },
-    {
-        "city": "Amravati",
-        "BQL": 141,
-        "MS": 105,
-        "MD": 101,
-        "ORDER": 44,
-        "HOTO": 42
-    },
-    {
-        "city": "Aurangabad",
-        "BQL": 111,
-        "MS": 86,
-        "MD": 84,
-        "ORDER": 49,
-        "HOTO": 49
-    },
-    {
-        "city": "Nashik",
-        "BQL": 165,
-        "MS": 169,
-        "MD": 158,
-        "ORDER": 103,
-        "HOTO": 98
-    },
-    {
-        "city": "Pune",
-        "BQL": 873,
-        "MS": 752,
-        "MD": 693,
-        "ORDER": 393,
-        "HOTO": 371
-    },
-    {
-        "city": "Kolhapur",
-        "BQL": 86,
-        "MS": 75,
-        "MD": 71,
-        "ORDER": 52,
-        "HOTO": 52
-    },
-    {
-        "city": "Jalgaon",
-        "BQL": 35,
-        "MS": 33,
-        "MD": 31,
-        "ORDER": 20,
-        "HOTO": 19
-    },
-    {
-        "city": "Solapur",
-        "BQL": 35,
-        "MS": 26,
-        "MD": 23,
-        "ORDER": 9,
-        "HOTO": 5
-    },
-    {
-        "city": "Bhopal",
-        "BQL": 458,
-        "MS": 299,
-        "MD": 274,
-        "ORDER": 147,
-        "HOTO": 146
-    },
-    {
-        "city": "Gwalior",
-        "BQL": 416,
-        "MS": 209,
-        "MD": 169,
-        "ORDER": 63,
-        "HOTO": 60
-    },
-    {
-        "city": "Indore",
-        "BQL": 393,
-        "MS": 303,
-        "MD": 268,
-        "ORDER": 122,
-        "HOTO": 120
-    },
-    {
-        "city": "Jabalpur",
-        "BQL": 476,
-        "MS": 271,
-        "MD": 245,
-        "ORDER": 147,
-        "HOTO": 146
-    },
-    {
-        "city": "Jaipur",
-        "BQL": 157,
-        "MS": 108,
-        "MD": 91,
-        "ORDER": 48,
-        "HOTO": 45
-    },
-    {
-        "city": "Delhi",
-        "BQL": 132,
-        "MS": 103,
-        "MD": 97,
-        "ORDER": 48,
-        "HOTO": 47
-    },
-    {
-        "city": "Faridabad",
-        "BQL": 25,
-        "MS": 19,
-        "MD": 15,
-        "ORDER": 7,
-        "HOTO": 7
-    },
-    {
-        "city": "Gurgaon",
-        "BQL": 52,
-        "MS": 40,
-        "MD": 39,
-        "ORDER": 22,
-        "HOTO": 22
-    },
-    {
-        "city": "Ghaziabad",
-        "BQL": 73,
-        "MS": 61,
-        "MD": 59,
-        "ORDER": 31,
-        "HOTO": 28
-    },
-    {
-        "city": "Noida",
-        "BQL": 32,
-        "MS": 24,
-        "MD": 23,
-        "ORDER": 10,
-        "HOTO": 10
-    },
-    {
-        "city": "Agra",
-        "BQL": 45,
-        "MS": 30,
-        "MD": 26,
-        "ORDER": 12,
-        "HOTO": 11
-    },
-    {
-        "city": "Kanpur",
-        "BQL": 218,
-        "MS": 196,
-        "MD": 187,
-        "ORDER": 137,
-        "HOTO": 127
-    },
-    {
-        "city": "Lucknow",
-        "BQL": 514,
-        "MS": 403,
-        "MD": 356,
-        "ORDER": 185,
-        "HOTO": 146
-    },
-    {
-        "city": "Varanasi",
-        "BQL": 59,
-        "MS": 54,
-        "MD": 53,
-        "ORDER": 28,
-        "HOTO": 28
-    },
-    {
-        "city": "Hyderabad",
-        "BQL": 205,
-        "MS": 170,
-        "MD": 161,
-        "ORDER": 87,
-        "HOTO": 85
-    },
-    {
-        "city": "Bangalore",
-        "BQL": 175,
-        "MS": 121,
-        "MD": 118,
-        "ORDER": 51,
-        "HOTO": 47
-    },
-    {
-        "city": "Chennai",
-        "BQL": 192,
-        "MS": 138,
-        "MD": 132,
-        "ORDER": 69,
-        "HOTO": 66
-    },
-    {
-        "city": "Coimbatore",
-        "BQL": 30,
-        "MS": 17,
-        "MD": 16,
-        "ORDER": 7,
-        "HOTO": 7
+    "combined": {
+      "BQL": 6289,
+      "MS": 4995,
+      "MD": 4127,
+      "ORDER": 2193,
+      "HOTO": 1948
     }
+  },
+  {
+    "city": "Ahmedabad",
+    "noBtl": {
+      "BQL": 57,
+      "MS": 46,
+      "MD": 45,
+      "ORDER": 29,
+      "HOTO": 27
+    },
+    "btl": {
+      "BQL": 50,
+      "MS": 52,
+      "MD": 50,
+      "ORDER": 21,
+      "HOTO": 20
+    },
+    "combined": {
+      "BQL": 107,
+      "MS": 98,
+      "MD": 95,
+      "ORDER": 50,
+      "HOTO": 47
+    }
+  },
+  {
+    "city": "Nagpur",
+    "noBtl": {
+      "BQL": 759,
+      "MS": 572,
+      "MD": 530,
+      "ORDER": 324,
+      "HOTO": 292
+    },
+    "btl": {
+      "BQL": 169,
+      "MS": 171,
+      "MD": 156,
+      "ORDER": 82,
+      "HOTO": 70
+    },
+    "combined": {
+      "BQL": 928,
+      "MS": 743,
+      "MD": 686,
+      "ORDER": 406,
+      "HOTO": 362
+    }
+  },
+  {
+    "city": "Amravati",
+    "noBtl": {
+      "BQL": 66,
+      "MS": 51,
+      "MD": 49,
+      "ORDER": 20,
+      "HOTO": 19
+    },
+    "btl": {
+      "BQL": 41,
+      "MS": 21,
+      "MD": 20,
+      "ORDER": 8,
+      "HOTO": 8
+    },
+    "combined": {
+      "BQL": 107,
+      "MS": 72,
+      "MD": 69,
+      "ORDER": 28,
+      "HOTO": 27
+    }
+  },
+  {
+    "city": "Aurangabad",
+    "noBtl": {
+      "BQL": 118,
+      "MS": 86,
+      "MD": 76,
+      "ORDER": 32,
+      "HOTO": 31
+    },
+    "btl": {
+      "BQL": 13,
+      "MS": 15,
+      "MD": 13,
+      "ORDER": 5,
+      "HOTO": 5
+    },
+    "combined": {
+      "BQL": 131,
+      "MS": 101,
+      "MD": 89,
+      "ORDER": 37,
+      "HOTO": 36
+    }
+  },
+  {
+    "city": "Nashik",
+    "noBtl": {
+      "BQL": 174,
+      "MS": 149,
+      "MD": 131,
+      "ORDER": 86,
+      "HOTO": 81
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 174,
+      "MS": 149,
+      "MD": 131,
+      "ORDER": 86,
+      "HOTO": 81
+    }
+  },
+  {
+    "city": "Pune",
+    "noBtl": {
+      "BQL": 809,
+      "MS": 679,
+      "MD": 612,
+      "ORDER": 347,
+      "HOTO": 313
+    },
+    "btl": {
+      "BQL": 136,
+      "MS": 112,
+      "MD": 100,
+      "ORDER": 47,
+      "HOTO": 40
+    },
+    "combined": {
+      "BQL": 945,
+      "MS": 791,
+      "MD": 712,
+      "ORDER": 394,
+      "HOTO": 353
+    }
+  },
+  {
+    "city": "Kolhapur",
+    "noBtl": {
+      "BQL": 59,
+      "MS": 53,
+      "MD": 47,
+      "ORDER": 33,
+      "HOTO": 32
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 59,
+      "MS": 53,
+      "MD": 47,
+      "ORDER": 33,
+      "HOTO": 32
+    }
+  },
+  {
+    "city": "Jalgaon",
+    "noBtl": {
+      "BQL": 29,
+      "MS": 24,
+      "MD": 21,
+      "ORDER": 14,
+      "HOTO": 14
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 29,
+      "MS": 24,
+      "MD": 21,
+      "ORDER": 14,
+      "HOTO": 14
+    }
+  },
+  {
+    "city": "Solapur",
+    "noBtl": {
+      "BQL": 34,
+      "MS": 21,
+      "MD": 19,
+      "ORDER": 8,
+      "HOTO": 8
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 34,
+      "MS": 21,
+      "MD": 19,
+      "ORDER": 8,
+      "HOTO": 8
+    }
+  },
+  {
+    "city": "Bhopal",
+    "noBtl": {
+      "BQL": 349,
+      "MS": 287,
+      "MD": 199,
+      "ORDER": 98,
+      "HOTO": 80
+    },
+    "btl": {
+      "BQL": 73,
+      "MS": 59,
+      "MD": 40,
+      "ORDER": 21,
+      "HOTO": 20
+    },
+    "combined": {
+      "BQL": 422,
+      "MS": 346,
+      "MD": 239,
+      "ORDER": 119,
+      "HOTO": 100
+    }
+  },
+  {
+    "city": "Gwalior",
+    "noBtl": {
+      "BQL": 279,
+      "MS": 157,
+      "MD": 108,
+      "ORDER": 45,
+      "HOTO": 37
+    },
+    "btl": {
+      "BQL": 147,
+      "MS": 110,
+      "MD": 73,
+      "ORDER": 23,
+      "HOTO": 22
+    },
+    "combined": {
+      "BQL": 426,
+      "MS": 267,
+      "MD": 181,
+      "ORDER": 68,
+      "HOTO": 59
+    }
+  },
+  {
+    "city": "Indore",
+    "noBtl": {
+      "BQL": 275,
+      "MS": 213,
+      "MD": 175,
+      "ORDER": 76,
+      "HOTO": 62
+    },
+    "btl": {
+      "BQL": 29,
+      "MS": 25,
+      "MD": 20,
+      "ORDER": 11,
+      "HOTO": 10
+    },
+    "combined": {
+      "BQL": 304,
+      "MS": 238,
+      "MD": 195,
+      "ORDER": 87,
+      "HOTO": 72
+    }
+  },
+  {
+    "city": "Jabalpur",
+    "noBtl": {
+      "BQL": 390,
+      "MS": 282,
+      "MD": 172,
+      "ORDER": 103,
+      "HOTO": 85
+    },
+    "btl": {
+      "BQL": 31,
+      "MS": 41,
+      "MD": 25,
+      "ORDER": 16,
+      "HOTO": 15
+    },
+    "combined": {
+      "BQL": 421,
+      "MS": 323,
+      "MD": 197,
+      "ORDER": 119,
+      "HOTO": 100
+    }
+  },
+  {
+    "city": "Jaipur",
+    "noBtl": {
+      "BQL": 271,
+      "MS": 185,
+      "MD": 156,
+      "ORDER": 77,
+      "HOTO": 66
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 271,
+      "MS": 185,
+      "MD": 156,
+      "ORDER": 77,
+      "HOTO": 66
+    }
+  },
+  {
+    "city": "Delhi",
+    "noBtl": {
+      "BQL": 154,
+      "MS": 135,
+      "MD": 118,
+      "ORDER": 63,
+      "HOTO": 54
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 154,
+      "MS": 135,
+      "MD": 118,
+      "ORDER": 63,
+      "HOTO": 54
+    }
+  },
+  {
+    "city": "Faridabad",
+    "noBtl": {
+      "BQL": 22,
+      "MS": 20,
+      "MD": 16,
+      "ORDER": 8,
+      "HOTO": 7
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 22,
+      "MS": 20,
+      "MD": 16,
+      "ORDER": 8,
+      "HOTO": 7
+    }
+  },
+  {
+    "city": "Gurgaon",
+    "noBtl": {
+      "BQL": 65,
+      "MS": 57,
+      "MD": 46,
+      "ORDER": 28,
+      "HOTO": 24
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 65,
+      "MS": 57,
+      "MD": 46,
+      "ORDER": 28,
+      "HOTO": 24
+    }
+  },
+  {
+    "city": "Ghaziabad",
+    "noBtl": {
+      "BQL": 77,
+      "MS": 67,
+      "MD": 59,
+      "ORDER": 32,
+      "HOTO": 26
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 77,
+      "MS": 67,
+      "MD": 59,
+      "ORDER": 32,
+      "HOTO": 26
+    }
+  },
+  {
+    "city": "Noida",
+    "noBtl": {
+      "BQL": 39,
+      "MS": 33,
+      "MD": 28,
+      "ORDER": 15,
+      "HOTO": 13
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 39,
+      "MS": 33,
+      "MD": 28,
+      "ORDER": 15,
+      "HOTO": 13
+    }
+  },
+  {
+    "city": "Agra",
+    "noBtl": {
+      "BQL": 49,
+      "MS": 30,
+      "MD": 27,
+      "ORDER": 12,
+      "HOTO": 10
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 49,
+      "MS": 30,
+      "MD": 27,
+      "ORDER": 12,
+      "HOTO": 10
+    }
+  },
+  {
+    "city": "Kanpur",
+    "noBtl": {
+      "BQL": 209,
+      "MS": 190,
+      "MD": 166,
+      "ORDER": 108,
+      "HOTO": 92
+    },
+    "btl": {
+      "BQL": 37,
+      "MS": 38,
+      "MD": 33,
+      "ORDER": 21,
+      "HOTO": 20
+    },
+    "combined": {
+      "BQL": 246,
+      "MS": 228,
+      "MD": 199,
+      "ORDER": 129,
+      "HOTO": 112
+    }
+  },
+  {
+    "city": "Lucknow",
+    "noBtl": {
+      "BQL": 441,
+      "MS": 337,
+      "MD": 251,
+      "ORDER": 126,
+      "HOTO": 107
+    },
+    "btl": {
+      "BQL": 107,
+      "MS": 86,
+      "MD": 63,
+      "ORDER": 29,
+      "HOTO": 25
+    },
+    "combined": {
+      "BQL": 548,
+      "MS": 423,
+      "MD": 314,
+      "ORDER": 155,
+      "HOTO": 132
+    }
+  },
+  {
+    "city": "Varanasi",
+    "noBtl": {
+      "BQL": 36,
+      "MS": 27,
+      "MD": 26,
+      "ORDER": 14,
+      "HOTO": 12
+    },
+    "btl": {
+      "BQL": 20,
+      "MS": 21,
+      "MD": 20,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 56,
+      "MS": 48,
+      "MD": 46,
+      "ORDER": 14,
+      "HOTO": 12
+    }
+  },
+  {
+    "city": "Hyderabad",
+    "noBtl": {
+      "BQL": 190,
+      "MS": 162,
+      "MD": 132,
+      "ORDER": 66,
+      "HOTO": 63
+    },
+    "btl": {
+      "BQL": 51,
+      "MS": 61,
+      "MD": 48,
+      "ORDER": 25,
+      "HOTO": 24
+    },
+    "combined": {
+      "BQL": 241,
+      "MS": 223,
+      "MD": 180,
+      "ORDER": 91,
+      "HOTO": 87
+    }
+  },
+  {
+    "city": "Bangalore",
+    "noBtl": {
+      "BQL": 154,
+      "MS": 101,
+      "MD": 80,
+      "ORDER": 36,
+      "HOTO": 34
+    },
+    "btl": {
+      "BQL": 63,
+      "MS": 70,
+      "MD": 53,
+      "ORDER": 21,
+      "HOTO": 20
+    },
+    "combined": {
+      "BQL": 217,
+      "MS": 171,
+      "MD": 133,
+      "ORDER": 57,
+      "HOTO": 54
+    }
+  },
+  {
+    "city": "Chennai",
+    "noBtl": {
+      "BQL": 141,
+      "MS": 84,
+      "MD": 71,
+      "ORDER": 34,
+      "HOTO": 32
+    },
+    "btl": {
+      "BQL": 52,
+      "MS": 55,
+      "MD": 45,
+      "ORDER": 24,
+      "HOTO": 23
+    },
+    "combined": {
+      "BQL": 193,
+      "MS": 139,
+      "MD": 116,
+      "ORDER": 58,
+      "HOTO": 55
+    }
+  },
+  {
+    "city": "Coimbatore",
+    "noBtl": {
+      "BQL": 24,
+      "MS": 10,
+      "MD": 8,
+      "ORDER": 5,
+      "HOTO": 5
+    },
+    "btl": {
+      "BQL": 0,
+      "MS": 0,
+      "MD": 0,
+      "ORDER": 0,
+      "HOTO": 0
+    },
+    "combined": {
+      "BQL": 24,
+      "MS": 10,
+      "MD": 8,
+      "ORDER": 5,
+      "HOTO": 5
+    }
+  }
 ]

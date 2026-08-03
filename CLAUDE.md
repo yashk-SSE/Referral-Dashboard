@@ -386,6 +386,15 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   `git add`/commit, and hold off on `git push` until he separately says go (per Section
   14/first-push precedent — pushing is still a distinct confirmation, reviewing the
   preview isn't the same as approving the push).
+  **Important:** opening the file directly (double-click, `file://`) makes
+  `fetchJSON()` fall back to fetching data from the live GitHub Pages site instead of
+  local files — confirmed 2026-08-03 after this caused a real, confusing bug (stale
+  MOP data with a missing field showing as 0 in a local review). `fetchJSON` now tries
+  the local `data/` folder first and only falls back to production if that fetch
+  throws, but Yash still needs to open the file through a local server for that local-first
+  path to actually run — use `preview-local.bat` (double-click) for this, which starts
+  a server on `http://localhost:8743` and opens `index.preview.html` (falling back to
+  `index.html` if no preview copy exists).
 
 ---
 
