@@ -27,6 +27,7 @@ and is kept in sync with the code. This README is just an orientation.
 
 ## Deployment
 
-Deployed via **GitHub Pages** from this repo (`yashk-SSE/Referral-Dashboard`) — switched
-from Netlify due to its free-tier monthly production-deploy cap. Pushing to `main`
-(whether from the Apps Script or manually) triggers a redeploy.
+Live at **https://yashk-sse.github.io/Referral-Dashboard/** via GitHub Pages, from this
+repo (`yashk-SSE/Referral-Dashboard`) — switched from Netlify due to its free-tier
+monthly production-deploy cap. Pushing to `main` (whether from the Apps Script or
+manually) triggers a redeploy.
