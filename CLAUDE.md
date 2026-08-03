@@ -33,6 +33,23 @@ performance for SolarSquare, a B2C solar company, across 29–32 Indian cities (
   data pipeline back to Python/GitHub Actions, and separately connect this project to
   **Metabase**. Neither is happening now — flagged here so a future session doesn't have
   to rediscover the context. Don't build toward this speculatively.
+- **Digital channel is being gradually removed (2026-08-03, no timeline yet):** Yash's
+  plan is to eventually drop the Digital-channel JSONs (`digital_effort.json`,
+  `digital_leads.json`) and the Ref-vs-Digital compare view entirely, narrowing this
+  dashboard back to Referral only (matching Section 1's original framing). Not urgent,
+  no code changes made yet — don't touch the Digital channel code until told to.
+- **Repo bloat from daily full-JSON commits — suggested long-term fix (not urgent,
+  not implemented):** the Apps Script pushes full rewrites of `data/*.json` (tens of MB)
+  to git on every run, so repo history grows every day forever. Removing the Digital
+  JSONs helps some but `referral_effort.json`/`referral_leads.json` will keep growing.
+  Git LFS doesn't really solve this — the files change daily so there's no dedup benefit.
+  The clean long-term fix is to **stop storing this data in git at all**: have the Apps
+  Script (or its Python/Actions successor) write the JSON to a small storage layer
+  outside git — a Cloud Storage bucket, a lightweight API, or eventually just point
+  Metabase straight at BigQuery — and have `index.html` fetch from that URL at runtime
+  instead of from a git-tracked file. This is also the natural convergence point with
+  the Metabase idea above: a real BI/serving layer removes the need for static
+  JSON-in-git entirely. Flagging for whenever this becomes a real problem, not now.
 
 ### Known local files — confirmed by inspection (2026-08-03)
 
@@ -357,6 +374,14 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
 - **Code is the final source of truth** for how the dashboard actually behaves — when
   code and docs disagree, fix the docs to match the code, don't silently trust either
   without checking, and say so when you make the correction.
+- **Local-preview-before-push workflow (standing habit, 2026-08-03):** when making
+  changes to `index.html` (or any other dashboard file), don't edit it in place. Instead
+  edit a gitignored copy (`index.preview.html` — see `.gitignore`), leave the real,
+  committed `index.html` untouched, and tell Yash to open the preview copy locally to
+  review. Only after he approves: copy the preview over the real file, then
+  `git add`/commit, and hold off on `git push` until he separately says go (per Section
+  14/first-push precedent — pushing is still a distinct confirmation, reviewing the
+  preview isn't the same as approving the push).
 
 ---
 
