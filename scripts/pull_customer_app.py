@@ -5,10 +5,15 @@ Customer App data puller -- Metabase -> data/customer_app.json
 Runs the query in scripts/customer_app_query.sql (single source of truth,
 shared with the independent Metabase SQL question Yash can run himself)
 against the SolarSquare Postgres database via Metabase's API, and writes the
-raw per-login-event rows to data/customer_app.json for the dashboard.
+per-project rows to data/customer_app.json for the dashboard.
 
-One row per verified Customer App login event, joined to that project's
-milestone dates (Order Booked, HOTO, Installation, Commissioning) and city.
+One row per PROJECT (not per login event, and not just projects with a
+login) -- includes every project in `project`, with first_login_at = null
+for the ones that have never logged in. This is required to compute "% of
+commissioned/installed/HOTO base that has logged in" against the full base,
+not just the subset that ever logged in. Only the FIRST login per project is
+tracked, not every login -- confirmed with Yash, 2026-08.
+
 Milestone-window bucketing and P50/P90/P95/Avg stats are computed downstream
 in the dashboard's JavaScript, not here -- this script only pulls raw data.
 
@@ -122,8 +127,9 @@ def main():
     print(f"Flagged {anomalies:,} rows with date_anomaly = true "
           f"(commissioning_at before installation_at)")
 
-    distinct_projects = len(set(r["sseid"] for r in records if r.get("sseid")))
-    print(f"{distinct_projects:,} distinct projects (sseid) with at least one login")
+    with_login = sum(1 for r in records if r.get("first_login_at"))
+    print(f"{len(records):,} total projects, {with_login:,} have at least one "
+          f"login ({with_login/len(records)*100:.1f}%)")
 
     distinct_cities = sorted(set(r["city"] for r in records if r.get("city")))
     print(f"{len(distinct_cities)} distinct city values after merging:")

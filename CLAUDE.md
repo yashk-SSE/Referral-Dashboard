@@ -515,19 +515,35 @@ independent pipeline from everything else in this file.
   - City = `project.site_address_cluster`
   - Lead ID = `project.lead_id` (directly on `project` — no `lead` join needed at all
     for this feature)
+- **Only the FIRST login per project is tracked, not every login — corrected
+  2026-08-03.** The initial build tracked every login event; Yash confirmed only the
+  first one matters for this feature. This also surfaced a bigger issue: the original
+  query started from `otps` (INNER JOIN to `project`), which silently excluded every
+  project with **zero** logins entirely. That's wrong for the "% of base logged in"
+  stats below, which need the full project universe as the denominator. The query is
+  now anchored on `project` (`LEFT JOIN` to a `MIN(created_at)`-per-sseid login CTE),
+  so every project appears, with `first_login_at = NULL` for those with no login yet.
 - **5 milestone windows** (per the original request): Before Order Booked · Order
   Booked→HOTO · HOTO→Installation · Installation→Commissioning · After Commissioning.
-  Bucketing a login into a window, and computing days-elapsed-since-window-start, is
-  done **client-side in the dashboard's JavaScript** — deliberately not pre-aggregated
-  in SQL — because "custom date range cohort" filtering (per the original ask) needs
-  raw per-login-event data to re-slice on the fly, the same reason the existing
-  Velocity tab computes P75/P90 client-side rather than in a query.
+  Bucketing a project's *first* login into a window, and (eventually, Phase 3)
+  computing days-elapsed-since-window-start, is done **client-side in the dashboard's
+  JavaScript** — deliberately not pre-aggregated in SQL — because "custom date range
+  cohort" filtering (per the original ask) needs raw per-project data to re-slice on
+  the fly, the same reason the existing Velocity tab computes P75/P90 client-side
+  rather than in a query. Projects with no login at all don't get a milestone bucket
+  at all — they're tracked separately via the "% of base logged in" stats, not forced
+  into one of the 5 windows.
 - **`date_anomaly` flag:** `TRUE` when `commissioning_date < installation_date` for a
   project — confirmed by Yash as a rare, genuine data anomaly (not normal sequencing).
-  Rows are **not dropped**, just flagged, so the dashboard can surface them separately
-  rather than silently bucketing them into a nonsensical negative-duration window.
-  Observed rate: ~0.6% of rows (684 / 116,693 in the initial pull) — if this rate ever
-  climbs much higher, that's worth a second look, not just filtering.
+  Rows are **not dropped**. They're excluded from the City × Milestone bucketing table
+  specifically (their install/commission sequence can't be trusted to place a login in
+  the right window) but **are still counted** in the "% of base logged in" stats — the
+  anomaly is about stage *ordering*, not about whether the project/login is real.
+  Observed rate: ~1.6% of projects (1,161 / 73,636 in the corrected, project-anchored
+  pull) — if this rate ever climbs much higher, that's worth a second look, not just
+  filtering. **UI note (2026-08-03):** don't surface this anomaly count at the top of
+  the tab — a prominent red banner up front reads as "the data is wrong." It's now a
+  small muted note near the bottom instead, alongside the Phase-2-scope note.
 - **`capp_logged_in` boolean** (directly on `project`) can be used as a sanity-check
   cross-reference (e.g. does its count roughly match distinct logged-in SSEIDs) but
   **cannot** drive milestone bucketing — it has no timestamp.
@@ -549,34 +565,47 @@ independent pipeline from everything else in this file.
   intentionally left out for now, not a bug if it stays absent.
 
 ### Pipeline status
-- `scripts/customer_app_query.sql` — the finalized query (one row per login event +
-  that project's milestone dates + city + `date_anomaly`). This is the **single
-  source of truth**, also meant to be pasted into a standalone Metabase SQL question
-  for Yash's own independent use — keep both in sync if this ever changes.
+- `scripts/customer_app_query.sql` — the finalized query, **rewritten 2026-08-03**:
+  one row per **project** (anchored on `project`, not `otps`), with `first_login_at`
+  (via a `MIN(created_at)` CTE, `NULL` if no login) + that project's milestone dates +
+  city + `date_anomaly`. This is the **single source of truth**, also meant to be
+  pasted into a standalone Metabase SQL question for Yash's own independent use —
+  keep both in sync if this ever changes.
 - `scripts/pull_customer_app.py` — the puller script. Reads the API key from
   `.metabase_key/`, runs the query above via Metabase's API (with the row-cap fix),
   applies the city merge + null-city drop, writes `data/customer_app.json`.
   Run manually for now (`python3 scripts/pull_customer_app.py`) — not yet automated
   via any scheduled job; that's a separate future decision, not assumed.
-- `data/customer_app.json` — ~116,600 rows as of 2026-08-03 (row count moves slightly
-  between pulls — live production data), ~32.7 MB. Contains real customer-level data
-  (`sseid`, `lead_id`,
-  login timestamps) — consistent with the existing `referral_leads.json` already
-  doing the same in this public repo, not a new category of exposure.
-- **Phase 2 done (2026-08-03, pending Yash's review — built in `index.preview.html`,
-  not yet merged to `index.html`):** a 4th channel switcher button ("Customer App",
+- `data/customer_app.json` — ~73,600 rows as of 2026-08-03 (one per project, not per
+  login — row count moves slightly between pulls, live production data), ~19.5 MB.
+  Contains real customer-level data (`sseid`, `lead_id`, login timestamp) — consistent
+  with the existing `referral_leads.json` already doing the same in this public repo,
+  not a new category of exposure.
+- **Phase 2 (2026-08-03, pending Yash's review — built in `index.preview.html`, not
+  yet merged to `index.html`):** a 4th channel switcher button ("Customer App",
   `ACTIVE_CH='capp'`) alongside Referral/Digital/Ref vs Digital, its own sidebar
   section (`data-ch="capp"`, same show/hide mechanism as Digital's `data-ch="digital"`
-  items), and one skeleton tab (`capp` → `bCApp()`) showing raw login counts by
-  City × Milestone, tier-sorted, with an India total row and a separate anomaly-count
-  callout (not merged into the milestone counts). `precomputeCApp()` /
-  `capMilestone()` do the actual bucketing — a login falls into the first milestone
-  window it hasn't passed yet; a missing (null) milestone date is treated as "not
-  reached yet," not skipped over. Cities not in the Referral dashboard's own `TIERS`
-  list (`Raipur`, `Surat`) render with no tier tag, sorted after all known tiers.
-  `CAPP`/`CAC` are the new global arrays (raw rows / precomputed aggregates),
-  following the same `ED`/`C` and `DED`/`DC` naming convention already used for
-  Referral and Digital.
-- **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, the
-  month-level summary cards (Order Booked/HOTO/Installation/Commissioned this
-  month), and the custom date-range cohort view. Phase 2 is raw counts only.
+  items), and one tab (`capp` → `bCApp()`) with:
+  - Three top-line cards: % of Commissioned/Installed/HOTO base that has ever logged
+    in (each base counted independently — a commissioned project is also installed
+    and HOTO'd, these are not mutually exclusive groups).
+  - A City × Milestone table classifying each project's *first* login into one of the
+    5 windows, tier-sorted, India total row. Only projects with a login and without
+    `date_anomaly` appear here (see the `date_anomaly` note above).
+  - The anomaly-count note near the bottom, deliberately not at the top (per Yash).
+
+  `precomputeCApp()` / `capMilestone()` do the actual bucketing — a project's first
+  login falls into the first milestone window it hadn't passed yet as of that login; a
+  missing (null) milestone date is treated as "not reached yet," not skipped over.
+  Cities not in the Referral dashboard's own `TIERS` list (`Raipur`, `Surat`) render
+  with no tier tag, sorted after all known tiers. `CAPP`/`CAC` are the new global
+  arrays (raw rows / precomputed aggregates), following the same `ED`/`C` and
+  `DED`/`DC` naming convention already used for Referral and Digital.
+- **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, and a
+  month-over-month view of the login rate against the cumulative commissioned base
+  (e.g. "of the 40,000 commissioned as of end of July, how many have logged in, and
+  how has that trended month to month"). **Open question, not yet resolved:** does
+  "how many were logged in" for a given month mean logged in *by that month's end*
+  (a decay/freshness view — do newer cohorts log in slower?), or logged in *by now*
+  (today's cumulative status against each month's commissioned base)? These produce
+  materially different charts — confirm with Yash before building this piece.
