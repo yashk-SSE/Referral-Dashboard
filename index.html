@@ -332,6 +332,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
       <button class="ch-btn active" id="ch-ref" onclick="setChannel('referral',this)">Referral</button>
       <button class="ch-btn" id="ch-dig" onclick="setChannel('digital',this)">Digital</button>
       <button class="ch-btn" id="ch-cmp" onclick="setChannel('compare',this)">Ref vs Digital</button>
+      <button class="ch-btn" id="ch-capp" onclick="setChannel('capp',this)">Customer App</button>
     </div>
     <!-- Metric Definition Switchers (Referral only) -->
     <div id="metric-switchers">
@@ -432,6 +433,10 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <!-- COMPARISON -->
   <div class="sh sh-cmp" data-ch="compare" style="display:none">Comparison</div>
   <div class="ni ni-cmp" data-ch="compare" style="display:none" onclick="sw('compare',this)">⟺ Referral vs Digital</div>
+  <!-- CUSTOMER APP -->
+  <div class="sh sh-capp" data-ch="capp" style="display:none">Customer App</div>
+  <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capp',this)">⬡ Overview</div>
+  <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capptrend',this)">📈 MoM Trend</div>
 </nav>
 </div>
 <main class="main" id="main">
@@ -507,6 +512,9 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-dm0" class="panel"></div>
   <!-- Compare panel -->
   <div id="p-compare" class="panel"></div>
+  <!-- Customer App panel -->
+  <div id="p-capp" class="panel"></div>
+  <div id="p-capptrend" class="panel"></div>
 </main>
 </div>
 <script>
@@ -548,6 +556,19 @@ const EXP=CITIES.filter(c=>TIERS[c]==='Exp');
 // setMetricDef() already uses for the BQL/MS/MD definition toggles.
 let ED_ALL=[],LD_ALL=[],ED=[],LD=[],C={},rendered={},chartInst={},curTab='exec';
 let DED=[],DLD=[],DC={},ACTIVE_CH='referral',dataLoaded=false;
+let CAPP=[],CAC={},CAPP_ALL_CITIES=[];
+// The 5 Customer App login milestone windows, in sequence.
+const CAPP_MILESTONES=['Before Order Booked','Order Booked to HOTO','HOTO to Installation','Installation to Commissioning','After Commissioning'];
+// Short single-line versions for table headers (full name kept as a title tooltip).
+const CAPP_MILESTONE_SHORT={'Before Order Booked':'Pre-Order','Order Booked to HOTO':'Order→HOTO','HOTO to Installation':'HOTO→Install','Installation to Commissioning':'Install→Comm','After Commissioning':'Post-Comm'};
+// Shared tier-sort for Customer App city lists (Focus>Big>Mid>Small>Exp, then alpha; unknown-tier cities like Raipur/Surat sort last).
+function capTierSort(arr){
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  return[...arr].sort((a,b)=>{
+    const tA=TIERS[a]!=null?tierOrd[TIERS[a]]:5,tB=TIERS[b]!=null?tierOrd[TIERS[b]]:5;
+    return tA!==tB?tA-tB:a.localeCompare(b);
+  });
+}
 
 // ?? DATE UTILS ??
 const D0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
@@ -847,7 +868,7 @@ function setChannel(ch,el){
   document.querySelectorAll('.ni:not([data-ch]),.sh:not([data-ch]):not(.sh-d):not(.sh-cmp)').forEach(item=>{
     item.style.display=ch==='referral'?'':'none';
   });
-  const defaults={referral:'exec',digital:'dexec',compare:'compare'};
+  const defaults={referral:'exec',digital:'dexec',compare:'compare',capp:'capp'};
   const target=defaults[ch]||'exec';
   rendered[target]=false;
   sw(target,null);
@@ -856,7 +877,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare'];
+  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -871,7 +892,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -918,7 +939,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare};
+  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -1280,6 +1301,7 @@ const TIER_OPTIONS=['Focus','Big','Mid','Small','Exp'];
 const TIER_LABELS={Focus:'Focus',Big:'Big',Mid:'Mid',Small:'Small',Exp:'Expansion'};
 const TIER_CFG={allLabel:'All Tiers',noun:'Tier',nounPlural:'Tiers',labelFn:o=>TIER_LABELS[o]||o};
 const SC_CFG={allLabel:'All Sub-Channels',noun:'Sub-Channel',nounPlural:'Sub-Channels'};
+const CAPP_CITY_CFG={allLabel:'All Cities',noun:'City',nounPlural:'Cities'};
 function tierOk(tfArr,tier){return !tfArr||!tfArr.length||tfArr.includes(tier);}
 function scOk(sfArr,sc){return !sfArr||!sfArr.length||sfArr.includes(sc);}
 
@@ -1301,20 +1323,23 @@ async function init(){
 
   try{
     // Load files one-by-one so progress is visible (total ~10 MB)
-    setLoad('Loading Referral effort data… (1/5)');
+    setLoad('Loading Referral effort data… (1/6)');
     const eR  = await fetchJSON('referral_effort.json');
 
-    setLoad('Loading Referral lead data… (2/5)');
+    setLoad('Loading Referral lead data… (2/6)');
     const lR  = await fetchJSON('referral_leads.json');
 
-    setLoad('Loading MOP targets… (3/5)');
+    setLoad('Loading MOP targets… (3/6)');
     const mopR= await fetchJSON('referral_mop.json').catch(()=>[]);
 
-    setLoad('Loading Digital effort data… (4/5)');
+    setLoad('Loading Digital effort data… (4/6)');
     const deR = await fetchJSON('digital_effort.json').catch(()=>[]);
 
-    setLoad('Loading Digital lead data… (5/5)');
+    setLoad('Loading Digital lead data… (5/6)');
     const dlR = await fetchJSON('digital_leads.json').catch(()=>[]);
+
+    setLoad('Loading Customer App data… (6/6)');
+    const capR = await fetchJSON('customer_app.json').catch(()=>[]);
 
     setLoad('Processing data…');
 
@@ -1427,9 +1452,43 @@ async function init(){
 
     console.log(`Digital: DED=${DED.length} rows, DLD=${DLD.length} rows`);
 
+    // ── Customer App data → CAPP[] ──────────────────────────────────
+    // One row per PROJECT (not per login event, and not just projects with a
+    // login) -- loginAt is null for projects that have never logged in. Only
+    // the FIRST login per project is tracked, not every login. city has
+    // already been merged/cleaned by scripts/pull_customer_app.py
+    // (Bengaluru→Bangalore etc.) -- no cityFix() needed here.
+    // NOTE: filtered on city only, NOT on having a login -- projects with no
+    // login must stay in CAPP so the "% of base logged in" stats have a
+    // complete denominator.
+    CAPP=capR.map(r=>{
+      const hotoAt=pd(r.hoto_at),instAt=pd(r.installation_at),commAt=pd(r.commissioning_at);
+      return{
+        sseid:      r.sseid,
+        leadId:     r.lead_id,
+        city:       (r.city||'').trim(),
+        orderAt:    pd(r.order_booked_at),
+        hotoAt,
+        // Some projects have no hoto_at recorded but DO have an installation/commissioning
+        // date -- Installation/Commissioning can't happen without HOTO already having
+        // occurred, so treat those as HOTO'ed for base-counting/bucketing purposes even
+        // though the exact HOTO date is unknown. Flagged by Yash, 2026-08.
+        hotoEffAt:  hotoAt||instAt||commAt||null,
+        instAt,
+        commAt,
+        loginAt:    pd(r.first_login_at),
+        dateAnomaly:r.date_anomaly===true||r.date_anomaly==='true'
+      };
+    }).filter(r=>r.city);
+
+    CAPP_ALL_CITIES=capTierSort([...new Set(CAPP.map(r=>r.city))]);
+
+    console.log(`Customer App: CAPP=${CAPP.length} rows`);
+
     // ── Everything below is identical to before ───────────────────────────
     precompute();
     precomputeDigital();
+    precomputeCApp();
     const yd=C.yd;
     document.getElementById('upd-lbl').textContent=`MTD ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
     const fyP=Math.round(C.ytdHoto/FY_T*100);
@@ -6084,6 +6143,337 @@ function bCompare(){
 <div class="stitle">⚡ Growth Narrative</div>
 ${insHtml}`;
   autoSort(document.getElementById('p-compare'));
+}
+
+// ================================================================
+// CUSTOMER APP (Metabase-sourced, independent of Referral/Digital)
+// Phase 2: City x Milestone FIRST-login counts, + % of Commissioned/Installed/
+// HOTO base that has ever logged in. P50/P90/P95/Avg days-since-milestone and
+// the month-level/custom-cohort views are Phase 3/4, not built yet.
+// See CLAUDE.md Section 15 for the full data-source writeup.
+//
+// CAPP holds one row per PROJECT (not per login, and not just projects with a
+// login) -- loginAt is null for projects that have never logged in. Only the
+// FIRST login per project is tracked. Confirmed with Yash, 2026-08.
+// ================================================================
+
+// Which of the 5 sequential milestone windows a project's FIRST login falls
+// into. Only call this for rows that actually have a login (l.loginAt set) --
+// projects with no login at all don't get a milestone, they're tracked
+// separately via the "% of base logged in" stats. A missing (null) milestone
+// date means that stage hasn't happened yet for this project, so the login is
+// treated as still being in the current window rather than skipped ahead.
+function capMilestone(l){
+  const t=l.loginAt;
+  if(!l.orderAt||t<l.orderAt)return CAPP_MILESTONES[0];
+  if(!l.hotoEffAt||t<l.hotoEffAt)return CAPP_MILESTONES[1];
+  if(!l.instAt||t<l.instAt)return CAPP_MILESTONES[2];
+  if(!l.commAt||t<l.commAt)return CAPP_MILESTONES[3];
+  return CAPP_MILESTONES[4];
+}
+
+// Trailing n calendar months (oldest first), used by both the MoM Trend chart and the
+// City x Milestone table's login-month selector.
+function capGetMonths(n){
+  const r=[],t=D0();
+  for(let i=n-1;i>=0;i--){
+    const d=new Date(t.getFullYear(),t.getMonth()-i,1);
+    r.push({y:d.getFullYear(),m:d.getMonth()+1,lbl:d.toLocaleString('default',{month:'short'})+"'"+String(d.getFullYear()).slice(2)});
+  }
+  return r;
+}
+
+// % of a base (any date-milestone field present) that has a first login -- shared by
+// the 3 fixed stat cards, the per-city columns, and the dropdown-driven "Logins on
+// Base" card.
+function capBaseStat(scope,dateKey){
+  const inBase=scope.filter(l=>l[dateKey]);
+  const loggedIn=inBase.filter(l=>l.loginAt).length;
+  return{count:inBase.length,loggedIn,pct:inBase.length?loggedIn/inBase.length*100:0};
+}
+
+// cityFilter: optional array of city names to scope everything to (multi-select filter
+// on the Overview/MoM Trend tabs). Omit/empty = full India base, same as before.
+function precomputeCApp(cityFilter){
+  CAC={};
+  const scope=(cityFilter&&cityFilter.length)?CAPP.filter(l=>cityFilter.includes(l.city)):CAPP;
+  // date_anomaly rows (commissioning before installation) are excluded from
+  // the milestone-window bucketing (their install/commission sequence can't
+  // be trusted to place a login in the right window) but ARE still counted
+  // in the "% of base logged in" stats below -- the anomaly is about stage
+  // ordering, not about whether the project itself is real. Per Yash, 2026-08.
+  const base=scope; // full (scoped) base, every project, for the % stats
+  const bucketable=scope.filter(l=>l.loginAt&&!l.dateAnomaly);
+  CAC.base=base;           // exposed so dropdown/table controls can re-slice without a full recompute
+  CAC.bucketable=bucketable;
+
+  CAC.anomalyCount=scope.filter(l=>l.dateAnomaly).length;
+
+  CAC.totalProjects=base.length;
+  CAC.totalWithLogin=base.filter(l=>l.loginAt).length;
+  CAC.pctLoggedIn=CAC.totalProjects?CAC.totalWithLogin/CAC.totalProjects*100:0;
+
+  // % of {Commissioned,Installed,HOTO} base that has ever logged in.
+  // Optional cityFilter2 scopes the same stat to one city (used by the
+  // per-city columns in the City x Milestone table). HOTO uses hotoEffAt --
+  // installation/commissioning dates imply HOTO already happened even when
+  // hoto_at itself wasn't recorded (see hotoEffAt note in the CAPP mapping).
+  function baseStat(dateKey,cityFilter2){
+    return capBaseStat(cityFilter2?base.filter(l=>l.city===cityFilter2):base,dateKey);
+  }
+  CAC.commStat=baseStat('commAt');
+  CAC.instStat=baseStat('instAt');
+  CAC.hotoStat=baseStat('hotoEffAt');
+
+  const cities=capTierSort([...new Set(bucketable.map(l=>l.city))]);
+  CAC.cities=cities;
+
+  CAC.cityBaseStats={};
+  cities.forEach(c=>{
+    CAC.cityBaseStats[c]={hoto:baseStat('hotoEffAt',c),inst:baseStat('instAt',c),comm:baseStat('commAt',c)};
+  });
+
+  // ── MoM trend: cumulative base size + login rate, trailing 12 months ──
+  // Two interpretations, both shown: "by month end" (had they logged in as of
+  // that month's close -- a decay/freshness view) vs "by now" (today's
+  // cumulative login status against each month's commissioned/installed/HOTO
+  // volume). Per Yash 2026-08: build both rather than pick one.
+  function momTrend(dateKey){
+    const months=capGetMonths(12);
+    return months.map(mo=>{
+      const monthEnd=new Date(mo.y,mo.m,0,23,59,59,999);
+      const cumulative=base.filter(l=>l[dateKey]&&l[dateKey]<=monthEnd);
+      const byMonthEnd=cumulative.filter(l=>l.loginAt&&l.loginAt<=monthEnd).length;
+      const byNow=cumulative.filter(l=>l.loginAt).length;
+      return{
+        lbl:mo.lbl,
+        cumulative:cumulative.length,
+        byMonthEnd,byNow,
+        pctByMonthEnd:cumulative.length?byMonthEnd/cumulative.length*100:0,
+        pctByNow:cumulative.length?byNow/cumulative.length*100:0
+      };
+    });
+  }
+  CAC.momTrend={hoto:momTrend('hotoEffAt'),inst:momTrend('instAt'),comm:momTrend('commAt')};
+}
+
+// City x Milestone breakdown, computed on demand from CAC.bucketable/CAC.cities so the
+// Abs/% and login-month controls can re-slice without re-running precomputeCApp (which
+// would also touch the always-lifetime stat cards above). monthFilter: {y,m} or null.
+function capMilestoneTable(monthFilter){
+  const rowsSrc=monthFilter?CAC.bucketable.filter(l=>l.loginAt&&l.loginAt.getFullYear()===monthFilter.y&&l.loginAt.getMonth()+1===monthFilter.m):CAC.bucketable;
+  const cityMilestone={},indiaMilestone={};
+  CAPP_MILESTONES.forEach(m=>indiaMilestone[m]=0);
+  CAC.cities.forEach(c=>{cityMilestone[c]={};CAPP_MILESTONES.forEach(m=>cityMilestone[c][m]=0);});
+  rowsSrc.forEach(l=>{
+    const m=capMilestone(l);
+    if(cityMilestone[l.city])cityMilestone[l.city][m]++;
+    indiaMilestone[m]++;
+  });
+  return{cityMilestone,indiaMilestone};
+}
+
+// Overview tab controls: Abs/% + login-month filter for the City x Milestone table,
+// and the base-stage dropdown for the standalone "Logins on Base" card. Kept as
+// module state (not CAC) since they only affect how already-computed CAC data renders,
+// not the underlying scope/filter.
+let CAPP_TABLE_MODE='abs';  // 'abs' | 'pct' (row composition -- % of that row's own total)
+let CAPP_TABLE_MONTH='';    // '' = all months, else 'y-m' key matching a capGetMonths() entry
+const CAPP_BASE_STAGE_CFG={
+  order:{label:'Order Booked',key:'orderAt'},
+  hoto: {label:'HOTO',key:'hotoEffAt'},
+  inst: {label:'Installation',key:'instAt'},
+  comm: {label:'Commissioning',key:'commAt'}
+};
+let CAPP_BASE_STAGE='hoto';
+function setCAppTableMode(mode){CAPP_TABLE_MODE=mode;renderCAppMilestoneSection();}
+function setCAppTableMonth(val){CAPP_TABLE_MONTH=val;renderCAppMilestoneSection();}
+function setCAppBaseStage(v){CAPP_BASE_STAGE=v;renderCAppBaseStageCard();}
+
+function bCApp(){
+  const el=document.getElementById('p-capp');
+  if(!el)return;
+  el.innerHTML=`
+<div class="ptitle">Customer App — Overview</div>
+<div class="psub">First-login tracking by city and lifecycle milestone . Source: Metabase (independent of Referral/Digital data)</div>
+<div class="fbar"><span id="capp-city-mc-wrap"></span></div>
+<div id="capp-body"></div>`;
+  insertMSWidget('capp-city-mc-wrap','capp-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCApp());
+  rebuildCApp();
+}
+function rebuildCApp(){
+  precomputeCApp(getMSVal('capp-city',CAPP_ALL_CITIES));
+  renderCApp();
+}
+function renderCApp(){
+  const el=document.getElementById('capp-body');
+  if(!el)return;
+
+  // No red/green here -- 50% isn't a meaningful benchmark yet (per Yash, 2026-08).
+  const statCard=(label,st)=>`<div class="mc">
+    <div class="mc-lbl">${label}</div>
+    <div class="mc-val">${st.pct.toFixed(1)}%</div>
+    <div class="mc-mop">${f(st.loggedIn)} of ${f(st.count)} logged in</div>
+  </div>`;
+
+  el.innerHTML=`
+<div class="stitle">Logged-In % by Base</div>
+<div class="mgrid">
+  ${statCard('% of HOTO Base',CAC.hotoStat)}
+  ${statCard('% of Installed Base',CAC.instStat)}
+  ${statCard('% of Commissioned Base',CAC.commStat)}
+</div>
+<div style="font-size:11px;color:var(--t2);margin:6px 0 14px">${f(CAC.totalWithLogin)} of ${f(CAC.totalProjects)} total projects (${CAC.pctLoggedIn.toFixed(1)}%) have logged in at least once, ever — each base above is not exclusive of the others (e.g. a commissioned project is also installed and HOTO'd). HOTO base includes projects with no recorded HOTO date but a recorded Installation or Commissioning date — those imply HOTO already happened.</div>
+
+<div class="stitle">Logins on Base</div>
+<div style="font-size:10px;color:var(--t3);margin-bottom:6px">Pick any single milestone stage to see what % of everyone who has reached it has ever logged in.</div>
+<div id="capp-basestage-card"></div>
+
+<div class="stitle">First Logins by City × Milestone</div>
+<div style="font-size:10px;color:var(--t3);margin-bottom:6px">Classified by which milestone window each project's FIRST login fell into. Excludes the data-anomaly rows noted below. The last 3 columns are independent of this breakdown and always lifetime — % of that city's own HOTO/Installed/Commissioned base that has logged in, ever.</div>
+<div id="capp-milestone-section"></div>
+
+<div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:var(--r);padding:8px 12px;font-size:11px;color:#374151;margin-top:14px">
+  <strong>Phase 2:</strong> P50/P90/P95/Avg days-since-milestone and custom date-range
+  cohort filtering are not built yet.
+  ${CAC.anomalyCount?`<br><br>⚠️ <strong>${f(CAC.anomalyCount)} project(s)</strong> have a data anomaly (commissioning date recorded before installation date) and are excluded from the City × Milestone table above.`:''}
+</div>`;
+  renderCAppBaseStageCard();
+  renderCAppMilestoneSection();
+}
+
+function renderCAppBaseStageCard(){
+  const el=document.getElementById('capp-basestage-card');
+  if(!el)return;
+  const stageBtn=(key)=>{
+    const cfg=CAPP_BASE_STAGE_CFG[key];
+    const active=CAPP_BASE_STAGE===key;
+    const style=active
+      ?'background:#1a56db;color:#fff;border:1px solid #1a56db;font-weight:600'
+      :'background:var(--sur);color:var(--t2);border:1px solid var(--bd2)';
+    return`<button onclick="setCAppBaseStage('${key}')" style="${style};padding:5px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">${cfg.label}</button>`;
+  };
+  const st=capBaseStat(CAC.base,CAPP_BASE_STAGE_CFG[CAPP_BASE_STAGE].key);
+  el.innerHTML=`
+<div class="fbar">${Object.keys(CAPP_BASE_STAGE_CFG).map(stageBtn).join('')}</div>
+<div class="mgrid" style="grid-template-columns:minmax(0,220px)">
+  <div class="mc">
+    <div class="mc-lbl">% of ${CAPP_BASE_STAGE_CFG[CAPP_BASE_STAGE].label} Base Logged In</div>
+    <div class="mc-val">${st.pct.toFixed(1)}%</div>
+    <div class="mc-mop">${f(st.loggedIn)} of ${f(st.count)} logged in</div>
+  </div>
+</div>`;
+}
+
+function renderCAppMilestoneSection(){
+  const el=document.getElementById('capp-milestone-section');
+  if(!el)return;
+  const months=capGetMonths(12);
+  const monthOpt=(mo)=>{
+    const key=`${mo.y}-${mo.m}`;
+    return`<option value="${key}" ${CAPP_TABLE_MONTH===key?'selected':''}>${mo.lbl}</option>`;
+  };
+  const monthFilter=CAPP_TABLE_MONTH?{y:+CAPP_TABLE_MONTH.split('-')[0],m:+CAPP_TABLE_MONTH.split('-')[1]}:null;
+  const{cityMilestone,indiaMilestone}=capMilestoneTable(monthFilter);
+
+  const rows=CAC.cities.map(c=>{
+    const cells=CAPP_MILESTONES.map(m=>cityMilestone[c][m]);
+    const bs=CAC.cityBaseStats[c];
+    return{c,tier:TIERS[c]||'',cells,total:cells.reduce((s,v)=>s+v,0),bs};
+  });
+  const indiaCells=CAPP_MILESTONES.map(m=>indiaMilestone[m]);
+  const indiaTotal=indiaCells.reduce((s,v)=>s+v,0);
+
+  const modeBtn=(key,lbl)=>{
+    const active=CAPP_TABLE_MODE===key;
+    const style=active
+      ?'background:#1a56db;color:#fff;border:1px solid #1a56db;font-weight:600'
+      :'background:var(--sur);color:var(--t2);border:1px solid var(--bd2)';
+    return`<button onclick="setCAppTableMode('${key}')" style="${style};padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">${lbl}</button>`;
+  };
+  // Row-composition %: each milestone cell as % of THAT ROW's own total -- the
+  // distribution shape per city/India, separate from the always-lifetime % columns.
+  const cell=(v,rowTotal)=>CAPP_TABLE_MODE==='pct'
+    ?`<td class="mono">${rowTotal?(v/rowTotal*100).toFixed(1)+'%':'-'}</td>`
+    :`<td class="mono">${f(v)}</td>`;
+  const pctCell=(st)=>`<td class="mono" title="${f(st.loggedIn)} of ${f(st.count)} logged in">${st.pct.toFixed(1)}%</td>`;
+
+  el.innerHTML=`
+<div class="fbar">
+  ${modeBtn('abs','Absolute')}${modeBtn('pct','%')}
+  <select onchange="setCAppTableMonth(this.value)" style="padding:5px 10px;border-radius:7px;border:1px solid var(--bd2);background:var(--sur);color:var(--t2);font-size:12px;font-family:'DM Sans',sans-serif">
+    <option value="" ${CAPP_TABLE_MONTH===''?'selected':''}>All Months (lifetime)</option>
+    ${months.map(monthOpt).join('')}
+  </select>
+</div>
+<div class="tw"><table>
+<thead><tr><th>City</th>${CAPP_MILESTONES.map(m=>`<th title="${m}">${CAPP_MILESTONE_SHORT[m]}</th>`).join('')}<th>Total</th><th title="% of Total HOTOs (always lifetime)" style="border-left:2px solid var(--bd2)">% HOTO</th><th title="% of Total Installations (always lifetime)">% Install</th><th title="% of Total Commissionings (always lifetime)">% Comm</th></tr></thead>
+<tbody>
+<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong></td>${indiaCells.map(v=>cell(v,indiaTotal)).join('')}<td class="mono" style="font-weight:700">${f(indiaTotal)}</td>${pctCell(CAC.hotoStat)}${pctCell(CAC.instStat)}${pctCell(CAC.commStat)}</tr>
+${rows.map(r=>`<tr><td><strong>${r.c}</strong>${r.tier?`<span class="ctag">${r.tier}</span>`:''}</td>${r.cells.map(v=>cell(v,r.total)).join('')}<td class="mono" style="font-weight:600">${f(r.total)}</td>${pctCell(r.bs.hoto)}${pctCell(r.bs.inst)}${pctCell(r.bs.comm)}</tr>`).join('')}
+</tbody></table></div>`;
+  setTimeout(()=>autoSort(el),50);
+}
+
+// ── Customer App: MoM Trend ─────────────────────────────────────────────
+let CAPP_TREND_BASE='comm'; // 'hoto' | 'inst' | 'comm'
+function setCAppTrendBase(base){
+  CAPP_TREND_BASE=base;
+  renderCAppTrendShell();
+}
+function bCAppTrend(){
+  const el=document.getElementById('p-capptrend');
+  if(!el)return;
+  el.innerHTML=`
+<div class="ptitle">Customer App — MoM Trend</div>
+<div class="psub">Cumulative base size vs login rate, trailing 12 months . Source: Metabase</div>
+<div class="fbar"><span id="capptrend-city-mc-wrap"></span></div>
+<div id="capptrend-body"></div>`;
+  insertMSWidget('capptrend-city-mc-wrap','capptrend-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCAppTrend());
+  rebuildCAppTrend();
+}
+function rebuildCAppTrend(){
+  precomputeCApp(getMSVal('capptrend-city',CAPP_ALL_CITIES));
+  renderCAppTrendShell();
+}
+function renderCAppTrendShell(){
+  const el=document.getElementById('capptrend-body');
+  if(!el)return;
+  const baseBtn=(key,lbl)=>{
+    const active=CAPP_TREND_BASE===key;
+    const style=active
+      ?'background:#1a56db;color:#fff;border:1px solid #1a56db;font-weight:600'
+      :'background:var(--sur);color:var(--t2);border:1px solid var(--bd2)';
+    return`<button onclick="setCAppTrendBase('${key}')" style="${style};padding:5px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">${lbl}</button>`;
+  };
+  el.innerHTML=`
+<div class="fbar">${baseBtn('hoto','HOTO')}${baseBtn('inst','Installed')}${baseBtn('comm','Commissioned')}</div>
+<div style="font-size:10px;color:var(--t3);margin:8px 0">
+  <strong>By Month End</strong> = of everyone reaching this milestone by that month, how many had logged in by that same month's close — a freshness/decay view (do newer cohorts log in slower?).
+  <strong>By Now</strong> = of that same cumulative base, how many have logged in as of today.
+</div>
+<div class="cwrap" style="height:260px"><canvas id="capp-trend-chart" role="img" aria-label="Customer App login rate trend"></canvas></div>
+<div class="tw" id="capp-trend-tbl" style="margin-top:12px"></div>`;
+  renderCAppTrend();
+}
+function renderCAppTrend(){
+  const data=CAC.momTrend[CAPP_TREND_BASE];
+  const baseLbl={hoto:'HOTO',inst:'Installed',comm:'Commissioned'}[CAPP_TREND_BASE];
+
+  const tbl=document.getElementById('capp-trend-tbl');
+  if(tbl)tbl.innerHTML=`<table><thead><tr><th>Month</th><th>Cumulative ${baseLbl}</th><th>Logged In (by month end)</th><th>% by Month End</th><th>Logged In (by now)</th><th>% by Now</th></tr></thead><tbody>
+  ${data.map(d=>`<tr><td style="font-weight:600">${d.lbl}</td><td class="mono">${f(d.cumulative)}</td><td class="mono">${f(d.byMonthEnd)}</td><td>${d.pctByMonthEnd.toFixed(1)}%</td><td class="mono">${f(d.byNow)}</td><td>${d.pctByNow.toFixed(1)}%</td></tr>`).join('')}
+  </tbody></table>`;
+
+  setTimeout(()=>{
+    const cv=document.getElementById('capp-trend-chart');
+    if(!cv)return;
+    if(chartInst.cappTrend)chartInst.cappTrend.destroy();
+    chartInst.cappTrend=new Chart(cv,{type:'line',data:{labels:data.map(d=>d.lbl),datasets:[
+      {label:'% Logged In (by month end)',data:data.map(d=>d.pctByMonthEnd),borderColor:'#1a56db',tension:.3,pointRadius:3,backgroundColor:'rgba(26,86,219,.04)'},
+      {label:'% Logged In (by now)',data:data.map(d=>d.pctByNow),borderColor:'#059669',tension:.3,pointRadius:3,borderDash:[5,3],backgroundColor:'rgba(5,150,105,.04)'}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom'}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}}});
+  },80);
 }
 
 // ================================================================

@@ -17,7 +17,7 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
-**As of 2026-08-03, end of session:**
+**As of 2026-08-03, end of session (updated — post-review-feedback round):**
 
 - **⚠️ `index.preview.html` exists in this folder and is AHEAD of `index.html`.**
   It's gitignored (`*.preview.html` in `.gitignore`), so `git status` will look
@@ -28,6 +28,25 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
     (Phase 2) — a 4th channel switcher button, two tabs (`capp` Overview,
     `capptrend` MoM Trend). Built and browser-tested (see Section 15 for full detail),
     but **Yash has not yet reviewed/approved it** as of this snapshot.
+  - **Yash gave a first round of review feedback on Phase 2 this session** (not yet a
+    second look/approval) — all addressed in `index.preview.html`, browser-tested, per
+    Section 15:
+    1. **Bug fix:** HOTO base/milestone bucketing previously undercounted — projects
+       with no `hoto_at` but a real installation/commissioning date are now counted as
+       HOTO'ed (new `hotoEffAt` fallback field). This also fixed a real bucketing bug:
+       ~1,284 first-logins were being misclassified into "Order Booked→HOTO" purely
+       because `hoto_at` was blank, when they'd actually logged in much later.
+    2. City multi-select filter added to both tabs (scopes stat cards + tables + the
+       India row correctly).
+    3. City × Milestone table headers shortened (e.g. "Order→HOTO") with full-name
+       tooltips — fixes the sort-icon/header-text wrap clutter Yash flagged.
+    4. City × Milestone table: Absolute/% toggle (row-composition %, i.e. each
+       milestone cell as % of that row's own total) + a login-month selector (filters
+       the 5 milestone columns to first-logins from that month only; the 3 "% of
+       Total X" columns stay lifetime, by design — see Section 15).
+    5. New standalone "Logins on Base" section — dropdown across all 4 real stage
+       boundaries (Order Booked/HOTO/Installation/Commissioning), separate from the
+       original fixed 3 cards which are unchanged.
   - **Do not merge it into `index.html` or commit/push it yourself.** Per the standing
     workflow (Section 12): show Yash the preview, wait for explicit approval, only then
     copy preview → `index.html`, commit, and separately wait for an explicit "push it"
@@ -639,26 +658,69 @@ independent pipeline from everything else in this file.
   data), ~15.9 MB. Contains real customer-level data (`sseid`, `lead_id`, login
   timestamp) — consistent with the existing `referral_leads.json` already doing the
   same in this public repo, not a new category of exposure.
-- **Phase 2 (2026-08-03, pending Yash's review — built in `index.preview.html`, not
-  yet merged to `index.html`):** a 4th channel switcher button ("Customer App",
+- **Phase 2 (2026-08-03, first round of Yash's review feedback addressed —
+  built in `index.preview.html`, not yet merged to `index.html`, not yet
+  re-reviewed/approved):** a 4th channel switcher button ("Customer App",
   `ACTIVE_CH='capp'`) alongside Referral/Digital/Ref vs Digital, its own sidebar
   section (`data-ch="capp"`, same show/hide mechanism as Digital's `data-ch="digital"`
   items), and **two tabs**:
 
   **`capp` → `bCApp()` — Overview:**
+  - A city multi-select filter (`capp-city` widget, `CAPP_ALL_CITIES` as the option
+    list so non-`TIERS` cities like Raipur/Surat are selectable too) scopes
+    everything below it — stat cards, the base-stage card, and the City × Milestone
+    table (including its India row, which becomes the sum over just the selected
+    cities). Same `insertMSWidget`/`buildMultiSelect` widget already used elsewhere
+    in the dashboard (e.g. India Summary's tier/city/sub-channel filters).
   - Three top-line cards (no color coding, see above): % of Commissioned/Installed/
     HOTO base that has ever logged in (each base counted independently — a
     commissioned project is also installed and HOTO'd, not mutually exclusive groups).
+    **HOTO base bug fix (2026-08-03, per Yash's review):** some projects have no
+    `hoto_at` recorded but DO have a real `installation_date`/`commissioning_date` —
+    since Installation/Commissioning can't happen without HOTO already having
+    occurred, these now count as HOTO'ed via a new `hotoEffAt` fallback field
+    (`hotoAt || instAt || commAt`), used everywhere HOTO base/bucketing logic runs.
+    This also fixed a real bucketing bug: ~1,284 first-logins nationally were being
+    dumped into "Order Booked→HOTO" purely because `hoto_at` was blank, when in
+    reality they'd logged in much later (mostly "After Commissioning") — confirmed
+    by the before/after city-level numbers matching exactly on reconciliation.
+  - **New standalone "Logins on Base" section** — a dropdown across all 4 real stage
+    boundaries (Order Booked/HOTO/Installation/Commissioning; `CAPP_BASE_STAGE_CFG`),
+    showing the same %-logged-in-ever stat as the fixed 3 cards but for whichever
+    stage is picked. Deliberately kept separate from (not replacing) the 3 fixed
+    cards, per Yash.
   - A City × Milestone table classifying each project's *first* login into one of the
     5 windows, tier-sorted, India total row, PLUS 3 more columns per city/India:
     % of that city's own Total HOTOs/Installations/Commissionings that have logged in
     (same stat as the top cards, just computed per-city instead of India-wide —
     `CAC.cityBaseStats[city]`). Only projects with a login and without `date_anomaly`
-    appear in the 5 milestone columns (see the `date_anomaly` note above) — the 3 new
-    %-of-total columns are independent of that and use the full per-city base.
+    appear in the 5 milestone columns (see the `date_anomaly` note above) — the 3
+    %-of-total columns are independent of that, always lifetime (unaffected by the
+    month selector below), and use the full per-city base.
+    - Column headers shortened to fit on one line (e.g. "Order→HOTO",
+      "HOTO→Install") with the full milestone name as a hover tooltip
+      (`CAPP_MILESTONE_SHORT`) — fixes header/sort-icon wrap clutter Yash flagged.
+    - **Absolute/% toggle** (`setCAppTableMode`) — "%" mode shows each of the 5
+      milestone cells as row-composition %, i.e. % of that row's (city's or India's)
+      own total, not a share of any city/column total. Lets you read the
+      distribution shape per city at a glance.
+    - **Login-month selector** (`setCAppTableMonth`, trailing 12 months via
+      `capGetMonths()`) — restricts the 5 milestone columns + Total to first-logins
+      that happened in the selected month only, so flipping through months shows
+      whether a given stage (e.g. "HOTO→Install") is trending up or down. The 3
+      "% of Total X" columns intentionally do NOT respond to this — they're a
+      lifetime cohort stat (% of a city's full HOTO/Install/Comm base that has ever
+      logged in), a different question from "logins that happened in month X," so
+      mixing the two would be misleading.
+    - Both controls recompute from `CAC.bucketable`/`CAC.cities` (stored on `CAC` by
+      `precomputeCApp()`) via `capMilestoneTable(monthFilter)` — they don't re-run
+      `precomputeCApp()`, so the always-lifetime stat cards above are never affected
+      by them, only by the city filter.
   - The anomaly-count note near the bottom, deliberately not at the top (per Yash).
 
   **`capptrend` → `bCAppTrend()` — MoM Trend:**
+  - Same city multi-select filter as the Overview tab (separate widget instance,
+    `capptrend-city`, its own independent selection state).
   - A base selector (HOTO / Installed / Commissioned) driving a trailing-12-month line
     chart + data table: cumulative base size reaching that milestone by each month,
     and the login rate against that cumulative base shown **two ways** (per Yash,
@@ -669,16 +731,19 @@ independent pipeline from everything else in this file.
       today (the data-pull time).
     In practice these visibly converge for older cohorts (they've had more time to
     log in since their month closed) and stay close together for recent cohorts —
-    confirmed this shows clearly in the first real chart, 2026-08-03.
+    confirmed this shows clearly in the first real chart, 2026-08-03. The HOTO series
+    here uses the same `hotoEffAt` fallback as the Overview tab.
     `precomputeCApp()`'s `momTrend()` computes this per base into `CAC.momTrend`.
 
-  `precomputeCApp()` / `capMilestone()` do the actual bucketing — a project's first
-  login falls into the first milestone window it hadn't passed yet as of that login; a
-  missing (null) milestone date is treated as "not reached yet," not skipped over.
-  Cities not in the Referral dashboard's own `TIERS` list (`Raipur`, `Surat`) render
-  with no tier tag, sorted after all known tiers. `CAPP`/`CAC` are the new global
-  arrays (raw rows / precomputed aggregates), following the same `ED`/`C` and
-  `DED`/`DC` naming convention already used for Referral and Digital.
+  `precomputeCApp(cityFilter)` / `capMilestone()` do the actual bucketing — a
+  project's first login falls into the first milestone window it hadn't passed yet
+  as of that login (checked against `hotoEffAt` for the HOTO boundary, not raw
+  `hotoAt`); a missing (null) milestone date is treated as "not reached yet," not
+  skipped over. Cities not in the Referral dashboard's own `TIERS` list (`Raipur`,
+  `Surat`) render with no tier tag, sorted after all known tiers (`capTierSort()`).
+  `CAPP`/`CAC`/`CAPP_ALL_CITIES` are the new global arrays (raw rows / precomputed
+  aggregates / master city list for the filter widgets), following the same `ED`/`C`
+  and `DED`/`DC` naming convention already used for Referral and Digital.
 - **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, and custom
   date-range cohort filtering (per the original ask). Everything else from the
-  original request is now built.
+  original request, plus this session's review-feedback round, is now built.
