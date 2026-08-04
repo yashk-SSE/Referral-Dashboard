@@ -437,6 +437,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="sh sh-capp" data-ch="capp" style="display:none">Customer App</div>
   <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capp',this)">⬡ Overview</div>
   <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capptrend',this)">📈 MoM Trend</div>
+  <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('cappvel',this)">⏱ Login Velocity</div>
 </nav>
 </div>
 <main class="main" id="main">
@@ -515,6 +516,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <!-- Customer App panel -->
   <div id="p-capp" class="panel"></div>
   <div id="p-capptrend" class="panel"></div>
+  <div id="p-cappvel" class="panel"></div>
 </main>
 </div>
 <script>
@@ -877,7 +879,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend'];
+  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -892,7 +894,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -939,7 +941,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend};
+  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -6204,8 +6206,8 @@ function precomputeCApp(cityFilter){
   // ordering, not about whether the project itself is real. Per Yash, 2026-08.
   const base=scope; // full (scoped) base, every project, for the % stats
   const bucketable=scope.filter(l=>l.loginAt&&!l.dateAnomaly);
-  CAC.base=base;           // exposed so dropdown/table controls can re-slice without a full recompute
-  CAC.bucketable=bucketable;
+  CAC.base=base;             // exposed for the Login Velocity tab's stage+date-range cohort filtering
+  CAC.bucketable=bucketable; // exposed so the milestone-table controls can re-slice without a full recompute
 
   CAC.anomalyCount=scope.filter(l=>l.dateAnomaly).length;
 
@@ -6273,29 +6275,20 @@ function capMilestoneTable(monthFilter){
   return{cityMilestone,indiaMilestone};
 }
 
-// Overview tab controls: Abs/% + login-month filter for the City x Milestone table,
-// and the base-stage dropdown for the standalone "Logins on Base" card. Kept as
-// module state (not CAC) since they only affect how already-computed CAC data renders,
-// not the underlying scope/filter.
+// Overview tab controls: Abs/% + login-month filter for the City x Milestone table.
+// Kept as module state (not CAC) since they only affect how already-computed CAC data
+// renders, not the underlying scope/filter.
 let CAPP_TABLE_MODE='abs';  // 'abs' | 'pct' (row composition -- % of that row's own total)
 let CAPP_TABLE_MONTH='';    // '' = all months, else 'y-m' key matching a capGetMonths() entry
-const CAPP_BASE_STAGE_CFG={
-  order:{label:'Order Booked',key:'orderAt'},
-  hoto: {label:'HOTO',key:'hotoEffAt'},
-  inst: {label:'Installation',key:'instAt'},
-  comm: {label:'Commissioning',key:'commAt'}
-};
-let CAPP_BASE_STAGE='hoto';
 function setCAppTableMode(mode){CAPP_TABLE_MODE=mode;renderCAppMilestoneSection();}
 function setCAppTableMonth(val){CAPP_TABLE_MONTH=val;renderCAppMilestoneSection();}
-function setCAppBaseStage(v){CAPP_BASE_STAGE=v;renderCAppBaseStageCard();}
 
 function bCApp(){
   const el=document.getElementById('p-capp');
   if(!el)return;
   el.innerHTML=`
 <div class="ptitle">Customer App — Overview</div>
-<div class="psub">First-login tracking by city and lifecycle milestone . Source: Metabase (independent of Referral/Digital data)</div>
+<div class="psub">First-login tracking by city and lifecycle milestone . Source: Metabase (independent of Referral/Digital data) . Active/Completed projects only</div>
 <div class="fbar"><span id="capp-city-mc-wrap"></span></div>
 <div id="capp-body"></div>`;
   insertMSWidget('capp-city-mc-wrap','capp-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCApp());
@@ -6325,44 +6318,11 @@ function renderCApp(){
 </div>
 <div style="font-size:11px;color:var(--t2);margin:6px 0 14px">${f(CAC.totalWithLogin)} of ${f(CAC.totalProjects)} total projects (${CAC.pctLoggedIn.toFixed(1)}%) have logged in at least once, ever — each base above is not exclusive of the others (e.g. a commissioned project is also installed and HOTO'd). HOTO base includes projects with no recorded HOTO date but a recorded Installation or Commissioning date — those imply HOTO already happened.</div>
 
-<div class="stitle">Logins on Base</div>
-<div style="font-size:10px;color:var(--t3);margin-bottom:6px">Pick any single milestone stage to see what % of everyone who has reached it has ever logged in.</div>
-<div id="capp-basestage-card"></div>
-
 <div class="stitle">First Logins by City × Milestone</div>
 <div style="font-size:10px;color:var(--t3);margin-bottom:6px">Classified by which milestone window each project's FIRST login fell into. Excludes the data-anomaly rows noted below. The last 3 columns are independent of this breakdown and always lifetime — % of that city's own HOTO/Installed/Commissioned base that has logged in, ever.</div>
 <div id="capp-milestone-section"></div>
-
-<div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:var(--r);padding:8px 12px;font-size:11px;color:#374151;margin-top:14px">
-  <strong>Phase 2:</strong> P50/P90/P95/Avg days-since-milestone and custom date-range
-  cohort filtering are not built yet.
-  ${CAC.anomalyCount?`<br><br>⚠️ <strong>${f(CAC.anomalyCount)} project(s)</strong> have a data anomaly (commissioning date recorded before installation date) and are excluded from the City × Milestone table above.`:''}
-</div>`;
-  renderCAppBaseStageCard();
+${CAC.anomalyCount?`<div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:var(--r);padding:8px 12px;font-size:11px;color:#374151;margin-top:14px">⚠️ <strong>${f(CAC.anomalyCount)} project(s)</strong> have a data anomaly (commissioning date recorded before installation date) and are excluded from the City × Milestone table above.</div>`:''}`;
   renderCAppMilestoneSection();
-}
-
-function renderCAppBaseStageCard(){
-  const el=document.getElementById('capp-basestage-card');
-  if(!el)return;
-  const stageBtn=(key)=>{
-    const cfg=CAPP_BASE_STAGE_CFG[key];
-    const active=CAPP_BASE_STAGE===key;
-    const style=active
-      ?'background:#1a56db;color:#fff;border:1px solid #1a56db;font-weight:600'
-      :'background:var(--sur);color:var(--t2);border:1px solid var(--bd2)';
-    return`<button onclick="setCAppBaseStage('${key}')" style="${style};padding:5px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">${cfg.label}</button>`;
-  };
-  const st=capBaseStat(CAC.base,CAPP_BASE_STAGE_CFG[CAPP_BASE_STAGE].key);
-  el.innerHTML=`
-<div class="fbar">${Object.keys(CAPP_BASE_STAGE_CFG).map(stageBtn).join('')}</div>
-<div class="mgrid" style="grid-template-columns:minmax(0,220px)">
-  <div class="mc">
-    <div class="mc-lbl">% of ${CAPP_BASE_STAGE_CFG[CAPP_BASE_STAGE].label} Base Logged In</div>
-    <div class="mc-val">${st.pct.toFixed(1)}%</div>
-    <div class="mc-mop">${f(st.loggedIn)} of ${f(st.count)} logged in</div>
-  </div>
-</div>`;
 }
 
 function renderCAppMilestoneSection(){
@@ -6426,7 +6386,7 @@ function bCAppTrend(){
   if(!el)return;
   el.innerHTML=`
 <div class="ptitle">Customer App — MoM Trend</div>
-<div class="psub">Cumulative base size vs login rate, trailing 12 months . Source: Metabase</div>
+<div class="psub">Cumulative base size vs login rate, trailing 12 months . Source: Metabase . Active/Completed projects only</div>
 <div class="fbar"><span id="capptrend-city-mc-wrap"></span></div>
 <div id="capptrend-body"></div>`;
   insertMSWidget('capptrend-city-mc-wrap','capptrend-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCAppTrend());
@@ -6474,6 +6434,151 @@ function renderCAppTrend(){
       {label:'% Logged In (by now)',data:data.map(d=>d.pctByNow),borderColor:'#059669',tension:.3,pointRadius:3,borderDash:[5,3],backgroundColor:'rgba(5,150,105,.04)'}
     ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom'}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}}});
   },80);
+}
+
+// ── Customer App: Login Velocity (Phase 3) ──────────────────────────────
+// Phase 3, per the original ask: P50/P90/P95/Avg days between reaching a milestone
+// and a project's FIRST login, for a custom-date-range cohort (defined by when the
+// project reached that milestone), not just the trailing-12-month windows used
+// elsewhere. Everything here is computed on demand from CAC.base -- it doesn't touch
+// precomputeCApp()'s other fields, only the tab's own city filter re-runs it.
+const CAPPVEL_STAGE_CFG={
+  order:{label:'Order Booked',key:'orderAt'},
+  hoto: {label:'HOTO',key:'hotoEffAt'},
+  inst: {label:'Installation',key:'instAt'},
+  comm: {label:'Commissioning',key:'commAt'}
+};
+let CAPPVEL_STAGE='hoto';
+let CAPPVEL_FROM=null,CAPPVEL_TO=null; // Date objects, null = unbounded on that side
+
+// scope: array of CAPP rows already city-filtered (CAC.base). dateKey: the milestone
+// field defining both the cohort (reached in [from,to]) and the "days since" anchor.
+// Only logins at/after the milestone count toward days-since -- consistent with how
+// capMilestone() treats the milestone instant as the start of the NEXT window, so a
+// login before it belongs to an earlier stage, not a "negative days" data error.
+function capVelocityStats(scope,dateKey,from,to){
+  const cohort=scope.filter(l=>{
+    const d=l[dateKey];
+    if(!d)return false;
+    if(from&&d<from)return false;
+    if(to&&d>to)return false;
+    return true;
+  });
+  // "At/after" = logins counted toward the days-since-milestone percentiles (a login
+  // before the milestone can't produce a meaningful days-since figure). "Ever" = the
+  // full login rate for this cohort regardless of timing -- shown alongside for
+  // clarity, since at/after alone understates how many of the cohort have logged in
+  // at all (some logged in earlier, in a prior milestone window). Per Yash, 2026-08.
+  const loggedInAtAfter=cohort.filter(l=>l.loginAt&&l.loginAt>=l[dateKey]);
+  const loggedInEver=cohort.filter(l=>l.loginAt);
+  const days=loggedInAtAfter.map(l=>dD(l[dateKey],l.loginAt));
+  const avg=days.length?days.reduce((s,v)=>s+v,0)/days.length:null;
+  return{
+    cohortCount:cohort.length,
+    loggedInCount:loggedInAtAfter.length,
+    pctLoggedIn:cohort.length?loggedInAtAfter.length/cohort.length*100:0,
+    everLoggedInCount:loggedInEver.length,
+    pctEverLoggedIn:cohort.length?loggedInEver.length/cohort.length*100:0,
+    p50:perc(days,50),p90:perc(days,90),p95:perc(days,95),avg
+  };
+}
+
+function setCAppVelStage(key){CAPPVEL_STAGE=key;renderCAppVel();}
+function setCAppVelFrom(val){CAPPVEL_FROM=val?new Date(val+'T00:00:00'):null;renderCAppVel();}
+function setCAppVelTo(val){CAPPVEL_TO=val?new Date(val+'T23:59:59'):null;renderCAppVel();}
+function resetCAppVelRange(){
+  CAPPVEL_FROM=null;CAPPVEL_TO=null;
+  const fEl=document.getElementById('cappvel-from'),tEl=document.getElementById('cappvel-to');
+  if(fEl)fEl.value='';if(tEl)tEl.value='';
+  renderCAppVel();
+}
+
+function bCAppVel(){
+  const el=document.getElementById('p-cappvel');
+  if(!el)return;
+  el.innerHTML=`
+<div class="ptitle">Customer App — Login Velocity</div>
+<div class="psub">P50/P90/P95/Avg days from reaching a milestone to first login . custom date-range cohort . Source: Metabase . Active/Completed projects only</div>
+<div class="fbar"><span id="cappvel-city-mc-wrap"></span></div>
+<div id="cappvel-body"></div>`;
+  insertMSWidget('cappvel-city-mc-wrap','cappvel-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCAppVel());
+  rebuildCAppVel();
+}
+function rebuildCAppVel(){
+  precomputeCApp(getMSVal('cappvel-city',CAPP_ALL_CITIES));
+  renderCAppVel();
+}
+function renderCAppVel(){
+  const el=document.getElementById('cappvel-body');
+  if(!el)return;
+  // Local-date formatter (not toISOString, which shifts the date in +IST -- the From/To
+  // inputs are constructed at local midnight/end-of-day, so this must round-trip in local time).
+  const fmtD=d=>d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:'';
+  const stageBtn=(key)=>{
+    const cfg=CAPPVEL_STAGE_CFG[key];
+    const active=CAPPVEL_STAGE===key;
+    const style=active
+      ?'background:#1a56db;color:#fff;border:1px solid #1a56db;font-weight:600'
+      :'background:var(--sur);color:var(--t2);border:1px solid var(--bd2)';
+    return`<button onclick="setCAppVelStage('${key}')" style="${style};padding:5px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">${cfg.label}</button>`;
+  };
+  const dateKey=CAPPVEL_STAGE_CFG[CAPPVEL_STAGE].key;
+  const stageLbl=CAPPVEL_STAGE_CFG[CAPPVEL_STAGE].label;
+
+  const india=capVelocityStats(CAC.base,dateKey,CAPPVEL_FROM,CAPPVEL_TO);
+  const rows=CAC.cities.map(c=>({
+    c,tier:TIERS[c]||'',
+    st:capVelocityStats(CAC.base.filter(l=>l.city===c),dateKey,CAPPVEL_FROM,CAPPVEL_TO)
+  }));
+
+  const dayCard=(label,v)=>`<div class="mc">
+    <div class="mc-lbl">${label}</div>
+    <div class="mc-val">${v==null?'-':v.toFixed(1)}</div>
+    <div class="mc-mop">days</div>
+  </div>`;
+  const dayCell=(v)=>v==null?'<td class="mono">-</td>':`<td class="mono">${v.toFixed(1)}</td>`;
+
+  el.innerHTML=`
+<div class="stitle">Cohort — reached ${stageLbl} in the selected date range</div>
+<div class="fbar">
+  ${Object.keys(CAPPVEL_STAGE_CFG).map(stageBtn).join('')}
+  <span style="margin-left:8px;font-size:11px;color:var(--t3)">From</span>
+  <input type="date" id="cappvel-from" value="${fmtD(CAPPVEL_FROM)}" onchange="setCAppVelFrom(this.value)" style="padding:5px 8px;border-radius:7px;border:1px solid var(--bd2);background:var(--sur);color:var(--t2);font-size:12px;font-family:'DM Sans',sans-serif">
+  <span style="font-size:11px;color:var(--t3)">To</span>
+  <input type="date" id="cappvel-to" value="${fmtD(CAPPVEL_TO)}" onchange="setCAppVelTo(this.value)" style="padding:5px 8px;border-radius:7px;border:1px solid var(--bd2);background:var(--sur);color:var(--t2);font-size:12px;font-family:'DM Sans',sans-serif">
+  <button onclick="resetCAppVelRange()" style="background:var(--sur);color:var(--t2);border:1px solid var(--bd2);padding:5px 12px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Reset (lifetime)</button>
+</div>
+<div style="font-size:10px;color:var(--t3);margin-bottom:6px">Blank From/To = no bound on that side (lifetime by default). "Days" = calendar days between the ${stageLbl} date and a project's FIRST login, counted only for logins at/after ${stageLbl} — a login before this stage belongs to an earlier milestone window, not a data error.</div>
+<div class="mgrid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+  <div class="mc">
+    <div class="mc-lbl">Cohort Size</div>
+    <div class="mc-val">${f(india.cohortCount)}</div>
+    <div class="mc-mop">reached ${stageLbl}</div>
+  </div>
+  <div class="mc">
+    <div class="mc-lbl">% Ever Logged In</div>
+    <div class="mc-val">${india.pctEverLoggedIn.toFixed(1)}%</div>
+    <div class="mc-mop">${f(india.everLoggedInCount)} of ${f(india.cohortCount)} -- total login rate</div>
+  </div>
+  <div class="mc">
+    <div class="mc-lbl">% Logged In (at/after)</div>
+    <div class="mc-val">${india.pctLoggedIn.toFixed(1)}%</div>
+    <div class="mc-mop">${f(india.loggedInCount)} of ${f(india.cohortCount)} -- basis for days-since stats</div>
+  </div>
+  ${dayCard('Avg Days',india.avg)}
+  ${dayCard('P50 Days',india.p50)}
+  ${dayCard('P90 Days',india.p90)}
+  ${dayCard('P95 Days',india.p95)}
+</div>
+<div style="font-size:10px;color:var(--t3);margin-bottom:6px">"% Ever Logged In" = total login rate for this cohort regardless of timing (some may have logged in before reaching ${stageLbl}, e.g. in an earlier milestone window). "% Logged In (at/after)" is the subset whose login happened at/after ${stageLbl} -- only that subset feeds the days-since percentiles, since a login before the milestone can't produce a meaningful "days since" figure.</div>
+<div class="stitle">By City</div>
+<div class="tw"><table>
+<thead><tr><th>City</th><th>Cohort</th><th>Ever Logged In</th><th>% Ever</th><th>Logged In (At/After)</th><th>% At/After</th><th>P50</th><th>P90</th><th>P95</th><th>Avg</th></tr></thead>
+<tbody>
+<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong></td><td class="mono">${f(india.cohortCount)}</td><td class="mono">${f(india.everLoggedInCount)}</td><td class="mono">${india.pctEverLoggedIn.toFixed(1)}%</td><td class="mono">${f(india.loggedInCount)}</td><td class="mono">${india.pctLoggedIn.toFixed(1)}%</td>${dayCell(india.p50)}${dayCell(india.p90)}${dayCell(india.p95)}${dayCell(india.avg)}</tr>
+${rows.map(r=>`<tr><td><strong>${r.c}</strong>${r.tier?`<span class="ctag">${r.tier}</span>`:''}</td><td class="mono">${f(r.st.cohortCount)}</td><td class="mono">${f(r.st.everLoggedInCount)}</td><td class="mono">${r.st.cohortCount?r.st.pctEverLoggedIn.toFixed(1)+'%':'-'}</td><td class="mono">${f(r.st.loggedInCount)}</td><td class="mono">${r.st.cohortCount?r.st.pctLoggedIn.toFixed(1)+'%':'-'}</td>${dayCell(r.st.p50)}${dayCell(r.st.p90)}${dayCell(r.st.p95)}${dayCell(r.st.avg)}</tr>`).join('')}
+</tbody></table></div>`;
+  setTimeout(()=>autoSort(el),50);
 }
 
 // ================================================================

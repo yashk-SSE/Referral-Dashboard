@@ -812,10 +812,25 @@ independent pipeline from everything else in this file.
     error — it belongs to an earlier milestone window (consistent with the
     half-open-interval boundary rule confirmed with Yash: the stage's own instant
     counts as the start of the window *after* it, never the one before).
+  - **Two login-rate stats shown side by side, added 2026-08-04 per Yash's review**
+    (both stat cards and both table columns): **% Ever Logged In** (total login
+    rate for the cohort regardless of timing — includes logins that happened
+    *before* the chosen stage) alongside **% Logged In (at/after)** (the subset
+    whose login happened at/after the stage, which is the only subset feeding the
+    days-since percentiles). Showing only the at/after figure understated the
+    cohort's real login rate, since some projects log in earlier than the stage
+    being measured — both numbers are needed for clarity, not a replacement of
+    one by the other.
   - India + per-city breakdown table, tier-sorted, same structure as the Overview
     tab's City × Milestone table. Percentiles are computed from each row's own
     pooled day-array (not averaged from other rows), same as the main dashboard's
     Velocity tab convention.
+  - **"Active/Completed projects only" caveat added to all 3 Customer App tab
+    subtitles, 2026-08-04 per Yash's review** — not just documented in CLAUDE.md,
+    now visible in the dashboard itself (`capp`, `capptrend`, and `cappvel` psub
+    lines all state it) since every Customer App figure is scoped to
+    `project_state IN ('active','completed')`, and that scope wasn't previously
+    visible to anyone just looking at the tab.
   - Local-date input round-trip fix: the From/To `<input type="date">` values are
     formatted back for display using local `getFullYear/getMonth/getDate`, not
     `toISOString()` — the latter (used elsewhere in the codebase for similar date
