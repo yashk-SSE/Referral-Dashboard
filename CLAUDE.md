@@ -17,26 +17,54 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
-**As of 2026-08-04, end of session (updated — Phase 2 approved, merged, and pushed):**
+**As of 2026-08-04, end of session (updated — Phase 3 started, pending review):**
 
-- **Customer App Phase 2 is now LIVE in `index.html` and pushed to `origin/main`**
+- **Customer App Phase 2 is LIVE in `index.html` and pushed to `origin/main`**
   (commit `7d1b610`) — the 4th channel switcher button, `capp` Overview tab, and
   `capptrend` MoM Trend tab, including the full round of review-feedback fixes (HOTO
   base bug via `hotoEffAt`, city multi-select filter on both tabs, shortened table
-  headers, Absolute/%+login-month selector, standalone "Logins on Base" section —
-  see Section 15 for full detail). Yash reviewed and explicitly approved the merge
-  and the push on 2026-08-04.
-  - `index.preview.html` may still exist locally as a leftover copy — check whether
-    it's now identical to `index.html` (it should be, right after a merge) before
-    assuming it holds newer unmerged work. If Yash asks to keep building **Phase 3**
-    (P50/P90/P95/Avg stats, custom date-range cohort filtering), go back to editing
-    `index.preview.html` (not `index.html` directly) per the standing workflow below.
-- **Everything is committed and pushed** — confirm with `git fetch && git log
-  --oneline origin/main..HEAD` (should be empty). Note the Apps Script also pushes
-  automated `data/*.json` refresh commits straight to `main` throughout the day
-  (commit messages like "📊 Referral leads: ...") — these are routine and don't
-  touch `index.html`/`CLAUDE.md`; a local push getting rejected because of them just
-  needs a `git pull --rebase origin main` before retrying, not a conflict investigation.
+  headers, Absolute/%+login-month selector — see Section 15 for full detail). Yash
+  reviewed and explicitly approved the merge and the push on 2026-08-04.
+- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — Phase 3
+  work in progress, per Yash's own request this session. NOT yet reviewed/approved,
+  do not merge/commit/push. What's in it but not in `index.html`:
+  - Removed the "Logins on Base" standalone card from the `capp` Overview tab — Yash
+    flagged it as redundant with the 3 fixed cards above it (picking HOTO/Installed/
+    Commissioning in the dropdown just reproduced one of those 3 exactly). The
+    `CAPPVEL_STAGE_CFG`-style 4-stage concept it introduced was **not** deleted, just
+    relocated — see the new 3rd tab below, where it's load-bearing rather than redundant.
+  - **New 3rd Customer App tab: `cappvel` → `bCAppVel()` — "Login Velocity"** (Phase 3).
+    P50/P90/P95/Avg days from reaching a milestone (Order Booked/HOTO/Installation/
+    Commissioning, picked via buttons) to a project's first login, for a custom
+    date-range cohort (From/To inputs scoping which projects count, by when they
+    reached that milestone — blank = lifetime). Own city multi-select filter
+    (`cappvel-city`), India + per-city breakdown table. Full detail in Section 15.
+  - Custom date-range cohort filtering (per the original Phase 3 ask) is now built.
+    Still open for a future phase: nothing else was flagged as missing as of this
+    snapshot — confirm with Yash before assuming Phase 3 is fully "done."
+  - Browser-tested (city filter, stage buttons, date-range inputs incl. round-trip
+    display, Reset button) — no console errors. **Not yet shown to Yash.**
+- **Customer App data pipeline field fix is committed and pushed (2026-08-04):**
+  `scripts/customer_app_query.sql` now sources HOTO from
+  `project.sales_handover_datetime` and Installation from a `usertasks` task-`039A`
+  completion timestamp, replacing `cx_approval_timestamp`/`project.installation_date`
+  — per Yash's explicit instruction to match his own Metabase question 1466.
+  `data/customer_app.json` re-pulled to match. Installation and Commissioning
+  reconcile exactly against Yash's manually-read July'26 numbers (3,581 and 4,129).
+  **HOTO does not fully reconcile** (pipeline: 3,949 for Jul'26 vs Yash's ~4,476
+  manually-read figure) — **Yash's explicit call (2026-08-04): accept 3,949 for now
+  and move on**, don't re-chase this without new info from him on where 4,476 comes
+  from. **Scope note (make this explicit wherever this number is cited): 3,949 is
+  `project_state IN ('active','completed')` only**, not an unfiltered count and not
+  necessarily the same population as the main Referral dashboard's own HOTO actuals.
+  Full detail in Section 15.
+- **Everything else is committed and pushed** — confirm with `git fetch && git log
+  --oneline origin/main..HEAD` (should be empty, aside from Phase 3 sitting unmerged
+  in the gitignored preview file). Note the Apps Script also pushes automated
+  `data/*.json` refresh commits straight to `main` throughout the day (commit messages
+  like "📊 Referral leads: ...") — these are routine and don't touch `index.html`/
+  `CLAUDE.md`; a local push getting rejected because of them just needs a
+  `git pull --rebase origin main` before retrying, not a conflict investigation.
 - **Two credential/data files exist locally, both gitignored, never committed:**
   - `.metabase_key/metabase_key.txt` — the Metabase API key. Read it only by having a
     script load it at runtime (see `scripts/pull_customer_app.py`) — never `Read` this
@@ -554,15 +582,49 @@ independent pipeline from everything else in this file.
   UI events generally, but Yash's own established query uses `otps`).
 - **Attribution chain:** `otps.mobile → customer.phone → customer.projects →
   customer_projects (index_=0) → projects_sseid → project.sseid`.
-- **All 5 milestone dates + city come from the `project` table** (NOT `lead` — a
-  correction from an earlier sample query that pulled some of these from `lead`):
+- **Milestone dates + city (current, as of the 2026-08-04 field correction below):**
   - Order Booked = `project.order_closure_datetime`
-  - HOTO = `project.cx_approval_timestamp`
-  - Installation = `project.installation_date`
-  - Commissioning = `project.commissioning_date`
+  - HOTO = `project.sales_handover_datetime` (changed 2026-08-04, was
+    `project.cx_approval_timestamp` — see the correction note right below)
+  - Installation = `usertasks` task-`039A` completion timestamp (changed
+    2026-08-04, was `project.installation_date` — see below)
+  - Commissioning = `project.commissioning_date` (unchanged)
   - City = `project.site_address_cluster`
   - Lead ID = `project.lead_id` (directly on `project` — no `lead` join needed at all
     for this feature)
+- **HOTO and Installation field sources corrected 2026-08-04, per Yash's explicit
+  instruction to match his own Metabase question 1466 ("OMS Plants").** A
+  numbers-don't-match-up check against card 1466 and card 1182 ("CApp Login Report")
+  surfaced that those two reference questions use different underlying columns than
+  this pipeline did at the time — Yash's call was to **switch this pipeline to match
+  card 1466**, not the other way round:
+  - **HOTO is now `p.sales_handover_datetime`** (card 1466's "Sales Handover Date"),
+    replacing the earlier `p.cx_approval_timestamp`.
+  - **Installation is now the `usertasks` task-`039A` completion timestamp** (card
+    1466's "Installation Completion Date"), replacing the earlier
+    `p.installation_date`. Pulled via a new `install_task` CTE in
+    `scripts/customer_app_query.sql`, joined on `project._id` (not `sseid` —
+    `usertasks` has no direct sseid column). Kept as a full timestamp rather than
+    card 1466's `::date`-truncated display value, so day-level velocity calcs keep
+    hour-of-day precision.
+  - Commissioning is unchanged (`p.commissioning_date` already matched card 1466).
+  - Login source stays `IN ('CONSUMER', 'CUSTOMER_JOURNEY_TRACKER')` — Yash confirmed
+    keeping `CUSTOMER_JOURNEY_TRACKER` even though card 1182 only filters `CONSUMER`.
+  - **Verified after re-pulling `data/customer_app.json` (2026-08-04):** using a
+    same-month (Jul'26) cohort-size reconciliation against Yash's own manually-read
+    numbers — Installation now matches **exactly** (3,581 = 3,581, previously 3,533)
+    and Commissioning still matches exactly (4,129 = 4,129, unchanged). **HOTO does
+    NOT fully reconcile** even after the field switch (pipeline shows 3,949 for
+    Jul'26 vs Yash's ~4,476 manually-read figure) — flagged back to Yash 2026-08-04.
+    **Yash's call (2026-08-04): accept 3,949 and move on for now** — don't re-chase
+    this gap without new information from him on where the 4,476 figure comes from.
+    **Explicitly note the scope this 3,949 (and all Customer App HOTO/Install/Comm
+    figures) represents: `project_state IN ('active','completed')` only** — this is
+    not a full/unfiltered count of all HOTOs in July, and not necessarily the same
+    population as the main Referral dashboard's own (Referral-channel-only) HOTO
+    actuals. Don't assume the HOTO field is "fully correct" just because
+    Installation/Commissioning reconciled — this specific number is accepted as a
+    working figure, not a fully confirmed one.
 - **Only the FIRST login per project is tracked, not every login — corrected
   2026-08-03.** The initial build tracked every login event; Yash confirmed only the
   first one matters for this feature. This also surfaced a bigger issue: the original
@@ -647,10 +709,10 @@ independent pipeline from everything else in this file.
   **`capp` → `bCApp()` — Overview:**
   - A city multi-select filter (`capp-city` widget, `CAPP_ALL_CITIES` as the option
     list so non-`TIERS` cities like Raipur/Surat are selectable too) scopes
-    everything below it — stat cards, the base-stage card, and the City × Milestone
-    table (including its India row, which becomes the sum over just the selected
-    cities). Same `insertMSWidget`/`buildMultiSelect` widget already used elsewhere
-    in the dashboard (e.g. India Summary's tier/city/sub-channel filters).
+    everything below it — stat cards and the City × Milestone table (including its
+    India row, which becomes the sum over just the selected cities). Same
+    `insertMSWidget`/`buildMultiSelect` widget already used elsewhere in the
+    dashboard (e.g. India Summary's tier/city/sub-channel filters).
   - Three top-line cards (no color coding, see above): % of Commissioned/Installed/
     HOTO base that has ever logged in (each base counted independently — a
     commissioned project is also installed and HOTO'd, not mutually exclusive groups).
@@ -663,11 +725,12 @@ independent pipeline from everything else in this file.
     dumped into "Order Booked→HOTO" purely because `hoto_at` was blank, when in
     reality they'd logged in much later (mostly "After Commissioning") — confirmed
     by the before/after city-level numbers matching exactly on reconciliation.
-  - **New standalone "Logins on Base" section** — a dropdown across all 4 real stage
-    boundaries (Order Booked/HOTO/Installation/Commissioning; `CAPP_BASE_STAGE_CFG`),
-    showing the same %-logged-in-ever stat as the fixed 3 cards but for whichever
-    stage is picked. Deliberately kept separate from (not replacing) the 3 fixed
-    cards, per Yash.
+  - ~~A standalone "Logins on Base" dropdown card~~ was added then **removed
+    2026-08-04** — Yash flagged it as redundant with the 3 fixed cards above (picking
+    HOTO/Installed/Commissioning in its dropdown just reproduced one of those 3
+    exactly). The underlying 4-stage concept (Order Booked/HOTO/Installation/
+    Commissioning) wasn't wasted — it's now `CAPPVEL_STAGE_CFG`, load-bearing in the
+    new `cappvel` Login Velocity tab below, where it isn't redundant with anything.
   - A City × Milestone table classifying each project's *first* login into one of the
     5 windows, tier-sorted, India total row, PLUS 3 more columns per city/India:
     % of that city's own Total HOTOs/Installations/Commissionings that have logged in
@@ -723,6 +786,45 @@ independent pipeline from everything else in this file.
   `CAPP`/`CAC`/`CAPP_ALL_CITIES` are the new global arrays (raw rows / precomputed
   aggregates / master city list for the filter widgets), following the same `ED`/`C`
   and `DED`/`DC` naming convention already used for Referral and Digital.
-- **Not yet built (Phase 3+):** P50/P90/P95/Avg days-since-milestone stats, and custom
-  date-range cohort filtering (per the original ask). Everything else from the
-  original request, plus this session's review-feedback round, is now built.
+
+- **Phase 3 (2026-08-04, started per Yash's request — built in `index.preview.html`,
+  not yet merged to `index.html`, not yet reviewed):** a 3rd tab.
+
+  **`cappvel` → `bCAppVel()` — Login Velocity:**
+  - Answers the original Phase 3 ask: P50/P90/P95/Avg days between a project
+    reaching a milestone and its first login, for a **custom date-range cohort** —
+    not just the fixed trailing-12-month windows the other two tabs use.
+  - Own city multi-select filter (`cappvel-city`, same widget/pattern as the other
+    two tabs, independent selection state) plus a stage picker
+    (`CAPPVEL_STAGE_CFG`: Order Booked/HOTO/Installation/Commissioning — the same
+    4-stage concept that used to be the removed "Logins on Base" card) and two
+    `<input type="date">` From/To fields (`setCAppVelFrom`/`setCAppVelTo`, a "Reset
+    (lifetime)" button clears both). Blank = unbounded on that side.
+  - **Cohort definition:** projects whose *chosen stage's own date* falls in
+    [From, To] (inclusive; blank side = no bound). This is deliberately about *when
+    the project reached the stage*, not when it logged in — lets you ask "of
+    everyone who hit HOTO in Q2, how fast did they log in?" rather than slicing by
+    login date.
+  - **Days-since calc:** only logins at/after the chosen stage's date count toward
+    the P50/P90/P95/Avg (`capVelocityStats()`, using the shared `dD()`/`perc()`
+    helpers already used by the main Referral dashboard's own Velocity tab). A login
+    that happened *before* the chosen stage is excluded here, not treated as a data
+    error — it belongs to an earlier milestone window (consistent with the
+    half-open-interval boundary rule confirmed with Yash: the stage's own instant
+    counts as the start of the window *after* it, never the one before).
+  - India + per-city breakdown table, tier-sorted, same structure as the Overview
+    tab's City × Milestone table. Percentiles are computed from each row's own
+    pooled day-array (not averaged from other rows), same as the main dashboard's
+    Velocity tab convention.
+  - Local-date input round-trip fix: the From/To `<input type="date">` values are
+    formatted back for display using local `getFullYear/getMonth/getDate`, not
+    `toISOString()` — the latter (used elsewhere in the codebase for similar date
+    inputs, e.g. City Deep Dive) shifts the displayed date back a day in +IST for
+    an input constructed at local midnight. Worth revisiting those other call sites
+    if this ever surfaces as a real bug there, but out of scope to touch unprompted.
+  - Browser-tested: city filter, stage switch, custom date-range (cohort correctly
+    narrows, e.g. full-lifetime Commissioned base 51,212 → 16,060 for a Jan–Jun 2026
+    window), Reset button, round-trip date-input display — no console errors.
+- **Not yet built:** nothing else was explicitly flagged as in-scope for Phase 3 as
+  of this snapshot — confirm with Yash before assuming it's fully "done" rather than
+  just "the two things he asked for are built."
