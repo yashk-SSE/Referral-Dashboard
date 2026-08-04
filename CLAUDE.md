@@ -17,47 +17,26 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
-**As of 2026-08-03, end of session (updated — post-review-feedback round):**
+**As of 2026-08-04, end of session (updated — Phase 2 approved, merged, and pushed):**
 
-- **⚠️ `index.preview.html` exists in this folder and is AHEAD of `index.html`.**
-  It's gitignored (`*.preview.html` in `.gitignore`), so `git status` will look
-  completely clean even though it holds real, tested, unmerged work — **don't assume
-  `index.html` reflects the latest dashboard state just because git shows nothing
-  pending.** Always check for `index.preview.html` first.
-  - What's in it but NOT yet in `index.html`: the entire **Customer App branch**
-    (Phase 2) — a 4th channel switcher button, two tabs (`capp` Overview,
-    `capptrend` MoM Trend). Built and browser-tested (see Section 15 for full detail),
-    but **Yash has not yet reviewed/approved it** as of this snapshot.
-  - **Yash gave a first round of review feedback on Phase 2 this session** (not yet a
-    second look/approval) — all addressed in `index.preview.html`, browser-tested, per
-    Section 15:
-    1. **Bug fix:** HOTO base/milestone bucketing previously undercounted — projects
-       with no `hoto_at` but a real installation/commissioning date are now counted as
-       HOTO'ed (new `hotoEffAt` fallback field). This also fixed a real bucketing bug:
-       ~1,284 first-logins were being misclassified into "Order Booked→HOTO" purely
-       because `hoto_at` was blank, when they'd actually logged in much later.
-    2. City multi-select filter added to both tabs (scopes stat cards + tables + the
-       India row correctly).
-    3. City × Milestone table headers shortened (e.g. "Order→HOTO") with full-name
-       tooltips — fixes the sort-icon/header-text wrap clutter Yash flagged.
-    4. City × Milestone table: Absolute/% toggle (row-composition %, i.e. each
-       milestone cell as % of that row's own total) + a login-month selector (filters
-       the 5 milestone columns to first-logins from that month only; the 3 "% of
-       Total X" columns stay lifetime, by design — see Section 15).
-    5. New standalone "Logins on Base" section — dropdown across all 4 real stage
-       boundaries (Order Booked/HOTO/Installation/Commissioning), separate from the
-       original fixed 3 cards which are unchanged.
-  - **Do not merge it into `index.html` or commit/push it yourself.** Per the standing
-    workflow (Section 12): show Yash the preview, wait for explicit approval, only then
-    copy preview → `index.html`, commit, and separately wait for an explicit "push it"
-    before pushing. Reviewing ≠ approving the merge; approving the merge ≠ approving
-    the push. Each is its own confirmation.
-  - If Yash says to keep building (Phase 3: P50/P90/P95/Avg stats, custom date-range
-    cohort filtering), keep building in `index.preview.html`, not `index.html` directly.
-- **Everything else is committed and pushed** — `origin/main` and local `HEAD` matched
-  as of the last check this session (confirm again with `git fetch && git log --oneline
-  origin/main..HEAD` — should be empty, or only show commits from a review round that
-  hasn't been pushed yet).
+- **Customer App Phase 2 is now LIVE in `index.html` and pushed to `origin/main`**
+  (commit `7d1b610`) — the 4th channel switcher button, `capp` Overview tab, and
+  `capptrend` MoM Trend tab, including the full round of review-feedback fixes (HOTO
+  base bug via `hotoEffAt`, city multi-select filter on both tabs, shortened table
+  headers, Absolute/%+login-month selector, standalone "Logins on Base" section —
+  see Section 15 for full detail). Yash reviewed and explicitly approved the merge
+  and the push on 2026-08-04.
+  - `index.preview.html` may still exist locally as a leftover copy — check whether
+    it's now identical to `index.html` (it should be, right after a merge) before
+    assuming it holds newer unmerged work. If Yash asks to keep building **Phase 3**
+    (P50/P90/P95/Avg stats, custom date-range cohort filtering), go back to editing
+    `index.preview.html` (not `index.html` directly) per the standing workflow below.
+- **Everything is committed and pushed** — confirm with `git fetch && git log
+  --oneline origin/main..HEAD` (should be empty). Note the Apps Script also pushes
+  automated `data/*.json` refresh commits straight to `main` throughout the day
+  (commit messages like "📊 Referral leads: ...") — these are routine and don't
+  touch `index.html`/`CLAUDE.md`; a local push getting rejected because of them just
+  needs a `git pull --rebase origin main` before retrying, not a conflict investigation.
 - **Two credential/data files exist locally, both gitignored, never committed:**
   - `.metabase_key/metabase_key.txt` — the Metabase API key. Read it only by having a
     script load it at runtime (see `scripts/pull_customer_app.py`) — never `Read` this
