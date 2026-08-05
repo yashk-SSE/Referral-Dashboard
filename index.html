@@ -455,6 +455,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capp',this)">⬡ Overview</div>
   <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capptrend',this)">📈 MoM Trend</div>
   <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('cappvel',this)">⏱ Login Velocity</div>
+  <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('cappdod',this)">📅 Day on Day</div>
 </nav>
 </div>
 <main class="main" id="main">
@@ -534,6 +535,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-capp" class="panel"></div>
   <div id="p-capptrend" class="panel"></div>
   <div id="p-cappvel" class="panel"></div>
+  <div id="p-cappdod" class="panel"></div>
 </main>
 </div>
 <script>
@@ -944,7 +946,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel'];
+  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel','cappdod'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -959,7 +961,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -1006,7 +1008,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel};
+  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -6651,6 +6653,126 @@ function renderCAppVel(){
 <tbody>
 <tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong></td><td class="mono">${f(india.cohortCount)}</td><td class="mono">${f(india.everLoggedInCount)}</td><td class="mono">${india.pctEverLoggedIn.toFixed(1)}%</td><td class="mono">${f(india.loggedInCount)}</td><td class="mono">${india.pctLoggedIn.toFixed(1)}%</td>${dayCell(india.p50)}${dayCell(india.p90)}${dayCell(india.p95)}${dayCell(india.avg)}</tr>
 ${rows.map(r=>`<tr><td><strong>${r.c}</strong>${r.tier?`<span class="ctag">${r.tier}</span>`:''}</td><td class="mono">${f(r.st.cohortCount)}</td><td class="mono">${f(r.st.everLoggedInCount)}</td><td class="mono">${r.st.cohortCount?r.st.pctEverLoggedIn.toFixed(1)+'%':'-'}</td><td class="mono">${f(r.st.loggedInCount)}</td><td class="mono">${r.st.cohortCount?r.st.pctLoggedIn.toFixed(1)+'%':'-'}</td>${dayCell(r.st.p50)}${dayCell(r.st.p90)}${dayCell(r.st.p95)}${dayCell(r.st.avg)}</tr>`).join('')}
+</tbody></table></div>`;
+  setTimeout(()=>autoSort(el),50);
+}
+
+// ── Customer App: Day on Day ─────────────────────────────────────────────
+// One row per day of the SELECTED month (defaults to current month): how many
+// projects reached the selected milestone that day, and BOTH login-rate
+// definitions among that day's cohort -- Ever Logged In (any time) and Logged In
+// At/After (only counting logins on/after the milestone date) -- same pair the
+// Login Velocity tab shows, for the same reason: "ever" alone hides that some
+// projects logged in earlier, in a prior milestone window. 4 stage options,
+// added Order Booked 2026-08-05 per Yash -- same 4 as Login Velocity/CAPPVEL_STAGE_CFG,
+// not just the MoM Trend tab's 3-way HOTO/Install/Comm selector this originally
+// matched. Days beyond "today" in the CURRENT month naturally show 0/-- (no data
+// exists yet for future dates) -- a fully-elapsed past month just shows real data
+// for every day, same as the main Referral dashboard's own Day-on-Day tab.
+const CAPPDOD_STAGE_CFG={
+  order:{label:'Order Booked',key:'orderAt'},
+  hoto:{label:'HOTO',key:'hotoEffAt'},
+  inst:{label:'Installation',key:'instAt'},
+  comm:{label:'Commissioning',key:'commAt'}
+};
+let CAPPDOD_STAGE='inst';
+let CAPPDOD_MONTH=''; // '' = current month; else 'y-m' key matching a capGetMonths() entry
+function setCAppDoDStage(key){CAPPDOD_STAGE=key;renderCAppDoD();}
+function setCAppDoDMonth(val){CAPPDOD_MONTH=val;renderCAppDoD();}
+
+function bCAppDoD(){
+  const el=document.getElementById('p-cappdod');
+  if(!el)return;
+  el.innerHTML=`
+<div class="ptitle">Customer App — Day on Day</div>
+<div class="psub">Daily milestone cohort vs Customer App logins (Ever + At/After) . Source: Metabase . Active/Completed projects only</div>
+<div class="fbar"><span id="cappdod-city-mc-wrap"></span></div>
+<div id="cappdod-body"></div>`;
+  insertMSWidget('cappdod-city-mc-wrap','cappdod-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCAppDoD());
+  rebuildCAppDoD();
+}
+function rebuildCAppDoD(){
+  precomputeCApp(getMSVal('cappdod-city',CAPP_ALL_CITIES));
+  renderCAppDoD();
+}
+function renderCAppDoD(){
+  const el=document.getElementById('cappdod-body');
+  if(!el)return;
+  const yd=D0();
+  const curY=yd.getFullYear(),curM=yd.getMonth()+1;
+  const[y,m]=CAPPDOD_MONTH?CAPPDOD_MONTH.split('-').map(Number):[curY,curM];
+  const daysInMonth=new Date(y,m,0).getDate();
+  const monthStr=new Date(y,m-1,1).toLocaleString('default',{month:'short'})+"'"+String(y).slice(2);
+  const cfg=CAPPDOD_STAGE_CFG[CAPPDOD_STAGE];
+  const dateKey=cfg.key;
+  const months=capGetMonths(12);
+  const monthOpt=(mo)=>{
+    const key=`${mo.y}-${mo.m}`;
+    const isCur=mo.y===curY&&mo.m===curM;
+    const selected=CAPPDOD_MONTH?CAPPDOD_MONTH===key:isCur;
+    return`<option value="${key}" ${selected?'selected':''}>${mo.lbl}</option>`;
+  };
+
+  const dayRows=[];
+  for(let d=1;d<=daysInMonth;d++){
+    const cohort=CAC.base.filter(l=>{
+      const dt=l[dateKey];
+      return dt&&dt.getFullYear()===y&&dt.getMonth()+1===m&&dt.getDate()===d;
+    });
+    const ever=cohort.filter(l=>l.loginAt).length;
+    const atAfter=cohort.filter(l=>l.loginAt&&l.loginAt>=l[dateKey]).length;
+    dayRows.push({
+      label:`${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`,
+      count:cohort.length,
+      ever,pctEver:cohort.length?ever/cohort.length*100:null,
+      atAfter,pctAtAfter:cohort.length?atAfter/cohort.length*100:null
+    });
+  }
+  const totalCount=dayRows.reduce((s,r)=>s+r.count,0);
+  const totalEver=dayRows.reduce((s,r)=>s+r.ever,0);
+  const totalAtAfter=dayRows.reduce((s,r)=>s+r.atAfter,0);
+  const pctEverAll=totalCount?totalEver/totalCount*100:0;
+  const pctAtAfterAll=totalCount?totalAtAfter/totalCount*100:0;
+
+  const stageBtn=(key)=>{
+    const c=CAPPDOD_STAGE_CFG[key];
+    const active=CAPPDOD_STAGE===key;
+    const style=active
+      ?'background:#1a56db;color:#fff;border:1px solid #1a56db;font-weight:600'
+      :'background:var(--sur);color:var(--t2);border:1px solid var(--bd2)';
+    return`<button onclick="setCAppDoDStage('${key}')" style="${style};padding:5px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">${c.label}</button>`;
+  };
+  const pctCell=(v)=>v==null?'<td class="mono">-</td>':`<td class="mono">${v.toFixed(1)}%</td>`;
+
+  el.innerHTML=`
+<div class="fbar">
+  ${Object.keys(CAPPDOD_STAGE_CFG).map(stageBtn).join('')}
+  <select onchange="setCAppDoDMonth(this.value)" style="padding:5px 10px;border-radius:7px;border:1px solid var(--bd2);background:var(--sur);color:var(--t2);font-size:12px;font-family:'DM Sans',sans-serif">
+    ${months.map(monthOpt).join('')}
+  </select>
+</div>
+<div class="stitle">${monthStr} — Daily ${cfg.label} &amp; Customer App Logins</div>
+<div style="font-size:10px;color:var(--t3);margin-bottom:6px">"Ever" = logged in at any time (including before reaching ${cfg.label}). "At/After" = logged in on/after the ${cfg.label} date — the stricter subset.</div>
+<div class="mgrid" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+  <div class="mc">
+    <div class="mc-lbl">Total ${cfg.label}</div>
+    <div class="mc-val">${f(totalCount)}</div>
+  </div>
+  <div class="mc">
+    <div class="mc-lbl">Ever Logged In</div>
+    <div class="mc-val">${pctEverAll.toFixed(1)}%</div>
+    <div class="mc-mop">${f(totalEver)} of ${f(totalCount)}</div>
+  </div>
+  <div class="mc">
+    <div class="mc-lbl">Logged In (At/After)</div>
+    <div class="mc-val">${pctAtAfterAll.toFixed(1)}%</div>
+    <div class="mc-mop">${f(totalAtAfter)} of ${f(totalCount)}</div>
+  </div>
+</div>
+<div class="tw"><table>
+<thead><tr><th>${cfg.label} Date</th><th># of ${cfg.label}</th><th>Ever Logged In</th><th>% Ever</th><th>Logged In (At/After)</th><th>% At/After</th></tr></thead>
+<tbody>
+${dayRows.map(r=>`<tr><td>${r.label}</td><td class="mono">${f(r.count)}</td><td class="mono">${f(r.ever)}</td>${pctCell(r.pctEver)}<td class="mono">${f(r.atAfter)}</td>${pctCell(r.pctAtAfter)}</tr>`).join('')}
 </tbody></table></div>`;
   setTimeout(()=>autoSort(el),50);
 }

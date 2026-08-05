@@ -17,104 +17,71 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
-**As of 2026-08-04, end of session (updated — "last updated" timestamps built, pending review):**
+**As of 2026-08-05, end of session (updated — 4th Customer App tab built, pending review):**
 
-- **Customer App Phase 2 AND Phase 3 are both LIVE in `index.html` and pushed to
-  `origin/main`** (Phase 2: commit `7d1b610`; Phase 3 + its own review-feedback round:
-  commit `e651ef4`) — the 4th channel switcher button, and all three Customer App
-  tabs (`capp` Overview, `capptrend` MoM Trend, `cappvel` Login Velocity), including
-  every round of review feedback so far (HOTO base bug via `hotoEffAt`, city
-  multi-select filters, shortened table headers, Absolute/%+login-month selector,
-  the Login Velocity tab's custom date-range cohort + P50/P90/P95/Avg stats, the
-  Ever-Logged-In/At-After login-rate split, and the Active/Completed-projects-only
-  caveat now shown in all 3 tab subtitles — see Section 15 for full detail). Yash
-  reviewed and explicitly approved each round before it was merged/pushed.
-- **Customer App data pipeline field fix is LIVE, committed and pushed (2026-08-04):**
-  `scripts/customer_app_query.sql` sources HOTO from `project.sales_handover_datetime`
-  and Installation from a `usertasks` task-`039A` completion timestamp (replacing
-  `cx_approval_timestamp`/`project.installation_date`), per Yash's instruction to
-  match his own Metabase question 1466. Installation and Commissioning reconcile
-  exactly against Yash's manually-read July'26 numbers (3,581 and 4,129). **HOTO does
-  not fully reconcile** (pipeline: 3,949 for Jul'26 vs Yash's ~4,476 manually-read
-  figure) — **Yash's explicit call: accept 3,949 for now**, don't re-chase without new
-  info from him on where 4,476 comes from. **Scope note (state this explicitly
-  wherever this number is cited): 3,949 is `project_state IN ('active','completed')`
-  only**, not an unfiltered count and not necessarily the same population as the main
-  Referral dashboard's own HOTO actuals. Full detail in Section 15.
+- **Customer App is fully LIVE in `index.html`/`origin/main`** through: Phase 2
+  (`capp` Overview, `capptrend` MoM Trend — commit `7d1b610`), Phase 3 (`cappvel`
+  Login Velocity — commit `e651ef4`), the HOTO/Installation field fix (commit
+  `da50a1f`, see below), and a top-bar polish round — "last updated" timestamps
+  (`#data-updated-lbl`/`#capp-updated-lbl`, mutually exclusive by channel, "IST"
+  suffix dropped), a dashboard-wide table row-hover highlight, and the 8-button
+  metric-switcher group collapsed into a single "⚙ Metrics" dropdown (channel
+  switcher deliberately left as tabs — only 4 options, switched often) — commit
+  `410899b`. Yash reviewed and explicitly approved every round before it was
+  merged/pushed. Full detail in Section 15.
+- **Customer App data pipeline field fix (2026-08-04):** HOTO now sources from
+  `project.sales_handover_datetime`, Installation from a `usertasks` task-`039A`
+  completion timestamp (both per Yash's instruction to match his own Metabase
+  question 1466, replacing `cx_approval_timestamp`/`project.installation_date`).
+  Installation and Commissioning reconcile exactly against Yash's manually-read
+  July'26 numbers (3,581 and 4,129). **HOTO does not fully reconcile** (pipeline:
+  3,949 vs Yash's ~4,476) — **his explicit call: accept 3,949 for now**, don't
+  re-chase without new info from him on where 4,476 comes from. **State this scope
+  explicitly wherever the number is cited: 3,949 is `project_state IN
+  ('active','completed')` only**, not necessarily the same population as the main
+  Referral dashboard's own HOTO actuals.
 - **Scheduled Customer App auto-pull is LIVE (2026-08-05):** `.github/workflows/
   pull_customer_app.yml` runs `scripts/pull_customer_app.py` at 9am/3pm/6pm/9pm IST
-  daily and commits `data/customer_app.json` if it changed (rebasing onto `main`
-  first to avoid racing the Referral Apps Script's own pushes). Yash added the
-  `METABASE_API_KEY` repo secret himself. **Not yet verified end-to-end in real CI**
-  (only validated locally via `pyyaml.safe_load` before pushing) — if Customer App
-  data ever looks stale, check the workflow's run history in the Actions tab before
-  assuming the pipeline itself is broken. A manual `workflow_dispatch` run is
-  available to test/force a pull any time. Full detail in Section 15.
-- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — small
-  polish items built per Yash's requests this session, NOT yet reviewed/approved,
-  do not merge/commit/push:
-  - **"Last updated" timestamps in the top bar.** `#data-updated-lbl` ("Data:
-    <date, time>") shows the most recent `Last-Modified` header across the 5 core
-    Referral/Digital JSON files; `#capp-updated-lbl` ("CApp Data: <date, time>")
-    shows `customer_app.json`'s own `Last-Modified` separately. Implementation:
-    `fetchJSON()` captures each response's `Last-Modified` header into `FILE_META`
-    (`captureLastModified()`), read by `latestFileUpdate()` and formatted via
-    `fmtUpdated()` (always computed in `Asia/Kolkata` regardless of viewer's own
-    timezone, though the "IST" suffix itself was dropped from the displayed text
-    2026-08-05 — Yash: cluttered). Reads real HTTP timestamps off the static files
-    rather than requiring every pipeline to embed its own timestamp field.
-  - **On the Customer App channel specifically, per Yash's 2026-08-05 review: only
-    `#capp-updated-lbl` shows.** `#data-updated-lbl` (Referral/Digital's own "Data:"
-    timestamp — irrelevant here) and `#upd-lbl` ("MTD <date>" — a Referral/Digital
-    MOP-cycle concept, also irrelevant here) both explicitly hide whenever
-    `ACTIVE_CH==='capp'`, toggled in `setChannel()` alongside the existing
-    `#metric-switchers` visibility pattern. The label text itself was also
-    shortened from "Customer App data:" to "CApp Data:".
-  - **Note for interpreting the local-preview timestamp:** locally, `Last-Modified`
-    reflects the file's on-disk mtime — which for a git-tracked file means "when
-    `git` last wrote it to disk" (a `pull`/checkout or a direct script run), NOT the
-    original commit time on GitHub. If `data/customer_app.json` was updated by the
-    new scheduled workflow (see below) but a local session's copy still shows an
-    old timestamp, that's almost always just a `git pull` away from being current,
-    not a sign the pipeline didn't run — confirmed exactly this scenario 2026-08-05.
-  - **Dashboard-wide table row-hover highlight, added 2026-08-05.** A plain
-    `tbody tr:hover{background:var(--s2)}` rule (plus a short transition) — applies
-    to every table in the dashboard, not just one tab, since the base `table`/`td`
-    styles are already global/unscoped. Deliberately backgrounds the `<tr>` itself
-    rather than each `<td>`, so cells with their own explicit background (deficit/
-    surplus red/green, inline-styled summary rows) still show their own color on
-    hover — only plain cells pick up the neutral tint. Subtle by design (reuses the
-    same `var(--s2)` tint already used for the City Deep Dive table's own
-    pre-existing row-hover rule) — confirmed actually applying via a real `:hover`
-    DOM match in-browser, even though it's subtle enough to be easy to miss in a
-    screenshot.
-  - **Metric switchers collapsed into a "⚙ Metrics" dropdown, added 2026-08-05**
-    (top-bar declutter, per Yash — was 8 always-visible buttons: BQL Old/New, MS
-    First/Total, MD First/Total, BTL On/Off). Same underlying groups/buttons/IDs/
-    `onclick` handlers (`setMetricDef()`/`setBtlSwitch()`) as before, completely
-    unchanged — only the presentation moved, from always-inline to a popover
-    (`#metric-dd-panel`) toggled by a single trigger button (`#metric-dd-btn`,
-    `toggleMetricDD()`), closing on an outside click via a document-level listener
-    (same convention as the existing multi-select filter widgets). Still lives
-    inside `#metric-switchers`, so the existing Referral-only visibility toggle in
-    `setChannel()` didn't need to change. Considered (and rejected, per discussion
-    with Yash) collapsing the 4-option channel switcher (Referral/Digital/Ref vs
-    Digital/Customer App) into a dropdown instead — decided against it: only 4
-    options, switched frequently, an always-visible tab row was judged more
-    valuable than the modest space savings. The metric switchers were the actual
-    clutter culprit (8 buttons, Referral-only relevance) and are what got collapsed.
-  - Browser-tested: opens/closes correctly (including click-outside-to-close), the
-    toggle buttons inside still correctly update `METRIC_SEL`/`BTL_INCLUDE` and
-    their active states — no console errors. **Not yet shown to Yash.**
+  daily, commits `data/customer_app.json` if changed. Confirmed working via a real
+  run 2026-08-05 (after Yash fixed an initially-missing/misnamed repo secret —
+  the script's CI error message was also made self-diagnosing for next time). If a
+  local session's "CApp Data:" timestamp looks stale, that's normally just a
+  `git pull` away from being current (local `Last-Modified` = on-disk mtime, not
+  the original GitHub commit time) — not a sign the pipeline didn't run.
+- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — a new
+  4th Customer App tab, NOT yet reviewed/approved, do not merge/commit/push:
+  - **`cappdod` → `bCAppDoD()` — "Day on Day."** One row per day of a **selected
+    month** (`setCAppDoDMonth()`, trailing-12-months dropdown via `capGetMonths()`,
+    defaults to the current month), with a **4-option stage picker** (Order
+    Booked/HOTO/Installation/Commissioning, `setCAppDoDStage()`, defaults to
+    Installation) — same 4 stages as Login Velocity's `CAPPVEL_STAGE_CFG` (widened
+    2026-08-05 from an initial 3-way HOTO/Install/Comm picker after Yash asked for
+    Order Booked too). Shows **both Ever Logged In and Logged In (At/After)** side
+    by side (added after Yash's review — same pair as Login Velocity, for the same
+    reason: "ever" alone hides pre-milestone logins). Own city multi-select filter
+    (`cappdod-city`, defaults to unfiltered = India-wide, "All Cities" label per
+    this dashboard's convention). Days beyond "today" in the *current* month show
+    0 / "-" (no data exists yet for future dates) — a fully-elapsed past month just
+    shows real data for every day. Full detail in Section 15.
+  - **Verified against Yash's own reference numbers (screenshot, 2026-08-05) for
+    Installation/Ever, current month:** Aug 1–4 daily figures matched exactly
+    (83/42/50.6%, 83/52/62.7%, 44/25/56.8%, 102/46/45.1%). The small total-installs
+    difference (315 vs his 312) is just newer data — 3 more installs landed on
+    Aug 5 after his screenshot was taken, not a discrepancy. At/After, Order
+    Booked/HOTO/Commissioning, and non-current months have no external reference
+    yet.
+  - Browser-tested: all 4 stages, month switching (confirmed a fully-elapsed past
+    month like Jul'26 shows real data on every day, not zeros), city filter, and
+    that month/stage selections persist independently of each other — no console
+    errors. **Not yet shown to Yash for a second look.**
 - **Everything else is committed and pushed** — confirm with `git fetch && git log
-  --oneline origin/main..HEAD` (should be empty — the two polish items above are the
-  only thing currently sitting unmerged, in the gitignored preview file). Note the
-  Apps Script also pushes automated `data/*.json` refresh commits straight to `main`
-  throughout the day (commit messages like "📊 Referral leads: ..."), and now the
-  Customer App auto-pull workflow does too (commit message "Auto-refresh Customer
-  App data from Metabase") — both are routine and don't touch `index.html`/
-  `CLAUDE.md`; a local push getting rejected because of either just needs a
-  `git pull --rebase origin main` before retrying, not a conflict investigation.
+  --oneline origin/main..HEAD` (should be empty — the Day on Day tab above is the
+  only thing currently sitting unmerged, in the gitignored preview file). The Apps
+  Script pushes automated `data/*.json` refresh commits throughout the day (commit
+  messages like "📊 Referral leads: ..."), and the Customer App auto-pull workflow
+  does too ("Auto-refresh Customer App data from Metabase") — both routine, don't
+  touch `index.html`/`CLAUDE.md`; a local push rejected because of either just
+  needs `git pull --rebase origin main` before retrying, not a conflict investigation.
 - **Two credential/data files exist locally, both gitignored, never committed:**
   - `.metabase_key/metabase_key.txt` — the Metabase API key. Read it only by having a
     script load it at runtime (see `scripts/pull_customer_app.py`) — never `Read` this
@@ -909,6 +876,55 @@ independent pipeline from everything else in this file.
   - Browser-tested: city filter, stage switch, custom date-range (cohort correctly
     narrows, e.g. full-lifetime Commissioned base 51,212 → 16,060 for a Jan–Jun 2026
     window), Reset button, round-trip date-input display — no console errors.
-- **Not yet built:** nothing else was explicitly flagged as in-scope for Phase 3 as
-  of this snapshot — confirm with Yash before assuming it's fully "done" rather than
-  just "the two things he asked for are built."
+- **Not yet built (as of Phase 3):** nothing else was explicitly flagged as in-scope
+  for Phase 3 — confirm with Yash before assuming it's fully "done" rather than just
+  "the two things he asked for are built."
+
+- **4th tab: `cappdod` → `bCAppDoD()` — "Day on Day" (2026-08-05, per Yash's
+  request — built in `index.preview.html`, not yet merged/re-reviewed).** Daily
+  (not cumulative) milestone-cohort counts vs Customer App login counts, one row
+  per calendar day of a **selected month**.
+  - **Stage picker, 4 options** (`CAPPDOD_STAGE_CFG`: Order Booked/HOTO/
+    Installation/Commissioning, `setCAppDoDStage()`) — same 4 stages as Login
+    Velocity's `CAPPVEL_STAGE_CFG`. Started as a 3-way HOTO/Install/Comm picker
+    (matching the MoM Trend tab's own selector) but widened to include Order
+    Booked after Yash asked for it explicitly. Defaults to Installation (the
+    original ask). Cohort for day D under a given stage = projects whose that
+    stage's date field falls on that calendar day.
+  - **Month selector, added 2026-08-05** (`setCAppDoDMonth()`, trailing 12 months
+    via the shared `capGetMonths()` helper, defaults to the current month). Days
+    beyond "today" in the *current* month show 0/"-" (no data exists yet for
+    future dates, nothing special-cased) — a fully-elapsed past month just shows
+    real data for every day, confirmed by testing Jul'26 (every day non-zero,
+    including the 31st). Month and stage selections are independent state and
+    persist across each other's changes.
+  - **Both login-rate definitions shown side by side, added 2026-08-05 per Yash's
+    review** (top summary cards AND both table column-pairs) — **Ever Logged In**
+    (any time, including before reaching the stage) and **Logged In (At/After)**
+    (only counting logins on/after the stage's date, the stricter subset). Same
+    pair, same reasoning, as the Login Velocity tab. For Installation specifically
+    the gap between the two is large (e.g. Aug 1'26: 83 installs, 42 ever logged in
+    but only 3 at/after) — most Customer App logins happen well before installation
+    (e.g. right after Order Booked/HOTO), so this split matters a lot here.
+  - Own city multi-select filter (`cappdod-city`, `CAPP_ALL_CITIES` options,
+    `CAPP_CITY_CFG` — same widget/pattern as the other 3 tabs). Default
+    (unfiltered) shows India-wide totals, labeled "All Cities" per this dashboard's
+    own convention — Yash's own reference spreadsheet for this feature literally
+    labeled its equivalent dropdown "India," but consistency with the other 3
+    Customer App tabs' wording was judged more valuable than matching that exact
+    label.
+  - Top summary cards (Total <stage> / Ever Logged In % / Logged In At/After % for
+    the selected month) above the daily table, computed by summing the same
+    per-day figures — not a separate calculation.
+  - **Verified against Yash's own reference numbers (a screenshot of his working
+    spreadsheet, 2026-08-05) for the Installation stage's "Ever" column, current
+    month:** Aug 1–4 daily figures matched exactly — 83/42/50.6%, 83/52/62.7%,
+    44/25/56.8%, 102/46/45.1%. Total installs differed slightly (this pipeline:
+    315, his screenshot: 312) — accounted for by 3 more installs landing on Aug 5
+    after his screenshot was taken (his screenshot's own Aug 5 row showed 0), not
+    a data or logic discrepancy. The "At/After" column, Order Booked/HOTO/
+    Commissioning, and non-current months have no external reference yet.
+  - Browser-tested: all 4 stages produce distinct correct numbers, city filter
+    narrows correctly (e.g. Pune-only, Installation stage, Aug 1: 14/9/64.3%
+    ever), month switching (Jul'26 shows real non-zero data through the 31st) —
+    no console errors.
