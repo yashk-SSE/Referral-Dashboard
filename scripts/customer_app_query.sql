@@ -28,13 +28,25 @@
 -- Metabase question 1466 ("OMS Plants"), per his explicit instruction --
 -- superseding the earlier cx_approval_timestamp / project.installation_date
 -- choice (see CLAUDE.md Section 15 for the full reconciliation history):
---   - HOTO is now p.sales_handover_datetime (card 1466's "Sales Handover
---     Date"), not p.cx_approval_timestamp.
 --   - Installation is now the usertasks task-039A completion timestamp
 --     (card 1466's "Installation Completion Date"), not
 --     p.installation_date. Sourced via the install_task CTE below, joined
 --     on project._id (usertasks has no direct sseid column).
 -- Commissioning is unchanged (p.commissioning_date matches card 1466 already).
+--
+-- HOTO and Order Booked corrected AGAIN 2026-08-05, per Yash's explicit
+-- instruction with reference COUNT(*) queries against public.lead -- this
+-- supersedes the 2026-08-04 choice of p.sales_handover_datetime for HOTO:
+--   - HOTO is now lead.cx_approval_timestamp (back to this field name, but
+--     off the `lead` table, not `project` -- NOT the same as the old
+--     p.cx_approval_timestamp choice from before 2026-08-04).
+--   - Order Booked is now lead.order_closure_datetime (same field name as
+--     before, but off `lead` instead of `project`).
+-- This is a real, if confusing, reversal-of-a-reversal -- see CLAUDE.md
+-- Section 15 for the full history before touching these two fields again.
+-- Joined via project.lead_id = lead.lead_id (this project's own documented
+-- attribution chain), a LEFT JOIN since not every project may resolve to a
+-- lead row.
 
 WITH login_data AS (
     SELECT
@@ -72,8 +84,8 @@ SELECT
     p.sseid,
     p.lead_id,
     p.site_address_cluster            AS city,
-    p.order_closure_datetime          AS order_booked_at,
-    p.sales_handover_datetime         AS hoto_at,
+    l.order_closure_datetime          AS order_booked_at,
+    l.cx_approval_timestamp           AS hoto_at,
     it.installation_at                AS installation_at,
     p.commissioning_date              AS commissioning_at,
     ld.first_login_at                 AS first_login_at,
@@ -89,5 +101,7 @@ LEFT JOIN login_data ld
     ON ld.sseid = p.sseid
 LEFT JOIN install_task it
     ON it.project_id = p._id
+LEFT JOIN lead l
+    ON l.lead_id = p.lead_id
 WHERE p.project_state IN ('active', 'completed')
 ORDER BY p.sseid;

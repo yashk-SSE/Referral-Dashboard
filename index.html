@@ -553,7 +553,10 @@ let MOP_NOBTL=JSON.parse(JSON.stringify(MOP_SEED));
 let MOP_COMBINED=JSON.parse(JSON.stringify(MOP_SEED));
 let BTL_INCLUDE=true;   // default: BTL included (matches pre-switch behavior)
 let MOP=MOP_COMBINED;   // active table — reassigned by setBtlSwitch()
-const SCS_ALL=['Sales','Online','BTL','Ops / AMC','Customer_App','Referral_Others'];
+// Customer_App removed 2026-08-05 -- no longer picked up from BigQuery at all
+// (Referral Dashboard.gs no longer classifies any Source_Class as this sub-channel).
+// Not a reclassification, a full removal -- see CLAUDE.md Section 4 for history.
+const SCS_ALL=['Sales','Online','BTL','Ops / AMC','Referral_Others'];
 let SCS=SCS_ALL.slice();
 // True once referral_mop.json actually has a (nonzero) entry for this city — used to
 // auto-include/exclude cities from MOP-target tables without a manually maintained list.
@@ -1465,7 +1468,15 @@ async function init(){
       MD:       num(r.First_MD),
       Order:    num(r.Order),
       HOTO:     num(r.HOTO)
-    })).filter(r=>r.date&&r.city);
+    })).filter(r=>r.date&&r.city&&r.sc!=='Customer_App');
+    // ^ Customer_App is dropped right here at ingestion, not just from SCS_ALL's
+    // filter-dropdown list -- ED/LD and every aggregate below are built from
+    // ED_ALL/LD_ALL directly (only the BTL toggle filters them further), so if
+    // Customer_App rows were left in ED_ALL they'd still silently flow into every
+    // India/city total even with no visible "Customer_App" row anywhere. Existing
+    // data/referral_effort.json may still contain old Customer_App rows until the
+    // Apps Script is redeployed -- this filter guarantees they never count toward
+    // anything in the dashboard regardless. Per Yash, 2026-08-05.
 
     // ── Lead data: JSON rows → LD[] ───────────────────────────────────────
     // Fields: city, sub_channel, created, first_ms_date, first_md_date,
@@ -1485,7 +1496,7 @@ async function init(){
       billBucket:    r.monthly_bill_value||null,
       bqlOld:   r.BQL_Old==='Yes',
       bqlNew:   r.BQL_New==='Yes'
-    })).filter(r=>r.city);
+    })).filter(r=>r.city&&r.sc!=='Customer_App');
 
     // ── BTL switch: derive the active ED/LD view from the full ED_ALL/LD_ALL ──
     ED=BTL_INCLUDE?ED_ALL:ED_ALL.filter(r=>r.sc!=='BTL');

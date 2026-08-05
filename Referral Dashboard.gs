@@ -188,14 +188,19 @@ MASTER_DATA AS (
 ),
 LEAD_DATA AS (
   SELECT *,
+    -- Customer_App sub-channel removed from BigQuery pickup 2026-08-05, per
+    -- Yash's explicit instruction -- Source_Class LIKE '%Customer App%' rows no
+    -- longer count as Referral channel at all (previously reclassified to
+    -- 'Customer_App' sub-channel; that whole branch is gone, not replaced).
+    -- See CLAUDE.md Section 4 for history -- this supersedes the earlier
+    -- "reclassification, not removal" plan documented there.
     CASE
-      WHEN Source_Class LIKE '%Referral%' OR Source_Class LIKE '%Customer App%' THEN 'Referral'
+      WHEN Source_Class LIKE '%Referral%' THEN 'Referral'
       WHEN Source_Class LIKE '%Digital%' THEN 'Digital'
       ELSE 'Others'
     END AS Source_Class_final,
     CASE
       WHEN Source_Class LIKE '%Referral%' THEN COALESCE(Source_Sub_Class, 'WhatsApp')
-      WHEN Source_Class LIKE '%Customer App%' THEN 'Customer_App'
       ELSE Source_Sub_Class
     END AS Source_Sub_Class_final,
     CASE
@@ -411,14 +416,15 @@ MASTER_DATA AS (
 ),
 LEAD_DATA AS (
   SELECT *,
+    -- Customer_App sub-channel removed from BigQuery pickup 2026-08-05 -- see
+    -- the matching comment in runEffortData() above for full context.
     CASE
-      WHEN Source_Class LIKE '%Referral%' OR Source_Class LIKE '%Customer App%' THEN 'Referral'
+      WHEN Source_Class LIKE '%Referral%' THEN 'Referral'
       WHEN Source_Class LIKE '%Digital%' THEN 'Digital'
       ELSE 'Others'
     END AS Source_Class_final,
     CASE
       WHEN Source_Class LIKE '%Referral%' THEN COALESCE(Source_Sub_Class,'WhatsApp')
-      WHEN Source_Class LIKE '%Customer App%' THEN 'Customer_App'
       ELSE Source_Sub_Class
     END AS Source_Sub_Class_final,
     CASE
@@ -508,7 +514,9 @@ BQL_BASE AS (
   WHERE DATE(created_on) BETWEEN DATE('2025-04-01') AND DATE('${d2}')
     AND (PincodeStatus = 'Active' OR PincodeStatus IS NULL)
     AND Exception IS NULL
-    AND (Source_Class LIKE '%Referral%' OR Source_Class LIKE '%Customer App%')
+    -- Customer App-sourced leads no longer picked up here at all, 2026-08-05
+    -- (previously included via "OR Source_Class LIKE '%Customer App%'").
+    AND Source_Class LIKE '%Referral%'
   QUALIFY ROW_NUMBER() OVER (PARTITION BY Opportunity_Id ORDER BY Last_Action_Date DESC) = 1
 ),
 SAMAGAM_MAPPING AS (

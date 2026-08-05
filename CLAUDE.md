@@ -29,17 +29,49 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   switcher deliberately left as tabs — only 4 options, switched often) — commit
   `410899b`. Yash reviewed and explicitly approved every round before it was
   merged/pushed. Full detail in Section 15.
-- **Customer App data pipeline field fix (2026-08-04):** HOTO now sources from
-  `project.sales_handover_datetime`, Installation from a `usertasks` task-`039A`
-  completion timestamp (both per Yash's instruction to match his own Metabase
-  question 1466, replacing `cx_approval_timestamp`/`project.installation_date`).
-  Installation and Commissioning reconcile exactly against Yash's manually-read
-  July'26 numbers (3,581 and 4,129). **HOTO does not fully reconcile** (pipeline:
-  3,949 vs Yash's ~4,476) — **his explicit call: accept 3,949 for now**, don't
-  re-chase without new info from him on where 4,476 comes from. **State this scope
-  explicitly wherever the number is cited: 3,949 is `project_state IN
-  ('active','completed')` only**, not necessarily the same population as the main
-  Referral dashboard's own HOTO actuals.
+- **Customer App HOTO/Order Booked field sourcing — reversed AGAIN 2026-08-05,
+  NOT YET committed/pushed (applied locally; ready to push whenever asked — Yash
+  has confirmed keeping both fields on the `lead` table, see below).** History,
+  in order (don't re-litigate earlier steps without new evidence):
+  1. Originally: HOTO = `project.cx_approval_timestamp`, Order Booked =
+     `project.order_closure_datetime`, Installation = `project.installation_date`.
+  2. 2026-08-04: HOTO → `project.sales_handover_datetime`, Installation → a
+     `usertasks` task-`039A` completion timestamp — per Yash's instruction to
+     match his own Metabase question 1466. Installation and Commissioning
+     reconciled exactly against his manually-read July'26 numbers (3,581, 4,129).
+     HOTO did not (3,949 vs his ~4,476) — accepted as a working figure at the time.
+  3. **2026-08-05 (current): HOTO → `lead.cx_approval_timestamp`, Order Booked →
+     `lead.order_closure_datetime`** — per Yash's explicit instruction, backed by
+     his own `COUNT(*)` reference queries against `public.lead` (226 HOTO, 442
+     Order Booked, both for `>= '2026-08-01' AND < '2026-08-06'`). Note this is
+     the SAME field name for HOTO as step 1 (`cx_approval_timestamp`) but now off
+     the **`lead`** table, not `project` — genuinely different data, not a revert.
+     Installation stays the task-`039A` timestamp from step 2; Commissioning
+     (`project.commissioning_date`) has never changed. Joined via
+     `project.lead_id = lead.lead_id` (LEFT JOIN — not every project resolves to
+     a lead row).
+  - **Reconciliation after re-pulling `data/customer_app.json` (2026-08-05),
+    checked against Yash's exact reference window (Aug 1–5'26):**
+    - **HOTO now reconciles closely: 222 (this pipeline, `project_state IN
+      ('active','completed')`-scoped) vs his 226 (unfiltered `lead` table)** — a
+      4-row gap, plausibly just the state filter. Much closer than step 2's HOTO
+      figure.
+    - **Order Booked does NOT reconcile: 44 (this pipeline) vs his 442 (unfiltered)
+      — off by 10x.** Investigated and have a strong explanation, not yet
+      confirmed with Yash: Order Booked is the *earliest* funnel milestone, and
+      the monthly trend of `order_booked_at` in this pipeline's own data climbs
+      steadily every month (July'26: 3,828) then falls off a cliff in Aug'26 (44)
+      — because it's only 5 days into the month and most freshly-booked orders
+      haven't yet matured into a `project` row with `project_state IN
+      ('active','completed')` (some may have no project row yet at all). This is
+      a **structural consequence of applying the same project_state filter to
+      Order Booked as to the later-funnel milestones**, not a wrong field/table.
+    - **Resolved 2026-08-05: Yash's explicit call — keep `project_state`
+      filtering applied to Order Booked too, accept the 44 vs 442 gap for now.**
+      Don't revisit without new information from him. This SQL/data change (both
+      HOTO and Order Booked on `lead`) is ready to commit/push whenever asked —
+      not yet pushed only because it hasn't been explicitly requested this
+      session, not because anything is still unresolved.
 - **Scheduled Customer App auto-pull is LIVE (2026-08-05):** `.github/workflows/
   pull_customer_app.yml` runs `scripts/pull_customer_app.py` at 9am/3pm/6pm/9pm IST
   daily, commits `data/customer_app.json` if changed. Confirmed working via a real
@@ -48,6 +80,34 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   local session's "CApp Data:" timestamp looks stale, that's normally just a
   `git pull` away from being current (local `Last-Modified` = on-disk mtime, not
   the original GitHub commit time) — not a sign the pipeline didn't run.
+- **`Customer_App` REFERRAL sub-channel removed entirely 2026-08-05 (NOT the
+  separate Metabase-sourced Customer App tabs above — different, unrelated
+  thing, don't confuse the two).** Per Yash's explicit instruction, superseding
+  an earlier reclassification plan (see Section 4). Applied locally to
+  `Referral Dashboard.gs` (3 places: both `LEAD_DATA` CASE blocks, the lead
+  query's `BQL_BASE` filter) and `index.html`/`index.preview.html`.
+  **Two-step fix on the `index.html` side — the first step alone was
+  incomplete, caught by Yash asking "does India Total still include
+  Customer_App?":** (1) removed `'Customer_App'` from `SCS_ALL` (now 5
+  entries) — but this only controls the filter dropdown/breakdown tables, NOT
+  the underlying totals; (2) `ED_ALL`/`LD_ALL` themselves now exclude
+  `sc==='Customer_App'` rows at ingestion (right where they're built from the
+  raw JSON), which is what actually keeps them out of every India/city total,
+  regardless of the BTL toggle or any other filter. Confirmed via console:
+  `ED_ALL` 31,566 → 28,669 rows (exactly the prior `Customer_App` row count),
+  zero remain in either array. Browser-tested across 7 tabs (incl. Digital,
+  unaffected) — no lingering mentions, no console errors. **Two things still
+  needed before this is fully live:**
+  1. Yash must copy the updated `.gs` code into the actual Google Apps Script
+     editor and redeploy — editing the tracked copy in this repo does nothing
+     to the live script by itself.
+  2. The `index.html` side needs the usual preview-review-merge cycle (it's
+     currently only in `index.preview.html`, bundled with the Day on Day tab
+     below — not yet committed to `index.html`/pushed).
+  Historical `data/referral_effort.json`/`referral_leads.json` rows may still
+  carry the old `Customer_App` tag until Yash redeploys the Apps Script — this
+  is now harmless either way, since `ED_ALL`/`LD_ALL`'s own filter excludes
+  them unconditionally regardless of what's still in the JSON.
 - **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — a new
   4th Customer App tab, NOT yet reviewed/approved, do not merge/commit/push:
   - **`cappdod` → `bCAppDoD()` — "Day on Day."** One row per day of a **selected
@@ -225,7 +285,7 @@ Order→HOTO timing as a structural lag, not an anomaly, when doing month-end an
 
 ---
 
-## 4. Referral sub-channels (6 today — still 6 planned, attribution is changing, see flagged change below)
+## 4. Referral sub-channels (now 5 — `Customer_App` removed entirely 2026-08-05)
 
 | Sub-channel | Source |
 |---|---|
@@ -233,37 +293,71 @@ Order→HOTO timing as a structural lag, not an anomaly, when doing month-end an
 | **Online** | Leads generated organically via WhatsApp / online channels |
 | **BTL** | Leads generated by BTL teams via on-ground activities |
 | **Ops / AMC** | Leads generated by Ops/AMC ground staff |
-| **Customer_App** | Leads generated directly by customers via the Customer App |
 | **Referral_Others** | Other sources — HO team, self-employees, etc. |
 
-**⚠️ Planned change (flagged 2026-08-03, corrected 2026-08-03, not yet implemented —
-future work, don't build toward this until explicitly asked):** Per Yash, this is a
-**reclassification, not a removal.** The *current* `Customer_App` sub-channel
-attribution is wrong and that current logic will be removed — but a **new, correctly
-attributed `Customer_App`** sub-channel will be added back, carved out of what's
-today lumped into `Online` (`Online` is getting bifurcated, and one of the resulting
-pieces is the real `Customer_App`). End state still has a `Customer_App` sub-channel
-— it just comes from a different, corrected source classification. Do **not** treat
-this as "delete all mentions of Customer_App" — that was my first (wrong) read of
-this; the name survives, only its underlying attribution logic changes. Touches:
-- `Referral Dashboard.gs` — the `Source_Sub_Class_final` CASE logic that currently
-  maps `Source_Class LIKE '%Customer App%'` to `'Customer_App'` (this specific rule
-  is the wrong one being replaced) and whatever rule currently produces `'Online'`
-  (needs to split, with the correct Customer_App slice breaking out of it)
-- `index.html` — the `SCS` constant and every sub-channel breakdown table/chart/filter
-  that iterates it; `Customer_App` stays in the list, `Online` may need to become
-  two entries depending on how the bifurcation is named
-- `data/referral_effort.json` / `referral_leads.json` — sourced from BigQuery via the
-  Apps Script, so this is fundamentally a **source-data reclassification**, not just a
-  dashboard filter change — the BigQuery query logic itself needs the corrected split
-  before anything downstream changes
-- `referral_mop.json` if/when Sub-Channel MOP targets get built (Section 13)
+**⚠️ History — read this before touching sub-channel logic again, the plan changed
+mid-stream:** On 2026-08-03 a reclassification was planned (see old text, preserved
+below) — remove the *current*, wrong `Customer_App` attribution but add back a
+*correctly*-attributed `Customer_App`, carved out of `Online`. **That plan was
+superseded 2026-08-05 by Yash's explicit, different instruction: remove
+`Customer_App` entirely, don't pick it up from BigQuery at all, no mention of it
+anywhere in the Referral flow.** This is a real removal now, not a reclassification
+— don't reintroduce a `Customer_App` sub-channel without a fresh, explicit ask from
+Yash, since the plan has already flipped once. Implemented 2026-08-05:
+- **`Referral Dashboard.gs`** (local tracked copy in this repo) — removed
+  `Source_Class LIKE '%Customer App%'` from all three places it appeared: the
+  `Source_Class_final` CASE (both the effort-query and lead-query `LEAD_DATA` CTEs,
+  ~2 occurrences each) which used to fold these rows into `'Referral'`; the
+  `Source_Sub_Class_final` CASE which used to tag them `'Customer_App'`; and the
+  lead-query's `BQL_BASE` CTE `WHERE` filter which used to pull these rows into the
+  Referral base query at all. Now `Source_Class LIKE '%Customer App%'` rows fall to
+  `Source_Class_final = 'Others'` and are excluded from the Referral pipeline
+  entirely (not reclassified into any other Referral sub-channel).
+  **⚠️ Editing this tracked `.gs` file does NOT change the live running Apps
+  Script** — Yash still needs to copy the updated code into the actual Google Apps
+  Script editor and save/redeploy it himself before this takes effect on real data.
+  Until he does, live pulls will keep tagging Customer App-sourced leads as before.
+- **`index.html`/`index.preview.html`** — removed `'Customer_App'` from `SCS_ALL`
+  (now `['Sales','Online','BTL','Ops / AMC','Referral_Others']`, 5 entries).
+  **This alone was NOT sufficient** — `SCS_ALL` only drives the sub-channel
+  *filter dropdown* and breakdown-table iteration; it does not gate what counts
+  toward India/city totals. `ED`/`LD` (used by every aggregate, including
+  Executive Summary and India Summary's totals) are derived from `ED_ALL`/`LD_ALL`
+  filtered *only* by the BTL toggle — so `Customer_App` rows already sitting in
+  `data/referral_effort.json`/`referral_leads.json` were still silently flowing
+  into every India/city total even after the dropdown fix, with no visible
+  "Customer_App" row anywhere to reveal it. **Caught by Yash asking "does India
+  Total still include Customer_App?" (2026-08-05) — confirmed yes, then fixed
+  properly:** `ED_ALL`/`LD_ALL` themselves now drop `sc==='Customer_App'` rows at
+  the point they're built from the raw JSON (`.filter(r=>...&&r.sc!=='Customer_App')`
+  on both), so these rows can never enter any in-memory dataset the dashboard
+  computes from, regardless of the BTL toggle or any other filter state — a hard,
+  unconditional exclusion, not just a hidden-from-the-dropdown one. Confirmed via
+  console: `ED_ALL` dropped from 31,566 to 28,669 rows (exactly the 2,897
+  `Customer_App` rows previously in the data), zero `Customer_App` rows remain in
+  either array, and all of Executive Summary/India Summary/Sub-Channel/Funnel/BQL
+  Quality/Insights render with no lingering text and no console errors.
+  **Lesson for next time a sub-channel (or similar dimension) needs removing:**
+  filtering the constant array that drives dropdowns/breakdowns is not enough —
+  check whether totals are computed from the *filtered* variable (`ED`/`LD`) or
+  the *raw* one (`ED_ALL`/`LD_ALL`), and exclude at the raw-ingestion point if the
+  goal is a true, complete removal.
+- **Historical data note:** existing rows already in `data/referral_effort.json`/
+  `referral_leads.json` may still carry the old `Customer_App` sub-channel tag
+  until Yash redeploys the Apps Script — per the script's own changelog comment,
+  every run does a full-history rewrite of these files (not an incremental
+  append), so the next live run after redeployment will naturally regenerate
+  fully-correct data. The `index.html` side's `ED_ALL`/`LD_ALL` filter above makes
+  this a non-issue either way — even if stale `Customer_App` rows linger in the
+  JSON files, the dashboard now excludes them unconditionally on load.
+- `referral_mop.json` was never touched — no Sub-Channel MOP targets exist yet
+  (Section 13), so there was nothing there to update.
 
-Don't start this without explicit confirmation on: exact bifurcation of `Online`
-(what the new sub-channel name(s) will be, and which existing rows move to the
-corrected `Customer_App`), and whether historical `referral_effort.json`/
-`referral_leads.json` rows need to be backfilled/relabeled or only new data goes
-forward under the corrected attribution.
+**Original 2026-08-03 reclassification plan (superseded, kept for history only —
+do not act on this without a fresh explicit ask):** the idea was to keep a
+`Customer_App` sub-channel but carve it correctly out of `Online` (bifurcating
+`Online` into two pieces), rather than removing it. Never implemented — the
+2026-08-05 instruction above replaced this plan before any of it was built.
 
 ---
 
@@ -599,49 +693,54 @@ independent pipeline from everything else in this file.
   UI events generally, but Yash's own established query uses `otps`).
 - **Attribution chain:** `otps.mobile → customer.phone → customer.projects →
   customer_projects (index_=0) → projects_sseid → project.sseid`.
-- **Milestone dates + city (current, as of the 2026-08-04 field correction below):**
-  - Order Booked = `project.order_closure_datetime`
-  - HOTO = `project.sales_handover_datetime` (changed 2026-08-04, was
-    `project.cx_approval_timestamp` — see the correction note right below)
+- **Milestone dates + city (current, as of the 2026-08-05 field correction —
+  full history in Section 0 and the SQL file's own comments, don't re-litigate
+  without new evidence from Yash):**
+  - Order Booked = `lead.order_closure_datetime` (changed 2026-08-05, was
+    `project.order_closure_datetime`)
+  - HOTO = `lead.cx_approval_timestamp` (changed 2026-08-05, was
+    `project.sales_handover_datetime`, which itself had replaced
+    `project.cx_approval_timestamp` on 2026-08-04 — three different sourcings
+    across two changes, see Section 0 for the full blow-by-blow)
   - Installation = `usertasks` task-`039A` completion timestamp (changed
-    2026-08-04, was `project.installation_date` — see below)
-  - Commissioning = `project.commissioning_date` (unchanged)
+    2026-08-04, was `project.installation_date`)
+  - Commissioning = `project.commissioning_date` (never changed)
   - City = `project.site_address_cluster`
-  - Lead ID = `project.lead_id` (directly on `project` — no `lead` join needed at all
-    for this feature)
-- **HOTO and Installation field sources corrected 2026-08-04, per Yash's explicit
-  instruction to match his own Metabase question 1466 ("OMS Plants").** A
-  numbers-don't-match-up check against card 1466 and card 1182 ("CApp Login Report")
-  surfaced that those two reference questions use different underlying columns than
-  this pipeline did at the time — Yash's call was to **switch this pipeline to match
-  card 1466**, not the other way round:
-  - **HOTO is now `p.sales_handover_datetime`** (card 1466's "Sales Handover Date"),
-    replacing the earlier `p.cx_approval_timestamp`.
-  - **Installation is now the `usertasks` task-`039A` completion timestamp** (card
-    1466's "Installation Completion Date"), replacing the earlier
-    `p.installation_date`. Pulled via a new `install_task` CTE in
-    `scripts/customer_app_query.sql`, joined on `project._id` (not `sseid` —
-    `usertasks` has no direct sseid column). Kept as a full timestamp rather than
-    card 1466's `::date`-truncated display value, so day-level velocity calcs keep
-    hour-of-day precision.
-  - Commissioning is unchanged (`p.commissioning_date` already matched card 1466).
-  - Login source stays `IN ('CONSUMER', 'CUSTOMER_JOURNEY_TRACKER')` — Yash confirmed
-    keeping `CUSTOMER_JOURNEY_TRACKER` even though card 1182 only filters `CONSUMER`.
-  - **Verified after re-pulling `data/customer_app.json` (2026-08-04):** using a
-    same-month (Jul'26) cohort-size reconciliation against Yash's own manually-read
-    numbers — Installation now matches **exactly** (3,581 = 3,581, previously 3,533)
-    and Commissioning still matches exactly (4,129 = 4,129, unchanged). **HOTO does
-    NOT fully reconcile** even after the field switch (pipeline shows 3,949 for
-    Jul'26 vs Yash's ~4,476 manually-read figure) — flagged back to Yash 2026-08-04.
-    **Yash's call (2026-08-04): accept 3,949 and move on for now** — don't re-chase
-    this gap without new information from him on where the 4,476 figure comes from.
-    **Explicitly note the scope this 3,949 (and all Customer App HOTO/Install/Comm
-    figures) represents: `project_state IN ('active','completed')` only** — this is
-    not a full/unfiltered count of all HOTOs in July, and not necessarily the same
-    population as the main Referral dashboard's own (Referral-channel-only) HOTO
-    actuals. Don't assume the HOTO field is "fully correct" just because
-    Installation/Commissioning reconciled — this specific number is accepted as a
-    working figure, not a fully confirmed one.
+  - Lead ID = `project.lead_id`; **as of 2026-08-05 a `lead` join IS needed**
+    (`LEFT JOIN lead l ON l.lead_id = p.lead_id`) for HOTO/Order Booked — this
+    reverses the earlier "no lead join needed" note, which was accurate through
+    2026-08-04 but is now stale.
+- **2026-08-04 correction (superseded 2026-08-05 for HOTO, see below):** HOTO and
+  Installation were switched to match Yash's Metabase question 1466 ("OMS Plants")
+  after a numbers-don't-match-up check found card 1466 used different columns than
+  this pipeline did. Installation → `usertasks` task-`039A` (kept, still current) —
+  reconciled exactly against Yash's July'26 figure (3,581). HOTO →
+  `p.sales_handover_datetime` — did NOT reconcile (3,949 vs his ~4,476), accepted
+  as a working figure at the time, then superseded the next day (see below).
+- **2026-08-05 correction (current):** Yash gave a further, explicit instruction —
+  backed by his own `COUNT(*)` reference queries against `public.lead` — to source
+  **HOTO from `lead.cx_approval_timestamp`** (same field name as the pre-08-04
+  choice, but off `lead` not `project` — genuinely different data) and **Order
+  Booked from `lead.order_closure_datetime`** (same field name as before, also
+  now off `lead` not `project`). Reconciled against his reference window
+  (Aug 1–5'26, `>= '2026-08-01' AND < '2026-08-06'`):
+  - **HOTO: 222 (this pipeline) vs his 226 (unfiltered)** — close, a 4-row gap
+    plausibly just the `project_state` filter. A big improvement over the
+    08-04 HOTO figure.
+  - **Order Booked: 44 (this pipeline) vs his 442 (unfiltered) — off by 10x.**
+    Investigated: this pipeline's own `order_booked_at` trend climbs every month
+    (Jul'26: 3,828) then falls off a cliff in Aug'26 (44, only 5 days into the
+    month at analysis time) — because Order Booked is the *earliest* funnel
+    milestone, and most freshly-booked orders haven't yet matured into a
+    `project` row with `project_state IN ('active','completed')`. This looks
+    like a structural consequence of applying the same state filter to an
+    early-funnel milestone, not a wrong field — **but this has NOT been
+    confirmed with Yash, and the change is NOT committed/pushed pending that.**
+    Open question for him: is `project_state` filtering even meaningful for
+    Order Booked, or should it be reported unfiltered (a bigger query change,
+    not just a field swap)?
+  - Login source stays `IN ('CONSUMER', 'CUSTOMER_JOURNEY_TRACKER')` — unchanged
+    by this round of correction.
 - **Only the FIRST login per project is tracked, not every login — corrected
   2026-08-03.** The initial build tracked every login event; Yash confirmed only the
   first one matters for this feature. This also surfaced a bigger issue: the original
