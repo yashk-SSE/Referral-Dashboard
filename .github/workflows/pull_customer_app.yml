@@ -1,0 +1,56 @@
+name: Pull Customer App Data
+
+# Runs the existing scripts/pull_customer_app.py against Metabase 4x/day and
+# commits data/customer_app.json if it changed. Times below are UTC -- GitHub
+# Actions cron always runs in UTC, and IST is UTC+5:30 -- so these correspond to
+# 9:00 AM, 3:00 PM, 6:00 PM, 9:00 PM IST. Per Yash, 2026-08-04.
+#
+# Requires a repo secret named METABASE_API_KEY (Settings > Secrets and
+# variables > Actions > New repository secret) with the same value as
+# .metabase_key/metabase_key.txt. Only a repo admin can add this -- Claude has
+# no access to repo secrets and never reads/prints the key itself.
+#
+# Note: GitHub Actions schedules run on a best-effort basis and can be delayed
+# a few minutes during periods of high platform load -- this is a GitHub
+# platform behavior, not something this workflow controls.
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # 9:00 AM IST
+    - cron: '30 9 * * *'   # 3:00 PM IST
+    - cron: '30 12 * * *'  # 6:00 PM IST
+    - cron: '30 15 * * *'  # 9:00 PM IST
+  workflow_dispatch: {} # allows a manual run from the Actions tab too
+
+permissions:
+  contents: write
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Pull Customer App data from Metabase
+        env:
+          METABASE_API_KEY: ${{ secrets.METABASE_API_KEY }}
+        run: python scripts/pull_customer_app.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/customer_app.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Auto-refresh Customer App data from Metabase"
+          # Rebase onto the latest main first -- the Referral Apps Script also
+          # pushes commits to main throughout the day, so a plain push can race it.
+          git pull --rebase origin main
+          git push

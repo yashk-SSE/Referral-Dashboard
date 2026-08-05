@@ -17,33 +17,60 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
-**As of 2026-08-04, end of session (updated — Phase 3 started, pending review):**
+**As of 2026-08-04, end of session (updated — "last updated" timestamps built, pending review):**
 
-- **Customer App Phase 2 is LIVE in `index.html` and pushed to `origin/main`**
-  (commit `7d1b610`) — the 4th channel switcher button, `capp` Overview tab, and
-  `capptrend` MoM Trend tab, including the full round of review-feedback fixes (HOTO
-  base bug via `hotoEffAt`, city multi-select filter on both tabs, shortened table
-  headers, Absolute/%+login-month selector — see Section 15 for full detail). Yash
-  reviewed and explicitly approved the merge and the push on 2026-08-04.
-- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — Phase 3
-  work in progress, per Yash's own request this session. NOT yet reviewed/approved,
-  do not merge/commit/push. What's in it but not in `index.html`:
-  - Removed the "Logins on Base" standalone card from the `capp` Overview tab — Yash
-    flagged it as redundant with the 3 fixed cards above it (picking HOTO/Installed/
-    Commissioning in the dropdown just reproduced one of those 3 exactly). The
-    `CAPPVEL_STAGE_CFG`-style 4-stage concept it introduced was **not** deleted, just
-    relocated — see the new 3rd tab below, where it's load-bearing rather than redundant.
-  - **New 3rd Customer App tab: `cappvel` → `bCAppVel()` — "Login Velocity"** (Phase 3).
-    P50/P90/P95/Avg days from reaching a milestone (Order Booked/HOTO/Installation/
-    Commissioning, picked via buttons) to a project's first login, for a custom
-    date-range cohort (From/To inputs scoping which projects count, by when they
-    reached that milestone — blank = lifetime). Own city multi-select filter
-    (`cappvel-city`), India + per-city breakdown table. Full detail in Section 15.
-  - Custom date-range cohort filtering (per the original Phase 3 ask) is now built.
-    Still open for a future phase: nothing else was flagged as missing as of this
-    snapshot — confirm with Yash before assuming Phase 3 is fully "done."
-  - Browser-tested (city filter, stage buttons, date-range inputs incl. round-trip
-    display, Reset button) — no console errors. **Not yet shown to Yash.**
+- **Customer App Phase 2 AND Phase 3 are both LIVE in `index.html` and pushed to
+  `origin/main`** (Phase 2: commit `7d1b610`; Phase 3 + its own review-feedback round:
+  commit `e651ef4`) — the 4th channel switcher button, and all three Customer App
+  tabs (`capp` Overview, `capptrend` MoM Trend, `cappvel` Login Velocity), including
+  every round of review feedback so far (HOTO base bug via `hotoEffAt`, city
+  multi-select filters, shortened table headers, Absolute/%+login-month selector,
+  the Login Velocity tab's custom date-range cohort + P50/P90/P95/Avg stats, the
+  Ever-Logged-In/At-After login-rate split, and the Active/Completed-projects-only
+  caveat now shown in all 3 tab subtitles — see Section 15 for full detail). Yash
+  reviewed and explicitly approved each round before it was merged/pushed.
+- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — a new,
+  smaller feature built per Yash's request this session, NOT yet reviewed/approved,
+  do not merge/commit/push:
+  - **"Last updated" timestamps in the top bar.** Two new labels next to the
+    existing `fy-mini`/`upd-lbl`: `#data-updated-lbl` ("Data: <date, time IST>") —
+    always visible, shows the most recent `Last-Modified` header across
+    `referral_effort.json`/`referral_leads.json`/`referral_mop.json`/
+    `digital_effort.json`/`digital_leads.json` — and `#capp-updated-lbl` ("Customer
+    App data: <date, time IST>") — only visible on the Customer App channel
+    (toggled in `setChannel()`, same visibility pattern as `#metric-switchers`),
+    showing `customer_app.json`'s own `Last-Modified` header separately, since it's
+    pulled on its own independent (currently manual-only) cadence.
+  - Implementation: `fetchJSON()` now captures each response's `Last-Modified`
+    header into a new `FILE_META` map (`captureLastModified()`), read by
+    `latestFileUpdate()` and formatted via `fmtUpdated()` (always in `Asia/Kolkata`,
+    regardless of viewer's own timezone, since this is a India-based team
+    dashboard). Deliberately reads real HTTP timestamps off the static files rather
+    than requiring every pipeline (Apps Script + Python puller) to embed its own
+    timestamp field — works immediately with zero pipeline changes. Locally this
+    reflects each file's on-disk mtime; live on GitHub Pages it reflects the actual
+    deploy time.
+  - Browser-tested: both labels populate correctly, `#capp-updated-lbl` correctly
+    hidden on Referral/Digital/Compare and shown only on Customer App — no console
+    errors. **Not yet shown to Yash.**
+  - **Confirmed while building this (see Section 15 for detail): there is currently
+    NO scheduled/automated job for the Customer App Metabase pull** — checked
+    `.github/workflows/` for anything referencing `pull_customer_app.py`, found
+    nothing (only the pre-existing trivial `test.yml` placeholder exists). It's
+    manual-only, run whenever someone (Claude or Yash) executes
+    `python scripts/pull_customer_app.py`. This matches what was already documented
+    in Section 15 pre-2026-08-04 — reconfirmed, not changed.
+- **⚠️ Scheduled Customer App auto-pull built, NOT yet live (2026-08-04):** per
+  Yash's request (9am/3pm/6pm/9pm IST daily), `.github/workflows/pull_customer_app.yml`
+  is written and `scripts/pull_customer_app.py` now accepts the API key via a
+  `METABASE_API_KEY` env var for CI use — both exist locally, **neither is committed
+  or pushed yet**. Two things block this going live, both requiring Yash directly:
+  1. He must add a `METABASE_API_KEY` repo secret himself (Settings → Secrets and
+     variables → Actions) — Claude has no access to add repo secrets.
+  2. Explicit go-ahead to commit + push, since a scheduled workflow is a standing
+     automation once live on `main` (same "ask before persistent config" caution as
+     everything else) — don't push this without that, even though the files exist.
+  Full detail in Section 15.
 - **Customer App data pipeline field fix is committed and pushed (2026-08-04):**
   `scripts/customer_app_query.sql` now sources HOTO from
   `project.sales_handover_datetime` and Installation from a `usertasks` task-`039A`
@@ -59,8 +86,9 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   necessarily the same population as the main Referral dashboard's own HOTO actuals.
   Full detail in Section 15.
 - **Everything else is committed and pushed** — confirm with `git fetch && git log
-  --oneline origin/main..HEAD` (should be empty, aside from Phase 3 sitting unmerged
-  in the gitignored preview file). Note the Apps Script also pushes automated
+  --oneline origin/main..HEAD` (should be empty — the "last updated" timestamps
+  feature above is the only thing currently sitting unmerged, in the gitignored
+  preview file). Note the Apps Script also pushes automated
   `data/*.json` refresh commits straight to `main` throughout the day (commit messages
   like "📊 Referral leads: ...") — these are routine and don't touch `index.html`/
   `CLAUDE.md`; a local push getting rejected because of them just needs a
@@ -690,10 +718,31 @@ independent pipeline from everything else in this file.
   pasted into a standalone Metabase SQL question for Yash's own independent use —
   keep both in sync if this ever changes.
 - `scripts/pull_customer_app.py` — the puller script. Reads the API key from
-  `.metabase_key/`, runs the query above via Metabase's API (with the row-cap fix),
-  applies the city merge + null-city drop, writes `data/customer_app.json`.
-  Run manually for now (`python3 scripts/pull_customer_app.py`) — not yet automated
-  via any scheduled job; that's a separate future decision, not assumed.
+  `.metabase_key/` for local/manual runs, or from a `METABASE_API_KEY` env var when
+  running in CI (added 2026-08-04 — see the scheduled workflow below), runs the query
+  above via Metabase's API (with the row-cap fix), applies the city merge +
+  null-city drop, writes `data/customer_app.json`.
+- **Scheduled auto-pull added 2026-08-04, per Yash's request — NOT yet live
+  (uncommitted locally, pending Yash's setup + confirmation):**
+  `.github/workflows/pull_customer_app.yml` runs the puller script 4x/day at 9:00 AM,
+  3:00 PM, 6:00 PM, 9:00 PM **IST** (cron times are in UTC: `30 3,9,12,15 * * *` across
+  4 separate `cron:` entries — IST is UTC+5:30) and commits `data/customer_app.json`
+  if it changed, rebasing onto `main` first to avoid racing the Referral Apps
+  Script's own automated pushes (same race this session already hit manually once —
+  see the note on that above). Also has a `workflow_dispatch` trigger for a manual
+  run from the Actions tab.
+  - **Blocking dependency: Yash must add a repo secret himself** — Claude has no
+    access to repo secrets and never reads/prints the actual key value. Steps: repo
+    Settings → Secrets and variables → Actions → New repository secret → name
+    `METABASE_API_KEY` → value = the same string in `.metabase_key/metabase_key.txt`.
+  - **Not pushed to `origin/main` yet** — a scheduled workflow is a standing,
+    self-perpetuating automation once it's live on the default branch (it'll keep
+    auto-committing 4x/day indefinitely), so per the safety-conscious workflow this
+    project follows for `index.html`, this needed Yash's explicit go-ahead before
+    pushing, same discipline as the dashboard file itself — don't push without
+    that even though the files already exist locally.
+  - YAML validity checked locally (`pyyaml.safe_load`) — not run end-to-end in a
+    real Actions environment yet (can't be, without the secret in place).
 - `data/customer_app.json` — ~58,300 rows as of 2026-08-03 (one per active/completed
   project, not per login — row count moves slightly between pulls, live production
   data), ~15.9 MB. Contains real customer-level data (`sseid`, `lead_id`, login

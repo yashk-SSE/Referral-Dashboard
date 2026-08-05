@@ -57,6 +57,12 @@ OUTPUT_FILE = os.path.join(REPO_ROOT, "data", "customer_app.json")
 
 
 def load_api_key():
+    # CI (GitHub Actions) has no .metabase_key/ checkout -- it supplies the key via
+    # the METABASE_API_KEY secret/env var instead. Local/manual runs keep using the
+    # gitignored key file. Never log or print the value either way.
+    env_key = os.environ.get("METABASE_API_KEY")
+    if env_key:
+        return env_key.strip()
     with open(KEY_FILE, "r", encoding="utf-8") as f:
         return f.read().strip()
 
