@@ -75,6 +75,12 @@ th{background:#f1f3f6;padding:7px 8px;text-align:left;font-weight:700;font-size:
 .tw tr:first-child th{background:#e9ecef;color:#1f2937;}
 td{padding:6px 8px;border-bottom:1px solid var(--bd);vertical-align:middle}
 tr:last-child td{border-bottom:none}
+/* Row-hover highlight, applied dashboard-wide -- background sits on the <tr> itself
+   (not individual <td>s) so cells with their own explicit background (deficit/surplus
+   red/green, inline-styled summary rows, etc.) still show their own color on top,
+   only plain cells pick up the neutral hover tint. Added 2026-08-05 per Yash. */
+tbody tr{transition:background .1s ease}
+tbody tr:hover{background:var(--s2)}
 .mono{font-family:'DM Mono',monospace}
 /* MOP table special cells */
 .def-hi{background:#fee2e2;color:#991b1b;font-weight:600;text-align:right}
@@ -236,8 +242,17 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .metric-sw-btn:hover{background:rgba(255,255,255,.14);color:#fff}
 .metric-sw-btn.active{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.55);color:#fbbf24;font-weight:600}
 .metric-sw-sep{width:1px;height:14px;background:rgba(255,255,255,.1);margin:0 2px}
-#metric-switchers{display:none;align-items:center;gap:6px;flex-wrap:wrap}
+#metric-switchers{display:none;align-items:center;gap:6px;flex-wrap:wrap;position:relative}
 #metric-switchers.visible{display:flex}
+/* Collapsed into a single dropdown 2026-08-05 (was 8 always-visible buttons) --
+   top-bar declutter per Yash. Same underlying groups/buttons/onclick handlers,
+   just tucked into a popover instead of inline. */
+.metric-dd-btn{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);color:#fff;padding:5px 10px;border-radius:7px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.metric-dd-btn:hover{background:rgba(255,255,255,.16)}
+.metric-dd-btn .arrow{font-size:9px;opacity:.7}
+.metric-dd-panel{position:absolute;top:calc(100% + 6px);right:0;background:#1a1a1a;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;display:none;flex-direction:column;gap:6px;z-index:400;box-shadow:0 10px 28px rgba(0,0,0,.4);min-width:180px}
+.metric-dd-panel.open{display:flex}
+.metric-dd-panel .metric-sw-group{justify-content:space-between}
 .ch-btn:hover:not(.active){color:var(--t1)}
 body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 /* Digital sidebar section — matches Referral styling */
@@ -334,34 +349,36 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
       <button class="ch-btn" id="ch-cmp" onclick="setChannel('compare',this)">Ref vs Digital</button>
       <button class="ch-btn" id="ch-capp" onclick="setChannel('capp',this)">Customer App</button>
     </div>
-    <!-- Metric Definition Switchers (Referral only) -->
+    <!-- Metric Definition Switchers (Referral only) -- collapsed into a dropdown -->
     <div id="metric-switchers">
-      <div class="metric-sw-group">
-        <span class="metric-sw-label">BQL</span>
-        <button class="metric-sw-btn" id="sw-bql-old" onclick="setMetricDef('bql','old',this)">Old</button>
-        <button class="metric-sw-btn active" id="sw-bql-new" onclick="setMetricDef('bql','new',this)">New</button>
-      </div>
-      <div class="metric-sw-sep"></div>
-      <div class="metric-sw-group">
-        <span class="metric-sw-label">MS</span>
-        <button class="metric-sw-btn active" id="sw-ms-first" onclick="setMetricDef('ms','first',this)">First</button>
-        <button class="metric-sw-btn" id="sw-ms-total" onclick="setMetricDef('ms','total',this)">Total</button>
-      </div>
-      <div class="metric-sw-sep"></div>
-      <div class="metric-sw-group">
-        <span class="metric-sw-label">MD</span>
-        <button class="metric-sw-btn active" id="sw-md-first" onclick="setMetricDef('md','first',this)">First</button>
-        <button class="metric-sw-btn" id="sw-md-total" onclick="setMetricDef('md','total',this)">Total</button>
-      </div>
-      <div class="metric-sw-sep"></div>
-      <div class="metric-sw-group">
-        <span class="metric-sw-label">BTL</span>
-        <button class="metric-sw-btn active" id="sw-btl-on" onclick="setBtlSwitch(true,this)">On</button>
-        <button class="metric-sw-btn" id="sw-btl-off" onclick="setBtlSwitch(false,this)">Off</button>
+      <button class="metric-dd-btn" id="metric-dd-btn" onclick="toggleMetricDD(event)">⚙ Metrics<span class="arrow">▾</span></button>
+      <div class="metric-dd-panel" id="metric-dd-panel">
+        <div class="metric-sw-group">
+          <span class="metric-sw-label">BQL</span>
+          <button class="metric-sw-btn" id="sw-bql-old" onclick="setMetricDef('bql','old',this)">Old</button>
+          <button class="metric-sw-btn active" id="sw-bql-new" onclick="setMetricDef('bql','new',this)">New</button>
+        </div>
+        <div class="metric-sw-group">
+          <span class="metric-sw-label">MS</span>
+          <button class="metric-sw-btn active" id="sw-ms-first" onclick="setMetricDef('ms','first',this)">First</button>
+          <button class="metric-sw-btn" id="sw-ms-total" onclick="setMetricDef('ms','total',this)">Total</button>
+        </div>
+        <div class="metric-sw-group">
+          <span class="metric-sw-label">MD</span>
+          <button class="metric-sw-btn active" id="sw-md-first" onclick="setMetricDef('md','first',this)">First</button>
+          <button class="metric-sw-btn" id="sw-md-total" onclick="setMetricDef('md','total',this)">Total</button>
+        </div>
+        <div class="metric-sw-group">
+          <span class="metric-sw-label">BTL</span>
+          <button class="metric-sw-btn active" id="sw-btl-on" onclick="setBtlSwitch(true,this)">On</button>
+          <button class="metric-sw-btn" id="sw-btl-off" onclick="setBtlSwitch(false,this)">Off</button>
+        </div>
       </div>
     </div>
     <div class="fy-pill" id="fy-mini">FY27: –</div>
     <div class="upd" id="upd-lbl">–</div>
+    <div class="upd" id="data-updated-lbl" title="Most recent of the Referral/Digital data files">Data: –</div>
+    <div class="upd" id="capp-updated-lbl" style="display:none" title="Customer App data auto-pulls from Metabase at 9am/3pm/6pm/9pm IST daily, independent of Referral/Digital data">CApp Data: –</div>
     <button class="rbtn" onclick="init()">↺ Refresh</button>
   </div>
 </div>
@@ -646,6 +663,19 @@ function defCellAbs(actual,mopMtd,extraStyle){
   return`<td class="${cls}" ${s}>${f(actual)}</td>`;
 }
 
+// ── Metrics dropdown (BQL/MS/MD/BTL switchers, collapsed into one popover) ──
+function toggleMetricDD(e){
+  e.stopPropagation();
+  document.getElementById('metric-dd-panel').classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('metric-dd-panel');
+  const btn=document.getElementById('metric-dd-btn');
+  if(panel&&panel.classList.contains('open')&&!panel.contains(e.target)&&e.target!==btn){
+    panel.classList.remove('open');
+  }
+});
+
 // ── Metric Definition Selector ──────────────────────────────────────────────
 // Controls which variant is used across ALL Referral tabs
 // bql: 'old' | 'new'   ms: 'first' | 'total'   md: 'first' | 'total'
@@ -750,6 +780,15 @@ function aggM0BySegment(ms,me,cityArr,scArr){
 
 // ?? FETCH — reads from local JSON files in /data folder ??
 // Files are updated daily by GitHub Actions (no Sheets, no API key needed)
+// filename -> Date (the file's Last-Modified header) or null if unavailable. Powers
+// the "last updated" labels in the top bar -- reads real deploy/pull timestamps
+// straight off the static files instead of requiring every pipeline to embed its own
+// timestamp field.
+const FILE_META={};
+function captureLastModified(filename,resp){
+  const lm=resp.headers.get('last-modified');
+  FILE_META[filename]=lm?new Date(lm):null;
+}
 async function fetchJSON(filename){
   // Always try the local/relative data/ folder first — this is what makes local
   // testing of unpushed data changes (like a new MOP file) actually work. Only fall
@@ -758,11 +797,26 @@ async function fetchJSON(filename){
   // the browser blocks fetch() of local files entirely.
   try{
     const r=await fetch('data/'+filename);
-    if(r.ok)return await r.json();
+    if(r.ok){captureLastModified(filename,r);return await r.json();}
   }catch(e){/* fall through to production fallback below */}
   const r2=await fetch('https://yashk-sse.github.io/Referral-Dashboard/data/'+filename);
   if(!r2.ok)throw new Error(`Failed to load ${filename}: ${r2.status}`);
+  captureLastModified(filename,r2);
   return await r2.json();
+}
+// Most recent Last-Modified among a set of files, or null if none are known.
+function latestFileUpdate(filenames){
+  const dates=filenames.map(f=>FILE_META[f]).filter(Boolean);
+  return dates.length?new Date(Math.max(...dates.map(d=>d.getTime()))):null;
+}
+// Always computed in IST regardless of viewer's own timezone -- this is a
+// India-based team dashboard, showing a timestamp in the viewer's local time would
+// be ambiguous/misleading for a "when was this refreshed" label. The "IST" suffix
+// itself was dropped from the displayed text 2026-08-05 (Yash: cluttered) -- the
+// timezone is still IST, just not spelled out anymore.
+function fmtUpdated(d){
+  if(!d)return'unknown';
+  return d.toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'});
 }
 
 // ?? PRE-COMPUTE (runs once after fetch) ??
@@ -860,6 +914,17 @@ function setChannel(ch,el){
   // Show metric switchers only on Referral channel
   const msEl=document.getElementById('metric-switchers');
   if(msEl)msEl.classList.toggle('visible',ch==='referral');
+  // The two "last updated" labels are mutually exclusive by channel -- showing
+  // both at once on the Customer App channel read as confusing (the Referral/Digital
+  // "Data:" timestamp has nothing to do with Customer App data). Per Yash, 2026-08-05.
+  const dataUpdEl=document.getElementById('data-updated-lbl');
+  if(dataUpdEl)dataUpdEl.style.display=ch==='capp'?'none':'';
+  const cappUpdEl=document.getElementById('capp-updated-lbl');
+  if(cappUpdEl)cappUpdEl.style.display=ch==='capp'?'':'none';
+  // "MTD <date>" is a Referral/Digital MOP-cycle concept -- irrelevant (and per Yash,
+  // cluttering) on the Customer App channel, so hide it there too.
+  const updEl=document.getElementById('upd-lbl');
+  if(updEl)updEl.style.display=ch==='capp'?'none':'';
   // Block sidebar/tab navigation until data is fully loaded
   if(!dataLoaded) return;
   // Items WITH data-ch: show only matching channel
@@ -1495,6 +1560,15 @@ async function init(){
     document.getElementById('upd-lbl').textContent=`MTD ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
     const fyP=Math.round(C.ytdHoto/FY_T*100);
     document.getElementById('fy-mini').textContent=`FY27: ${f(C.ytdHoto)}/${f(FY_T)} (${fyP}%)`;
+
+    // "Last updated" labels -- read straight off each file's Last-Modified header
+    // (captured in fetchJSON), not a fixed schedule. Referral/Digital files are
+    // pushed automatically by the Apps Script throughout the day; Customer App is
+    // pulled manually from Metabase, so its own label is shown separately rather
+    // than folded into the same number.
+    const dataUpd=latestFileUpdate(['referral_effort.json','referral_leads.json','referral_mop.json','digital_effort.json','digital_leads.json']);
+    document.getElementById('data-updated-lbl').textContent=`Data: ${fmtUpdated(dataUpd)}`;
+    document.getElementById('capp-updated-lbl').textContent=`CApp Data: ${fmtUpdated(FILE_META['customer_app.json'])}`;
 
     // Mark data as loaded — channel switcher now fully functional
     dataLoaded=true;

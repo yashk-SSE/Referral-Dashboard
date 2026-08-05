@@ -54,18 +54,29 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   polish items built per Yash's requests this session, NOT yet reviewed/approved,
   do not merge/commit/push:
   - **"Last updated" timestamps in the top bar.** `#data-updated-lbl` ("Data:
-    <date, time IST>") shows the most recent `Last-Modified` header across the 5
-    core Referral/Digital JSON files; `#capp-updated-lbl` ("Customer App data:
-    <date, time IST>") shows `customer_app.json`'s own `Last-Modified` separately.
-    **The two are mutually exclusive by channel** (fixed 2026-08-05 after Yash
-    flagged both showing at once on the Customer App channel as confusing — the
-    Referral/Digital timestamp has nothing to do with Customer App data): `#data-
-    updated-lbl` hides whenever `ACTIVE_CH==='capp'`, `#capp-updated-lbl` shows only
-    then. Implementation: `fetchJSON()` captures each response's `Last-Modified`
-    header into `FILE_META` (`captureLastModified()`), read by `latestFileUpdate()`
-    and formatted via `fmtUpdated()` (always `Asia/Kolkata`, regardless of viewer's
-    own timezone). Reads real HTTP timestamps off the static files rather than
-    requiring every pipeline to embed its own timestamp field.
+    <date, time>") shows the most recent `Last-Modified` header across the 5 core
+    Referral/Digital JSON files; `#capp-updated-lbl` ("CApp Data: <date, time>")
+    shows `customer_app.json`'s own `Last-Modified` separately. Implementation:
+    `fetchJSON()` captures each response's `Last-Modified` header into `FILE_META`
+    (`captureLastModified()`), read by `latestFileUpdate()` and formatted via
+    `fmtUpdated()` (always computed in `Asia/Kolkata` regardless of viewer's own
+    timezone, though the "IST" suffix itself was dropped from the displayed text
+    2026-08-05 — Yash: cluttered). Reads real HTTP timestamps off the static files
+    rather than requiring every pipeline to embed its own timestamp field.
+  - **On the Customer App channel specifically, per Yash's 2026-08-05 review: only
+    `#capp-updated-lbl` shows.** `#data-updated-lbl` (Referral/Digital's own "Data:"
+    timestamp — irrelevant here) and `#upd-lbl` ("MTD <date>" — a Referral/Digital
+    MOP-cycle concept, also irrelevant here) both explicitly hide whenever
+    `ACTIVE_CH==='capp'`, toggled in `setChannel()` alongside the existing
+    `#metric-switchers` visibility pattern. The label text itself was also
+    shortened from "Customer App data:" to "CApp Data:".
+  - **Note for interpreting the local-preview timestamp:** locally, `Last-Modified`
+    reflects the file's on-disk mtime — which for a git-tracked file means "when
+    `git` last wrote it to disk" (a `pull`/checkout or a direct script run), NOT the
+    original commit time on GitHub. If `data/customer_app.json` was updated by the
+    new scheduled workflow (see below) but a local session's copy still shows an
+    old timestamp, that's almost always just a `git pull` away from being current,
+    not a sign the pipeline didn't run — confirmed exactly this scenario 2026-08-05.
   - **Dashboard-wide table row-hover highlight, added 2026-08-05.** A plain
     `tbody tr:hover{background:var(--s2)}` rule (plus a short transition) — applies
     to every table in the dashboard, not just one tab, since the base `table`/`td`
@@ -77,7 +88,24 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
     pre-existing row-hover rule) — confirmed actually applying via a real `:hover`
     DOM match in-browser, even though it's subtle enough to be easy to miss in a
     screenshot.
-  - Browser-tested, no console errors. **Not yet shown to Yash.**
+  - **Metric switchers collapsed into a "⚙ Metrics" dropdown, added 2026-08-05**
+    (top-bar declutter, per Yash — was 8 always-visible buttons: BQL Old/New, MS
+    First/Total, MD First/Total, BTL On/Off). Same underlying groups/buttons/IDs/
+    `onclick` handlers (`setMetricDef()`/`setBtlSwitch()`) as before, completely
+    unchanged — only the presentation moved, from always-inline to a popover
+    (`#metric-dd-panel`) toggled by a single trigger button (`#metric-dd-btn`,
+    `toggleMetricDD()`), closing on an outside click via a document-level listener
+    (same convention as the existing multi-select filter widgets). Still lives
+    inside `#metric-switchers`, so the existing Referral-only visibility toggle in
+    `setChannel()` didn't need to change. Considered (and rejected, per discussion
+    with Yash) collapsing the 4-option channel switcher (Referral/Digital/Ref vs
+    Digital/Customer App) into a dropdown instead — decided against it: only 4
+    options, switched frequently, an always-visible tab row was judged more
+    valuable than the modest space savings. The metric switchers were the actual
+    clutter culprit (8 buttons, Referral-only relevance) and are what got collapsed.
+  - Browser-tested: opens/closes correctly (including click-outside-to-close), the
+    toggle buttons inside still correctly update `METRIC_SEL`/`BTL_INCLUDE` and
+    their active states — no console errors. **Not yet shown to Yash.**
 - **Everything else is committed and pushed** — confirm with `git fetch && git log
   --oneline origin/main..HEAD` (should be empty — the two polish items above are the
   only thing currently sitting unmerged, in the gitignored preview file). Note the
