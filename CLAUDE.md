@@ -29,69 +29,63 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   Ever-Logged-In/At-After login-rate split, and the Active/Completed-projects-only
   caveat now shown in all 3 tab subtitles — see Section 15 for full detail). Yash
   reviewed and explicitly approved each round before it was merged/pushed.
-- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — a new,
-  smaller feature built per Yash's request this session, NOT yet reviewed/approved,
+- **Customer App data pipeline field fix is LIVE, committed and pushed (2026-08-04):**
+  `scripts/customer_app_query.sql` sources HOTO from `project.sales_handover_datetime`
+  and Installation from a `usertasks` task-`039A` completion timestamp (replacing
+  `cx_approval_timestamp`/`project.installation_date`), per Yash's instruction to
+  match his own Metabase question 1466. Installation and Commissioning reconcile
+  exactly against Yash's manually-read July'26 numbers (3,581 and 4,129). **HOTO does
+  not fully reconcile** (pipeline: 3,949 for Jul'26 vs Yash's ~4,476 manually-read
+  figure) — **Yash's explicit call: accept 3,949 for now**, don't re-chase without new
+  info from him on where 4,476 comes from. **Scope note (state this explicitly
+  wherever this number is cited): 3,949 is `project_state IN ('active','completed')`
+  only**, not an unfiltered count and not necessarily the same population as the main
+  Referral dashboard's own HOTO actuals. Full detail in Section 15.
+- **Scheduled Customer App auto-pull is LIVE (2026-08-05):** `.github/workflows/
+  pull_customer_app.yml` runs `scripts/pull_customer_app.py` at 9am/3pm/6pm/9pm IST
+  daily and commits `data/customer_app.json` if it changed (rebasing onto `main`
+  first to avoid racing the Referral Apps Script's own pushes). Yash added the
+  `METABASE_API_KEY` repo secret himself. **Not yet verified end-to-end in real CI**
+  (only validated locally via `pyyaml.safe_load` before pushing) — if Customer App
+  data ever looks stale, check the workflow's run history in the Actions tab before
+  assuming the pipeline itself is broken. A manual `workflow_dispatch` run is
+  available to test/force a pull any time. Full detail in Section 15.
+- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — small
+  polish items built per Yash's requests this session, NOT yet reviewed/approved,
   do not merge/commit/push:
-  - **"Last updated" timestamps in the top bar.** Two new labels next to the
-    existing `fy-mini`/`upd-lbl`: `#data-updated-lbl` ("Data: <date, time IST>") —
-    always visible, shows the most recent `Last-Modified` header across
-    `referral_effort.json`/`referral_leads.json`/`referral_mop.json`/
-    `digital_effort.json`/`digital_leads.json` — and `#capp-updated-lbl` ("Customer
-    App data: <date, time IST>") — only visible on the Customer App channel
-    (toggled in `setChannel()`, same visibility pattern as `#metric-switchers`),
-    showing `customer_app.json`'s own `Last-Modified` header separately, since it's
-    pulled on its own independent (currently manual-only) cadence.
-  - Implementation: `fetchJSON()` now captures each response's `Last-Modified`
-    header into a new `FILE_META` map (`captureLastModified()`), read by
-    `latestFileUpdate()` and formatted via `fmtUpdated()` (always in `Asia/Kolkata`,
-    regardless of viewer's own timezone, since this is a India-based team
-    dashboard). Deliberately reads real HTTP timestamps off the static files rather
-    than requiring every pipeline (Apps Script + Python puller) to embed its own
-    timestamp field — works immediately with zero pipeline changes. Locally this
-    reflects each file's on-disk mtime; live on GitHub Pages it reflects the actual
-    deploy time.
-  - Browser-tested: both labels populate correctly, `#capp-updated-lbl` correctly
-    hidden on Referral/Digital/Compare and shown only on Customer App — no console
-    errors. **Not yet shown to Yash.**
-  - **Confirmed while building this (see Section 15 for detail): there is currently
-    NO scheduled/automated job for the Customer App Metabase pull** — checked
-    `.github/workflows/` for anything referencing `pull_customer_app.py`, found
-    nothing (only the pre-existing trivial `test.yml` placeholder exists). It's
-    manual-only, run whenever someone (Claude or Yash) executes
-    `python scripts/pull_customer_app.py`. This matches what was already documented
-    in Section 15 pre-2026-08-04 — reconfirmed, not changed.
-- **⚠️ Scheduled Customer App auto-pull built, NOT yet live (2026-08-04):** per
-  Yash's request (9am/3pm/6pm/9pm IST daily), `.github/workflows/pull_customer_app.yml`
-  is written and `scripts/pull_customer_app.py` now accepts the API key via a
-  `METABASE_API_KEY` env var for CI use — both exist locally, **neither is committed
-  or pushed yet**. Two things block this going live, both requiring Yash directly:
-  1. He must add a `METABASE_API_KEY` repo secret himself (Settings → Secrets and
-     variables → Actions) — Claude has no access to add repo secrets.
-  2. Explicit go-ahead to commit + push, since a scheduled workflow is a standing
-     automation once live on `main` (same "ask before persistent config" caution as
-     everything else) — don't push this without that, even though the files exist.
-  Full detail in Section 15.
-- **Customer App data pipeline field fix is committed and pushed (2026-08-04):**
-  `scripts/customer_app_query.sql` now sources HOTO from
-  `project.sales_handover_datetime` and Installation from a `usertasks` task-`039A`
-  completion timestamp, replacing `cx_approval_timestamp`/`project.installation_date`
-  — per Yash's explicit instruction to match his own Metabase question 1466.
-  `data/customer_app.json` re-pulled to match. Installation and Commissioning
-  reconcile exactly against Yash's manually-read July'26 numbers (3,581 and 4,129).
-  **HOTO does not fully reconcile** (pipeline: 3,949 for Jul'26 vs Yash's ~4,476
-  manually-read figure) — **Yash's explicit call (2026-08-04): accept 3,949 for now
-  and move on**, don't re-chase this without new info from him on where 4,476 comes
-  from. **Scope note (make this explicit wherever this number is cited): 3,949 is
-  `project_state IN ('active','completed')` only**, not an unfiltered count and not
-  necessarily the same population as the main Referral dashboard's own HOTO actuals.
-  Full detail in Section 15.
+  - **"Last updated" timestamps in the top bar.** `#data-updated-lbl` ("Data:
+    <date, time IST>") shows the most recent `Last-Modified` header across the 5
+    core Referral/Digital JSON files; `#capp-updated-lbl` ("Customer App data:
+    <date, time IST>") shows `customer_app.json`'s own `Last-Modified` separately.
+    **The two are mutually exclusive by channel** (fixed 2026-08-05 after Yash
+    flagged both showing at once on the Customer App channel as confusing — the
+    Referral/Digital timestamp has nothing to do with Customer App data): `#data-
+    updated-lbl` hides whenever `ACTIVE_CH==='capp'`, `#capp-updated-lbl` shows only
+    then. Implementation: `fetchJSON()` captures each response's `Last-Modified`
+    header into `FILE_META` (`captureLastModified()`), read by `latestFileUpdate()`
+    and formatted via `fmtUpdated()` (always `Asia/Kolkata`, regardless of viewer's
+    own timezone). Reads real HTTP timestamps off the static files rather than
+    requiring every pipeline to embed its own timestamp field.
+  - **Dashboard-wide table row-hover highlight, added 2026-08-05.** A plain
+    `tbody tr:hover{background:var(--s2)}` rule (plus a short transition) — applies
+    to every table in the dashboard, not just one tab, since the base `table`/`td`
+    styles are already global/unscoped. Deliberately backgrounds the `<tr>` itself
+    rather than each `<td>`, so cells with their own explicit background (deficit/
+    surplus red/green, inline-styled summary rows) still show their own color on
+    hover — only plain cells pick up the neutral tint. Subtle by design (reuses the
+    same `var(--s2)` tint already used for the City Deep Dive table's own
+    pre-existing row-hover rule) — confirmed actually applying via a real `:hover`
+    DOM match in-browser, even though it's subtle enough to be easy to miss in a
+    screenshot.
+  - Browser-tested, no console errors. **Not yet shown to Yash.**
 - **Everything else is committed and pushed** — confirm with `git fetch && git log
-  --oneline origin/main..HEAD` (should be empty — the "last updated" timestamps
-  feature above is the only thing currently sitting unmerged, in the gitignored
-  preview file). Note the Apps Script also pushes automated
-  `data/*.json` refresh commits straight to `main` throughout the day (commit messages
-  like "📊 Referral leads: ...") — these are routine and don't touch `index.html`/
-  `CLAUDE.md`; a local push getting rejected because of them just needs a
+  --oneline origin/main..HEAD` (should be empty — the two polish items above are the
+  only thing currently sitting unmerged, in the gitignored preview file). Note the
+  Apps Script also pushes automated `data/*.json` refresh commits straight to `main`
+  throughout the day (commit messages like "📊 Referral leads: ..."), and now the
+  Customer App auto-pull workflow does too (commit message "Auto-refresh Customer
+  App data from Metabase") — both are routine and don't touch `index.html`/
+  `CLAUDE.md`; a local push getting rejected because of either just needs a
   `git pull --rebase origin main` before retrying, not a conflict investigation.
 - **Two credential/data files exist locally, both gitignored, never committed:**
   - `.metabase_key/metabase_key.txt` — the Metabase API key. Read it only by having a
@@ -722,27 +716,25 @@ independent pipeline from everything else in this file.
   running in CI (added 2026-08-04 — see the scheduled workflow below), runs the query
   above via Metabase's API (with the row-cap fix), applies the city merge +
   null-city drop, writes `data/customer_app.json`.
-- **Scheduled auto-pull added 2026-08-04, per Yash's request — NOT yet live
-  (uncommitted locally, pending Yash's setup + confirmation):**
+- **Scheduled auto-pull — LIVE as of 2026-08-05, per Yash's request.**
   `.github/workflows/pull_customer_app.yml` runs the puller script 4x/day at 9:00 AM,
-  3:00 PM, 6:00 PM, 9:00 PM **IST** (cron times are in UTC: `30 3,9,12,15 * * *` across
-  4 separate `cron:` entries — IST is UTC+5:30) and commits `data/customer_app.json`
+  3:00 PM, 6:00 PM, 9:00 PM **IST** (cron times are in UTC: `30 3 * * *`, `30 9 * * *`,
+  `30 12 * * *`, `30 15 * * *` — IST is UTC+5:30) and commits `data/customer_app.json`
   if it changed, rebasing onto `main` first to avoid racing the Referral Apps
   Script's own automated pushes (same race this session already hit manually once —
   see the note on that above). Also has a `workflow_dispatch` trigger for a manual
   run from the Actions tab.
-  - **Blocking dependency: Yash must add a repo secret himself** — Claude has no
-    access to repo secrets and never reads/prints the actual key value. Steps: repo
-    Settings → Secrets and variables → Actions → New repository secret → name
-    `METABASE_API_KEY` → value = the same string in `.metabase_key/metabase_key.txt`.
-  - **Not pushed to `origin/main` yet** — a scheduled workflow is a standing,
-    self-perpetuating automation once it's live on the default branch (it'll keep
-    auto-committing 4x/day indefinitely), so per the safety-conscious workflow this
-    project follows for `index.html`, this needed Yash's explicit go-ahead before
-    pushing, same discipline as the dashboard file itself — don't push without
-    that even though the files already exist locally.
-  - YAML validity checked locally (`pyyaml.safe_load`) — not run end-to-end in a
-    real Actions environment yet (can't be, without the secret in place).
+  - Yash added the required `METABASE_API_KEY` repo secret himself (Settings →
+    Secrets and variables → Actions) — Claude has no access to repo secrets and
+    never read/printed the actual key value at any point.
+  - Committed and pushed 2026-08-05 (commit `41bf777`), after Yash's explicit
+    go-ahead — treated as a standing/persistent automation requiring that
+    confirmation before going live, same discipline as `index.html` changes.
+  - **Not yet verified end-to-end in a real Actions run** — only checked for YAML
+    validity locally (`pyyaml.safe_load`) before pushing, since a real run needs the
+    secret in place. If Customer App data ever looks stale, check the workflow's run
+    history in the repo's Actions tab (or trigger a manual `workflow_dispatch` run)
+    before assuming the pipeline is broken — don't just re-diagnose from scratch.
 - `data/customer_app.json` — ~58,300 rows as of 2026-08-03 (one per active/completed
   project, not per login — row count moves slightly between pulls, live production
   data), ~15.9 MB. Contains real customer-level data (`sseid`, `lead_id`, login

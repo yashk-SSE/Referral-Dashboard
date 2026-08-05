@@ -63,6 +63,17 @@ def load_api_key():
     env_key = os.environ.get("METABASE_API_KEY")
     if env_key:
         return env_key.strip()
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # Fail with a message that actually points at the fix, instead of a bare
+        # FileNotFoundError for a path that was never expected to exist in CI --
+        # confirmed 2026-08-05 this is exactly what happens when the secret is
+        # missing/misnamed/empty (a 2026-08-04 run failed this way).
+        raise SystemExit(
+            "METABASE_API_KEY is not set (or is empty) in this GitHub Actions run. "
+            "Check Settings > Secrets and variables > Actions > Repository secrets "
+            "for a secret named exactly METABASE_API_KEY (case-sensitive, no extra "
+            "spaces) -- Environment/Codespaces/Dependabot secrets don't count here."
+        )
     with open(KEY_FILE, "r", encoding="utf-8") as f:
         return f.read().strip()
 
