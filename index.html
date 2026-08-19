@@ -153,6 +153,22 @@ tbody tr:hover{background:var(--s2)}
   background:var(--sur);
   box-shadow:0 1px 4px rgba(0,0,0,.06);
 }
+/* Frozen header row(s) + first column for wide tables (City Summary, MOP vs MTD,
+   Actuals vs MOP) -- own internal scroll box so header/city stay pinned while
+   scrolling down or right, independent of the page's own sticky top bar. Applied
+   via an added "freeze" class on the .tw wrapper, so unaffected tables elsewhere
+   in the dashboard are untouched. Row-2 top offset is measured against this app's
+   actual rendered header height (2 stacked ~11px/10.5px header rows) -- if the
+   header font-size/padding ever changes, re-measure and adjust FREEZE_ROW2_TOP.
+*/
+.tw.freeze{max-height:72vh;overflow:auto;position:relative}
+.tw.freeze table{border-collapse:separate;border-spacing:0}
+.tw.freeze thead tr:first-child th{position:sticky;top:0;z-index:5}
+.tw.freeze thead tr:nth-child(2) th{position:sticky;top:28px;z-index:5}
+#city-perf-tw thead tr:nth-child(2) th{top:27px}
+.tw.freeze td:first-child,.tw.freeze th:first-child{position:sticky;left:0;z-index:6;background:var(--sur);box-shadow:2px 0 4px rgba(0,0,0,.08)}
+.tw.freeze thead th:first-child{z-index:7;background:#f1f3f6}
+.tw.freeze tbody tr td:first-child{background:var(--sur)}
 #sticky-hdr .sticky-tab-name{
   font-size:13px;font-weight:700;color:var(--tx);
   border-left:3px solid var(--bl);padding-left:8px;
@@ -409,6 +425,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="nav-group">
     <div class="ni active" onclick="sw('exec',this)">⬡ Executive</div>
     <div class="ni" onclick="sw('mop',this)">⊞ MOP vs MTD</div>
+    <div class="ni" onclick="sw('avm',this)">⊟ Actuals vs MOP</div>
     <div class="ni" onclick="sw('india',this)">◈ India Summary</div>
     <div class="ni" onclick="sw('funnel',this)">▽ Funnel (Effort)</div>
     <div class="ni" onclick="sw('m0funnel',this)">▽ Funnel (M0)</div>
@@ -507,6 +524,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   </div>
   <div id="p-exec" class="panel active"><div class="loading"><div class="spin"></div><div>Loading data…</div></div></div>
   <div id="p-mop" class="panel"></div>
+  <div id="p-avm" class="panel"></div>
   <div id="p-india" class="panel"></div>
   <div id="p-city" class="panel"></div>
   <div id="p-sc" class="panel"></div>
@@ -949,7 +967,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel','cappdod'];
+  const allTabs=['exec','mop','avm','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel','cappdod'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -964,7 +982,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',avm:'Actuals vs MOP',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -1011,7 +1029,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
+  const m={exec:bExec,mop:bMop,avm:bAVM,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -1046,21 +1064,50 @@ function precomputeDigital(){
 // ================================================================
 // SORT UTILITY
 // ================================================================
+// Simulates the header grid (respecting rowspan/colspan) to find each cell's TRUE
+// table-column index. A flat `querySelectorAll('thead th')` index (the old approach)
+// only matches tbody <td> indices for a single-row <thead> -- any multi-row header
+// with group cells (rowspan="2" corner/spacer columns, colspan group titles, as used
+// by MOP vs MTD / Actuals vs MOP / City Summary) silently mis-sorted the wrong column.
+// 2026-08-19: found while wiring up sort on those 3 tables.
+function computeHeaderGrid(theadRows){
+  const grid=[];
+  return theadRows.map((row,r)=>{
+    if(!grid[r])grid[r]=[];
+    let c=0;
+    return[...row.querySelectorAll('th,td')].map(cell=>{
+      while(grid[r][c])c++;
+      const rs=parseInt(cell.getAttribute('rowspan')||'1',10);
+      const cs=parseInt(cell.getAttribute('colspan')||'1',10);
+      for(let rr=r;rr<r+rs;rr++){
+        if(!grid[rr])grid[rr]=[];
+        for(let cc=c;cc<c+cs;cc++)grid[rr][cc]=true;
+      }
+      const col=c;
+      c+=cs;
+      return{el:cell,col};
+    });
+  });
+}
 function makeSortable(tableEl){
   if(!tableEl||tableEl.dataset.sortable)return;
   tableEl.dataset.sortable='1';
-  const ths=tableEl.querySelectorAll('thead th');
-  ths.forEach((th,ci)=>{
+  const theadRows=[...tableEl.querySelectorAll('thead tr')];
+  if(!theadRows.length)return;
+  // Only the LAST header row's cells map 1:1 onto tbody columns (group-header cells
+  // in earlier rows aren't sortable targets themselves).
+  const lastRowCells=computeHeaderGrid(theadRows).pop();
+  lastRowCells.forEach(({el:th,col:ci})=>{
     th.classList.add('sortable');
     th.addEventListener('click',()=>{
       const asc=th.dataset.sort!=='asc';
-      ths.forEach(t=>{t.dataset.sort='';t.classList.remove('sort-asc','sort-desc');});
+      lastRowCells.forEach(({el:t})=>{t.dataset.sort='';t.classList.remove('sort-asc','sort-desc');});
       th.dataset.sort=asc?'asc':'desc';
       th.classList.toggle('sort-asc',asc);th.classList.toggle('sort-desc',!asc);
       const tbody=tableEl.querySelector('tbody')||tableEl;
       const rows=[...tbody.querySelectorAll('tr')];
       // pin India/total rows at top
-      const pin=rows.filter(r=>r.querySelector('td:first-child')?.textContent?.trim()==='India');
+      const pin=rows.filter(r=>r.querySelector('td:first-child')?.textContent?.trim().startsWith('India'));
       const sort=rows.filter(r=>!pin.includes(r));
       sort.sort((a,b)=>{
         const av=cellVal(a,ci),bv=cellVal(b,ci);
@@ -1856,7 +1903,7 @@ function bMop(){
   <span style="background:var(--s2);color:var(--t2);padding:2px 8px;border-radius:6px">Hover cells for detail</span>
 </div>
 <div class="fbar"><span id="mop-tier-mc-wrap"></span><span id="mop-city-mc-wrap"></span></div>
-<div class="tw" id="mop-tbl"><table>
+<div class="tw freeze" id="mop-tbl"><table>
   <thead>
     <tr>
       <th rowspan="2" style="min-width:100px;background:#f1f3f6;color:#374151">City</th>
@@ -1881,6 +1928,7 @@ function bMop(){
   // widgets up here now.
   initMopMC();
   insertMSWidget('mop-tier-mc-wrap','mop-tier',TIER_OPTIONS,TIER_CFG,()=>filterMopTable());
+  autoSort(document.getElementById('mop-tbl'));
 }
 function filterMop(cfArr,tf){
   const yd=C.yd,doneD=yd.getDate();
@@ -1911,6 +1959,132 @@ function filterMop(cfArr,tf){
   const cities=cfArr.length?mopCities.filter(c=>cfArr.includes(c)):(tf.length?mopCities.filter(c=>tierOk(tf,TIERS[c])):mopCities);
   const tbody=document.querySelector('#mop-tbl tbody');
   if(tbody)tbody.innerHTML=cityRowHtml(null,true)+cities.map(c=>cityRowHtml(c,false)).join('');
+}
+
+// ??????????????????????????????????????
+// ACTUALS vs MOP -- Order-deficit bridge (BQL Volume / BQL->MD Conv. / MD->Order Conv.)
+// live tab. Uses MOP's own BQL->MD and MD->Order implied rates (NOT the 3-stage
+// BQL-MS-MD-Order funnel) -- per Yash's explicit spec, 2026-08. Reads C.cMTD/C.india
+// (already Effort-basis) and MOP (already BTL-toggle-aware via setBtlSwitch), so this
+// tab tracks live/daily with zero extra plumbing -- flip the existing top-bar BTL
+// switch and this table recomputes like every other Referral tab.
+function avmCalc(v,t,doneD,totalDays){
+  const frac=doneD/totalDays;
+  const tB=t.BQL||0,tD=t.MD||0,tO=t.ORDER||0;
+  const aB=v.BQL||0,aD=v.MD||0,aO=v.Order||0;
+  const mtdB=tB*frac,mtdO=tO*frac;
+  const r1t=tB?tD/tB:0, r2t=tD?tO/tD:0;
+  const r1a=aB?aD/aB:0, r2a=aD?aO/aD:0;
+  const bqlDef=aB-mtdB, ordDef=aO-mtdO;
+  const bqlEff=bqlDef*r1t*r2t;
+  const conv1=aB*(r1a-r1t)*r2t;
+  const conv2=aB*r1a*(r2a-r2t);
+  const effs=[['BQL Volume',Math.abs(bqlEff)],['BQL→MD Conv.',Math.abs(conv1)],['MD→Order Conv.',Math.abs(conv2)]];
+  const driver=effs.sort((a,b)=>b[1]-a[1])[0][0];
+  return{tB,tD,tO,mtdB,mtdO,r1t:r1t*100,r2t:r2t*100,aB,aD,aO,r1a:r1a*100,r2a:r2a*100,
+         bqlDef,ordDef,r1Def:(r1a-r1t)*100,r2Def:(r2a-r2t)*100,
+         bqlEff,conv1,conv2,driver,bqlProj:frac?aB/frac:0,ordProj:frac?aO/frac:0};
+}
+function avmNum(n,dec){return n==null||isNaN(n)?'-':n.toLocaleString('en-IN',{minimumFractionDigits:dec||0,maximumFractionDigits:dec||0});}
+function avmSigned(n,dec,suffix){const s=n>=0?'+':'';return`<span class="${n>=0?'green':'red'}">${s}${avmNum(n,dec)}${suffix||''}</span>`;}
+function avmRowHtml(city,isIndia,doneD,totalDays){
+  const key=isIndia?'India':city;
+  const t=MOP[key]||{};
+  const v=isIndia?C.india:(C.cMTD[city]||{BQL:0,MD:0,Order:0});
+  const tier=isIndia?'India':(TIERS[city]||'');
+  const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-top:2px solid var(--bl)"':'';
+  const r=avmCalc(v,t,doneD,totalDays);
+  return`<tr ${rowStyle}>
+    <td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>
+    <td class="neu" style="border-left:2px solid #adb5bd">${f(r.tB)}</td>
+    <td class="neu">${avmNum(r.mtdB,1)}</td>
+    <td class="neu">${f(r.tO)}</td>
+    <td class="neu">${avmNum(r.mtdO,1)}</td>
+    <td class="neu">${avmNum(r.r1t,1)}%</td>
+    <td class="neu">${avmNum(r.r2t,1)}%</td>
+    <td style="border-left:2px solid #6b7280;font-weight:600">${f(r.aB)}</td>
+    <td style="font-weight:600">${f(r.aO)}</td>
+    <td>${avmNum(r.r1a,1)}%</td>
+    <td>${avmNum(r.r2a,1)}%</td>
+    <td style="border-left:2px solid #9ca3af">${avmSigned(r.bqlDef,1)}</td>
+    <td style="font-weight:600">${avmSigned(r.ordDef,1)}</td>
+    <td>${avmSigned(r.r1Def,1,'pp')}</td>
+    <td>${avmSigned(r.r2Def,1,'pp')}</td>
+    <td style="border-left:2px solid #d1d5db">${avmSigned(r.bqlEff,1)}</td>
+    <td>${avmSigned(r.conv1,1)}</td>
+    <td>${avmSigned(r.conv2,1)}</td>
+    <td><span class="badge ${r.driver==='BQL Volume'?'bb':r.driver==='BQL→MD Conv.'?'ba':'bx'}" style="white-space:nowrap">${r.driver}</span></td>
+    <td style="border-left:2px solid #d1d5db">${avmNum(r.bqlProj,1)}</td>
+    <td>${avmNum(r.ordProj,1)}</td>
+  </tr>`;
+}
+function bAVM(){
+  const yd=C.yd,doneD=yd.getDate(),totalDays=dim(yd);
+  const indiaCalc=avmCalc(C.india,MOP.India||{},doneD,totalDays);
+  document.getElementById('p-avm').innerHTML=`
+<div class="ptitle">Actuals vs MOP — Order Deficit &amp; Loss Attribution</div>
+<div class="psub">MTD Day ${doneD}/${totalDays} · Order deficit decomposed using MOP's own BQL→MD &amp; MD→Order implied rates (not the BQL-MS-MD-Order funnel) · Toggle BTL with the top-bar switch — this table follows it live</div>
+<div class="mgrid">
+  <div class="mc"><div class="mc-lbl">India MTD Order Deficit</div><div class="mc-val ${indiaCalc.ordDef<0?'red':'green'}">${avmNum(indiaCalc.ordDef,0)}</div></div>
+  <div class="mc"><div class="mc-lbl">Loss: BQL Volume</div><div class="mc-val ${indiaCalc.bqlEff<0?'red':'green'}">${avmNum(indiaCalc.bqlEff,0)}</div></div>
+  <div class="mc"><div class="mc-lbl">Loss: BQL→MD Conv.</div><div class="mc-val ${indiaCalc.conv1<0?'red':'green'}">${avmNum(indiaCalc.conv1,0)}</div></div>
+  <div class="mc"><div class="mc-lbl">Loss: MD→Order Conv.</div><div class="mc-val ${indiaCalc.conv2<0?'red':'green'}">${avmNum(indiaCalc.conv2,0)}</div></div>
+  <div class="mc"><div class="mc-lbl">Primary Driver (India)</div><div class="mc-val" style="font-size:14px">${indiaCalc.driver}</div></div>
+</div>
+<div class="fbar"><span id="avm-tier-mc-wrap"></span><span id="avm-city-mc-wrap"></span></div>
+<div class="tw freeze" id="avm-tbl"><table>
+  <thead>
+    <tr>
+      <th rowspan="2" style="min-width:100px;background:#f1f3f6;color:#374151">City</th>
+      <th colspan="6" style="text-align:center;background:#dbeafe;color:#1e40af;border-left:2px solid #adb5bd">MOP Targets</th>
+      <th colspan="4" style="text-align:center;background:#e2efda;color:#166534;border-left:2px solid #6b7280">Actuals</th>
+      <th colspan="4" style="text-align:center;background:#fce4d6;color:#9c4221;border-left:2px solid #9ca3af">Deficit</th>
+      <th colspan="4" style="text-align:center;background:#fff2cc;color:#7c5e00;border-left:2px solid #d1d5db">Order Loss Attribution</th>
+      <th colspan="2" style="text-align:center;background:#ead1dc;color:#702459;border-left:2px solid #d1d5db">Projections</th>
+    </tr>
+    <tr>
+      <th style="background:#eff6ff;border-left:2px solid #adb5bd">BQL Target</th>
+      <th style="background:#eff6ff">MTD BQL Target</th>
+      <th style="background:#eff6ff">Order Target</th>
+      <th style="background:#eff6ff">MTD Order Target</th>
+      <th style="background:#eff6ff">BQL→MD Target%</th>
+      <th style="background:#eff6ff">MD→Order Target%</th>
+      <th style="background:#f0fdf4;border-left:2px solid #6b7280">MTD BQL Actual</th>
+      <th style="background:#f0fdf4">MTD Order Actual</th>
+      <th style="background:#f0fdf4">BQL→MD Actual%</th>
+      <th style="background:#f0fdf4">MD→Order Actual%</th>
+      <th style="background:#fef2f2;border-left:2px solid #9ca3af">MTD BQL Deficit</th>
+      <th style="background:#fef2f2">MTD Order Deficit</th>
+      <th style="background:#fef2f2">BQL→MD Deficit(pp)</th>
+      <th style="background:#fef2f2">MD→Order Deficit(pp)</th>
+      <th style="background:#fffbeb;border-left:2px solid #d1d5db">Loss by BQL Deficit</th>
+      <th style="background:#fffbeb">Loss by BQL→MD Deficit</th>
+      <th style="background:#fffbeb">Loss by MD→Order Deficit</th>
+      <th style="background:#fffbeb">Primary Driver</th>
+      <th style="background:#fdf2f8;border-left:2px solid #d1d5db">BQL Projected</th>
+      <th style="background:#fdf2f8">Order Projected</th>
+    </tr>
+  </thead>
+  <tbody>${avmRowHtml(null,true,doneD,totalDays)}${CITIES.filter(hasMop).sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);}).map(c=>avmRowHtml(c,false,doneD,totalDays)).join('')}</tbody>
+</table></div>
+<div style="font-size:11px;color:var(--t3);margin-top:8px">Note: cities with MTD activity but no MOP target this month aren't shown here but are included in the India row (small, expected gap per CLAUDE.md Sec.6).</div>`;
+  initAvmMC();
+  insertMSWidget('avm-tier-mc-wrap','avm-tier',TIER_OPTIONS,TIER_CFG,()=>filterAvmTable());
+  autoSort(document.getElementById('avm-tbl'));
+}
+function initAvmMC(){
+  const w=document.getElementById('avm-city-mc-wrap');
+  if(w&&!w.dataset.init){w.dataset.init='1';const mc=buildMultiCity('avm-city',()=>filterAvmTable());w.appendChild(mc);}
+}
+function filterAvmTable(){
+  const yd=C.yd,doneD=yd.getDate(),totalDays=dim(yd);
+  const tf=getMSVal('avm-tier',TIER_OPTIONS);
+  const cfArr=getMCVal('avm-city');
+  const mopCities=CITIES.filter(hasMop);
+  const cities=cfArr.length?mopCities.filter(c=>cfArr.includes(c)):(tf.length?mopCities.filter(c=>tierOk(tf,TIERS[c])):mopCities);
+  const sorted=cities.sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);});
+  const tbody=document.querySelector('#avm-tbl tbody');
+  if(tbody)tbody.innerHTML=avmRowHtml(null,true,doneD,totalDays)+sorted.map(c=>avmRowHtml(c,false,doneD,totalDays)).join('');
 }
 
 // ??????????????????????????????????????
@@ -2059,6 +2233,24 @@ function bCity(){
     const ppBadge=pp!==null?`<span class="${cls}" style="font-size:9px;margin-left:2px" title="vs LMTD: ${prev}%">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';
     return`<span title="Current: ${curr}% | LMTD: ${prev??'-'}%">${curr}%${ppBadge}</span>`;
   };
+  // Funnel rate vs MOP's own implied target rate (numKey/denKey off the city's full-month
+  // MOP row) plus LMTD, shown together like the absolute-metric vsMop() above. Only used
+  // for BQL->MD and MD->Order per Yash's explicit spec (2026-08) -- BQL->MS/MS->MD/
+  // MD->HOTO/BQL->Ord/BQL->HOTO stay LMTD-only via funnelPct above, since MOP doesn't
+  // define targets at that granularity for this analysis.
+  const funnelPctMop=(a,b,cityKey,numKey,denKey,pa,pb)=>{
+    if(!b)return'-';
+    const curr=a/b*100;
+    const mp=MOP[cityKey]||{};
+    const mopDen=mp[denKey]||0,mopNum=mp[numKey]||0;
+    const mopRate=mopDen?mopNum/mopDen*100:null;
+    const lmtd=pb?pa/pb*100:null;
+    const cls=mopRate!=null?(curr>=mopRate?'green':'red'):'';
+    const mopBadge=mopRate!=null?`<span style="font-size:9px;color:var(--t3)">/${mopRate.toFixed(1)}%</span>`:'';
+    const lmtdBadge=lmtd!=null?`<span style="font-size:9px;color:var(--t3)"> /${lmtd.toFixed(1)}%</span>`:'';
+    const tip=`title="Actual: ${curr.toFixed(1)}% | MOP Target: ${mopRate!=null?mopRate.toFixed(1)+'%':'-'} | LMTD: ${lmtd!=null?lmtd.toFixed(1)+'%':'-'}"`;
+    return`<span ${tip}><span class="mono ${cls}">${curr.toFixed(1)}%</span>${mopBadge}${lmtdBadge}</span>`;
+  };
   const rows=CITIES.map(c=>{
     const v=C.cMTD[c],pv=C.cLMTD[c];
     return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mO:C.mopMTD(c,'ORDER'),mB:C.mopMTD(c,'BQL'),mMS:C.mopMTD(c,'MS'),mMD:C.mopMTD(c,'MD'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
@@ -2083,10 +2275,10 @@ function bCity(){
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${funnelPct(indV.MS,indV.BQL,indPV.MS,indPV.BQL)}</td>
     <td>${funnelPct(indV.MD,indV.MS,indPV.MD,indPV.MS)}</td>
-    <td>${funnelPct(indV.Order,indV.MD,indPV.Order,indPV.MD)}</td>
+    <td>${funnelPctMop(indV.MD,indV.BQL,'India','MD','BQL',indPV.MD,indPV.BQL)}</td>
+    <td>${funnelPctMop(indV.Order,indV.MD,'India','ORDER','MD',indPV.Order,indPV.MD)}</td>
     <td>${funnelPct(indV.HOTO,indV.MD,indPV.HOTO,indPV.MD)}</td>
     <td>${funnelPct(indV.Order,indV.BQL,indPV.Order,indPV.BQL)}</td>
-    <td>${funnelPct(indV.HOTO,indV.BQL,indPV.HOTO,indPV.BQL)}</td>
   </tr>`;
   const tbl=indRow+rows.map(r=>`<tr>
     <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
@@ -2098,10 +2290,10 @@ function bCity(){
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${funnelPct(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td>
     <td>${funnelPct(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td>
-    <td>${funnelPct(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td>
+    <td>${funnelPctMop(r.v.MD,r.v.BQL,r.c,'MD','BQL',r.pv.MD,r.pv.BQL)}</td>
+    <td>${funnelPctMop(r.v.Order,r.v.MD,r.c,'ORDER','MD',r.pv.Order,r.pv.MD)}</td>
     <td>${funnelPct(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td>
     <td>${funnelPct(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td>
-    <td>${funnelPct(r.v.HOTO,r.v.BQL,r.pv.HOTO,r.pv.BQL)}</td>
   </tr>`).join('');
   const drills=rows.filter(r=>r.v.BQL>0||r.v.HOTO>0).map(r=>{
     const scd=SCS.map(s=>({s,v:C.cscMTD[r.c][s],pv:C.cscLMTD[r.c][s]})).filter(x=>x.v.BQL>0||x.v.HOTO>0);
@@ -2200,17 +2392,17 @@ function bCity(){
   <span style="color:#166534;font-weight:600">Green = surplus (≥95%)</span> · 
   <span style="color:#991b1b;font-weight:600">Red = deficit (&lt;95%)</span>
 </div>
-<div class="tw"><table>
+<div class="tw freeze" id="city-perf-tw"><table>
 <thead>
 <tr>
   <th rowspan="2">City</th>
   <th colspan="5" style="text-align:center;background:#dbeafe;color:#1e40af;border-bottom:0;border-left:3px solid #3b82f6">Absolute Metrics — MOP MTD &amp; LMTD</th>
   <th style="min-width:6px;background:#e5e7eb;padding:0" rowspan="2"></th>
-  <th colspan="6" style="text-align:center;background:#f0fdf4;color:#166534;border-bottom:0;border-left:3px solid #22c55e">Funnel Rates — vs LMTD</th>
+  <th colspan="6" style="text-align:center;background:#f0fdf4;color:#166534;border-bottom:0;border-left:3px solid #22c55e">Funnel Rates — vs LMTD (BQL→MD &amp; MD→Ord also vs MOP Target)</th>
 </tr>
 <tr>
   <th style="background:#eff6ff;color:#1e40af;border-left:3px solid #3b82f6">BQL</th><th style="background:#eff6ff;color:#1e40af">MS</th><th style="background:#eff6ff;color:#1e40af">MD</th><th style="background:#eff6ff;color:#1e40af">Order</th><th style="background:#eff6ff;color:#1e40af">HOTO</th>
-  <th style="background:#f0fdf4;color:#166534;border-left:3px solid #22c55e">BQL→MS%</th><th style="background:#f0fdf4;color:#166534">MS→MD%</th><th style="background:#f0fdf4;color:#166534">MD→Ord%</th><th style="background:#f0fdf4;color:#166534">MD→HOTO%</th><th style="background:#f0fdf4;color:#166534">BQL→Ord%</th><th style="background:#f0fdf4;color:#166534">BQL→HOTO%</th>
+  <th style="background:#f0fdf4;color:#166534;border-left:3px solid #22c55e">BQL→MS%</th><th style="background:#f0fdf4;color:#166534">MS→MD%</th><th style="background:#f0fdf4;color:#166534" title="Actual / MOP Target / LMTD">BQL→MD%</th><th style="background:#f0fdf4;color:#166534" title="Actual / MOP Target / LMTD">MD→Ord%</th><th style="background:#f0fdf4;color:#166534">MD→HOTO%</th><th style="background:#f0fdf4;color:#166534">BQL→Ord%</th>
 </tr>
 </thead>
 <tbody id="city-tbody">${tbl}</tbody></table></div>
@@ -2221,6 +2413,7 @@ function bCity(){
   initCityMC();
   insertMSWidget('city-tier-mc-wrap','city-tier',TIER_OPTIONS,TIER_CFG,()=>filterCityTable());
   insertMSWidget('city-sc-f-mc-wrap','city-sc-f',SCS,SC_CFG,()=>filterCityTable());
+  autoSort(document.getElementById('city-perf-tw'));
 }
 function initCityMC(){
   const w=document.getElementById('city-city-mc-wrap');
@@ -2260,6 +2453,28 @@ function filterCityTable(){
     const ppBadge=pp!==null?`<span class="${cls}" style="font-size:9px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';
     return`<span title="Current: ${c2}% | LMTD: ${p2??'-'}%">${c2}%${ppBadge}</span>`;
   };
+  // Same as bCity()'s funnelPctMop -- BQL->MD & MD->Order shown vs MOP target rate + LMTD,
+  // not just LMTD (kept as a duplicate here to match this function's existing pattern of
+  // not sharing closures with bCity(), same as fP2 above duplicating funnelPct).
+  const fPMopCore=(curr,mopNum,mopDen,lmtd)=>{
+    const mopRate=mopDen?mopNum/mopDen*100:null;
+    const cls=mopRate!=null?(curr>=mopRate?'green':'red'):'';
+    const mopBadge=mopRate!=null?`<span style="font-size:9px;color:var(--t3)">/${mopRate.toFixed(1)}%</span>`:'';
+    const lmtdBadge=lmtd!=null?`<span style="font-size:9px;color:var(--t3)"> /${lmtd.toFixed(1)}%</span>`:'';
+    const tip=`title="Actual: ${curr.toFixed(1)}% | MOP Target: ${mopRate!=null?mopRate.toFixed(1)+'%':'-'} | LMTD: ${lmtd!=null?lmtd.toFixed(1)+'%':'-'}"`;
+    return`<span ${tip}><span class="mono ${cls}">${curr.toFixed(1)}%</span>${mopBadge}${lmtdBadge}</span>`;
+  };
+  const fPMop2=(a,b,cityKey,numKey,denKey,pa,pb)=>{
+    if(!b)return'-';
+    const mp=MOP[cityKey]||{};
+    return fPMopCore(a/b*100,mp[numKey]||0,mp[denKey]||0,pb?pa/pb*100:null);
+  };
+  // For the "India (filtered)" aggregate row -- MOP num/den already summed across the
+  // filtered cities (aggMop), no single cityKey to look up.
+  const fPMopAgg2=(a,b,mopNum,mopDen,pa,pb)=>{
+    if(!b)return'-';
+    return fPMopCore(a/b*100,mopNum,mopDen,pb?pa/pb*100:null);
+  };
   // Build India aggregated row
   const indRow=(tf.length||cityFArr.length>0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)">
     <td><strong>India (filtered)</strong><span class="ctag" style="background:#1a56db;color:#fff">${cityFArr.length>0?cityFArr.length+' cities':tfLbl}</span></td>
@@ -2267,14 +2482,16 @@ function filterCityTable(){
     <td>${vM2(aggV.Order,indMO)}</td><td>${vM2(aggV.HOTO,indMH)}</td>
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${fP2(aggV.MS,aggV.BQL,aggPV.MS,aggPV.BQL)}</td><td>${fP2(aggV.MD,aggV.MS,aggPV.MD,aggPV.MS)}</td>
-    <td>${fP2(aggV.Order,aggV.MD,aggPV.Order,aggPV.MD)}</td><td>${fP2(aggV.HOTO,aggV.MD,aggPV.HOTO,aggPV.MD)}</td>
-    <td>${fP2(aggV.Order,aggV.BQL,aggPV.Order,aggPV.BQL)}</td><td>${fP2(aggV.HOTO,aggV.BQL,aggPV.HOTO,aggPV.BQL)}</td>
+    <td>${fPMopAgg2(aggV.MD,aggV.BQL,indMMD,indMB,aggPV.MD,aggPV.BQL)}</td>
+    <td>${fPMopAgg2(aggV.Order,aggV.MD,indMO,indMMD,aggPV.Order,aggPV.MD)}</td>
+    <td>${fP2(aggV.HOTO,aggV.MD,aggPV.HOTO,aggPV.MD)}</td>
+    <td>${fP2(aggV.Order,aggV.BQL,aggPV.Order,aggPV.BQL)}</td>
     </tr>`:''
   +(()=>{
     const iV=C.india,iPV=C.indiaL,iMH=C.mopMTD(null,'HOTO'),iMO=C.mopMTD(null,'ORDER'),iMB=C.mopMTD(null,'BQL'),iMMS=C.mopMTD(null,'MS'),iMMD=C.mopMTD(null,'MD');
-    return(!tf.length&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fP2(iV.Order,iV.MD,iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td><td>${fP2(iV.Order,iV.BQL,iPV.Order,iPV.BQL)}</td><td>${fP2(iV.HOTO,iV.BQL,iPV.HOTO,iPV.BQL)}</td></tr>`:'';
+    return(!tf.length&&cityFArr.length===0)?`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bl)"><td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td><td>${vM2(iV.BQL,iMB)}</td><td>${vM2(iV.MS,iMMS)}</td><td>${vM2(iV.MD,iMMD)}</td><td>${vM2(iV.Order,iMO)}</td><td>${vM2(iV.HOTO,iMH)}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(iV.MS,iV.BQL,iPV.MS,iPV.BQL)}</td><td>${fP2(iV.MD,iV.MS,iPV.MD,iPV.MS)}</td><td>${fPMop2(iV.MD,iV.BQL,'India','MD','BQL',iPV.MD,iPV.BQL)}</td><td>${fPMop2(iV.Order,iV.MD,'India','ORDER','MD',iPV.Order,iPV.MD)}</td><td>${fP2(iV.HOTO,iV.MD,iPV.HOTO,iPV.MD)}</td><td>${fP2(iV.Order,iV.BQL,iPV.Order,iPV.BQL)}</td></tr>`:'';
   })();
-  if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mO||C.mopMTD(r.c,'ORDER'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fP2(r.v.Order,r.v.MD,r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td><td>${fP2(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td><td>${fP2(r.v.HOTO,r.v.BQL,r.pv.HOTO,r.pv.BQL)}</td></tr>`).join('');
+  if(tb)tb.innerHTML=indRow+rows.map(r=>`<tr><td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td><td>${vM2(r.v.BQL,r.mB||C.mopMTD(r.c,'BQL'))}</td><td>${vM2(r.v.MS,C.mopMTD(r.c,'MS'))}</td><td>${vM2(r.v.MD,C.mopMTD(r.c,'MD'))}</td><td>${vM2(r.v.Order,r.mO||C.mopMTD(r.c,'ORDER'))}</td><td>${vM2(r.v.HOTO,r.mH||C.mopMTD(r.c,'HOTO'))}</td><td style="background:#e5e7eb;padding:0"></td><td>${fP2(r.v.MS,r.v.BQL,r.pv.MS,r.pv.BQL)}</td><td>${fP2(r.v.MD,r.v.MS,r.pv.MD,r.pv.MS)}</td><td>${fPMop2(r.v.MD,r.v.BQL,r.c,'MD','BQL',r.pv.MD,r.pv.BQL)}</td><td>${fPMop2(r.v.Order,r.v.MD,r.c,'ORDER','MD',r.pv.Order,r.pv.MD)}</td><td>${fP2(r.v.HOTO,r.v.MD,r.pv.HOTO,r.pv.MD)}</td><td>${fP2(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td></tr>`).join('');
   setTimeout(()=>autoSort(document.querySelector('#city-tbody')?.closest('table')),50);
 }
 
