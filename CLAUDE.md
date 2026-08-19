@@ -17,6 +17,71 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-08-19 (updated — new "Actuals vs MOP" tab + City Summary/sort/freeze
+polish, LIVE and pushed):**
+
+- **New `avm` "Actuals vs MOP" tab is LIVE in `index.html`/`origin/main`**
+  (commit `7fd723b`, reviewed and pushed same session). Sits right under "MOP vs
+  MTD" in the sidebar. India row + all 27 cities with an Aug'26 MOP target,
+  tier-sorted, grouped columns: **MOP Targets** / Actuals / Deficit / **Order
+  Loss Attribution** / Projections (group header labels exactly as named —
+  Yash asked for these specific wordings over the tab's original draft
+  "Target"/"Loss Attribution"). Decomposes the MTD Order deficit into 3
+  effects using a sequential-substitution bridge, built off **MOP's own
+  BQL→MD and MD→Order implied rates — deliberately NOT the dashboard's usual
+  3-stage BQL→MS→MD→Order funnel**, per Yash's explicit spec:
+  1. **BQL Volume effect** — `(actualBQL - mtdTargetBQL) * targetR1 * targetR2`
+  2. **BQL→MD Conversion effect** — `actualBQL * (actualR1 - targetR1) * targetR2`
+  3. **MD→Order Conversion effect** — `actualBQL * actualR1 * (actualR2 - targetR2)`
+
+  where R1 = MD/BQL rate, R2 = Order/MD rate, target = full-month MOP figures
+  (ratio-invariant to prorating), actual = MTD. Sum of the 3 effects reconciles
+  exactly to the MTD Order deficit (verified). The tab reads off the *existing*
+  `ED`/`MOP` globals, so **no new BTL switch was built** — flipping the
+  top-bar BTL include/exclude toggle already recomputes this tab live, same as
+  every other Referral tab. `avm` is intentionally **not** in `REFERRAL_TABS`
+  (so it's skipped by Timeframe/6-month mode entirely, same precedent as the
+  unreached `aging` tab) — MOP tracking is inherently a current-month concept.
+- **City Summary changes, same commit:** added a **BQL→MD%** column; both
+  **BQL→MD%** and **MD→Ord%** now show Actual / MOP Target / LMTD together
+  (colored green/red vs the MOP target rate specifically) — the other funnel
+  columns (BQL→MS%, MS→MD%, MD→HOTO%, BQL→Ord%) deliberately stay LMTD-only,
+  per Yash's explicit instruction that MOP-rate comparison is only meaningful
+  for BQL→MD and MD→Order. **BQL→HOTO% column removed** entirely (5 render
+  sites updated: `bCity()`'s India + city rows, `filterCityTable()`'s filtered
+  aggregate + plain-India + per-city rows).
+- **Frozen header row(s) + City column**, same commit, on all 3 wide tables —
+  City Summary, MOP vs MTD, and the new Actuals vs MOP — via a new `.tw.freeze`
+  CSS class (own internal `max-height`/`overflow:auto` scroll box, independent
+  of the page's own sticky top bar, so no offset math against that bar was
+  needed). Two-row grouped headers get per-row `top` offsets tuned against
+  actual measured render heights (28px generically, 27px override for City
+  Summary's slightly shorter row — see `#city-perf-tw` CSS rule); re-measure
+  and adjust if header font-size/padding ever changes.
+- **⚠️ Found and fixed a real pre-existing bug in the shared `makeSortable()`
+  sort utility** (used by ~15+ tables dashboard-wide via `autoSort()`), while
+  wiring up column-sort for the 3 tables above: it indexed columns via a flat
+  count across *every* `<thead th>` (all header rows concatenated), which only
+  happens to line up with tbody `<td>` indices for a single-row header. Any
+  table with a grouped 2-row header (rowspan corner/spacer cells + colspan
+  group titles — exactly City Summary/MOP vs MTD/Actuals vs MOP's own layout)
+  was **silently sorting the wrong column** — e.g. clicking "MTD Order
+  Deficit" was actually sorting by "Loss by MD→Order Deficit". Rewrote it to
+  simulate the real header grid (`computeHeaderGrid()`, rowspan/colspan-aware)
+  so only the last header row's cells are clickable and each maps to its true
+  table-column index. Verified this didn't regress any pre-existing
+  single-row-header table elsewhere (BQL Quality, Sub-Channel, etc. all
+  re-tested after the change). India/aggregate rows stay pinned at the top of
+  every sort (fixed a related edge case: City Summary's India row wasn't
+  matching the old exact-match `'India'` pin check because its markup
+  concatenates a tier-badge span's text into the same cell — pin check is now
+  `startsWith('India')`).
+- A one-off Excel report (`Referral_MOP_Report_Aug26_v2.xlsx`, not tracked in
+  the repo) was also built this session with the same India+City MOP-vs-MTD
+  and Order-loss-bridge analysis, both with and without BTL, for Yash's own
+  offline use — mentioned here only for context, nothing in the repo depends
+  on it.
+
 **As of 2026-08-05, end of session (updated — 4th Customer App tab built, pending review):**
 
 - **Customer App is fully LIVE in `index.html`/`origin/main`** through: Phase 2
