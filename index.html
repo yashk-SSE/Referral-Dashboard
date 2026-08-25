@@ -614,6 +614,11 @@ function capTierSort(arr){
 
 // ?? DATE UTILS ??
 const D0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+// Strips time-of-day so two timestamps can be compared as calendar dates only --
+// used for Customer App Before/At-After-milestone comparisons, per Yash 2026-08:
+// a login on the SAME calendar date as the milestone counts as At/After, even if
+// its time-of-day is earlier than the milestone's own timestamp.
+const dateOnly=d=>{if(!d)return null;const t=new Date(d);t.setHours(0,0,0,0);return t;};
 const YD=()=>{const d=D0();d.setDate(d.getDate()-1);return d;};
 const MS0=d=>new Date(d.getFullYear(),d.getMonth(),1);
 const dim=(d)=>{const t=d||YD();return new Date(t.getFullYear(),t.getMonth()+1,0).getDate();};
@@ -6470,11 +6475,13 @@ ${insHtml}`;
 // date means that stage hasn't happened yet for this project, so the login is
 // treated as still being in the current window rather than skipped ahead.
 function capMilestone(l){
-  const t=l.loginAt;
-  if(!l.orderAt||t<l.orderAt)return CAPP_MILESTONES[0];
-  if(!l.hotoEffAt||t<l.hotoEffAt)return CAPP_MILESTONES[1];
-  if(!l.instAt||t<l.instAt)return CAPP_MILESTONES[2];
-  if(!l.commAt||t<l.commAt)return CAPP_MILESTONES[3];
+  // Date-only comparison (see dateOnly() above) -- a login on the SAME calendar
+  // date as a milestone counts as at/after that milestone, not before it.
+  const t=dateOnly(l.loginAt);
+  if(!l.orderAt||t<dateOnly(l.orderAt))return CAPP_MILESTONES[0];
+  if(!l.hotoEffAt||t<dateOnly(l.hotoEffAt))return CAPP_MILESTONES[1];
+  if(!l.instAt||t<dateOnly(l.instAt))return CAPP_MILESTONES[2];
+  if(!l.commAt||t<dateOnly(l.commAt))return CAPP_MILESTONES[3];
   return CAPP_MILESTONES[4];
 }
 
@@ -6773,7 +6780,7 @@ function capVelocityStats(scope,dateKey,from,to){
   // full login rate for this cohort regardless of timing -- shown alongside for
   // clarity, since at/after alone understates how many of the cohort have logged in
   // at all (some logged in earlier, in a prior milestone window). Per Yash, 2026-08.
-  const loggedInAtAfter=cohort.filter(l=>l.loginAt&&l.loginAt>=l[dateKey]);
+  const loggedInAtAfter=cohort.filter(l=>l.loginAt&&dateOnly(l.loginAt)>=dateOnly(l[dateKey]));
   const loggedInEver=cohort.filter(l=>l.loginAt);
   const days=loggedInAtAfter.map(l=>dD(l[dateKey],l.loginAt));
   const avg=days.length?days.reduce((s,v)=>s+v,0)/days.length:null;
@@ -6986,7 +6993,7 @@ function renderCAppDoD(){
       return dt&&dt.getFullYear()===y&&dt.getMonth()+1===m&&dt.getDate()===d;
     });
     const ever=cohort.filter(l=>l.loginAt).length;
-    const atAfter=cohort.filter(l=>l.loginAt&&l.loginAt>=l[dateKey]).length;
+    const atAfter=cohort.filter(l=>l.loginAt&&dateOnly(l.loginAt)>=dateOnly(l[dateKey])).length;
     dayRows.push({
       label:`${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`,
       count:cohort.length,
