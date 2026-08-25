@@ -22,8 +22,11 @@ in the dashboard's JavaScript, not here -- this script only pulls raw data.
 Requires .metabase_key/metabase_key.txt (gitignored, never committed) with
 the raw API key on its own line. Nothing in this script is a secret.
 """
+import csv
+import io
 import json
 import os
+import urllib.parse
 import urllib.request
 
 METABASE_BASE_URL = "https://metabase-lighthouse.solarsquare.in"
@@ -85,21 +88,34 @@ def load_query():
 
 def run_metabase_query(api_key, sql):
     # Metabase's /api/dataset defaults to a ~2000-row display cap even for a
-    # plain SELECT with no LIMIT -- this override is required to get the full
-    # result set instead of a silently truncated one. Confirmed 2026-08:
-    # without this, a 116,666-row query silently came back as exactly 2,000.
-    url = f"{METABASE_BASE_URL}/api/dataset"
-    payload = json.dumps({
-        "database": DATABASE_ID,
-        "type": "native",
-        "native": {"query": sql},
-        "constraints": {"max-results": 1000000, "max-results-bare-rows": 1000000},
-    }).encode("utf-8")
-    req = urllib.request.Request(url, data=payload, method="POST")
+    # plain SELECT with no LIMIT. Passing a "constraints": {"max-results": ...}
+    # override in the JSON payload used to work around this (confirmed 2026-08),
+    # but Metabase silently stopped honoring it at some point between the
+    # 2026-08-18 09:59 UTC and 13:24 UTC scheduled pulls -- every /api/dataset
+    # call since then came back hard-capped at exactly 2,000 rows again
+    # (confirmed 2026-08-19: `json_query.constraints` in the response was `None`
+    # even though we sent it, i.e. Metabase/the API gateway now drops the field
+    # entirely rather than just ignoring its value). This resurfaced as a real
+    # data bug -- Customer App tabs showing ~226 installs pan-India instead of
+    # the true ~60k population.
+    #
+    # Fix: use the CSV export endpoint (/api/dataset/csv) instead of the JSON
+    # one (/api/dataset). Confirmed 2026-08-19 this returns the FULL result set
+    # uncapped (60,244 rows vs a plain COUNT(*) of 60,244) with no constraints
+    # override needed at all. This is also what Metabase's own UI "Download
+    # results" button hits, so it's a first-class, intentionally-uncapped path,
+    # not a hack. If this ever regresses again, re-run the 4-query diagnostic
+    # (bare COUNT(*), bare SELECT via /api/dataset, bare SELECT via
+    # /api/dataset/csv) before assuming anything else changed.
+    url = f"{METABASE_BASE_URL}/api/dataset/csv"
+    payload = {"database": DATABASE_ID, "type": "native", "native": {"query": sql}}
+    body = urllib.parse.urlencode({"query": json.dumps(payload)}).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="POST")
     req.add_header("x-api-key", api_key)
-    req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req, timeout=180) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    with urllib.request.urlopen(req, timeout=240) as resp:
+        csv_text = resp.read().decode("utf-8")
+    return list(csv.DictReader(io.StringIO(csv_text)))
 
 
 def main():
@@ -111,18 +127,23 @@ def main():
     sql = load_query()
 
     print("Running query against Metabase...")
-    result = run_metabase_query(api_key, sql)
+    all_records = run_metabase_query(api_key, sql)
 
-    if "data" not in result:
-        print("ERROR: unexpected response from Metabase:")
-        print(json.dumps(result, indent=2)[:2000])
+    if not all_records:
+        print("ERROR: Metabase returned zero rows (or an unparseable response).")
         raise SystemExit(1)
 
-    cols = [c["name"] for c in result["data"]["cols"]]
-    rows = result["data"]["rows"]
-    print(f"Fetched {len(rows):,} rows. Columns: {cols}")
+    print(f"Fetched {len(all_records):,} rows. Columns: {list(all_records[0].keys())}")
 
-    all_records = [dict(zip(cols, row)) for row in rows]
+    # CSV round-trips booleans as the strings "true"/"false", and SQL NULLs as ""
+    # rather than a real null -- normalize both back to what the JSON pipeline
+    # used to produce, so the dashboard's existing null/boolean checks stay simple.
+    date_fields = ("order_booked_at", "hoto_at", "installation_at", "commissioning_at", "first_login_at")
+    for r in all_records:
+        r["date_anomaly"] = str(r.get("date_anomaly")).strip().lower() == "true"
+        for f in date_fields:
+            if r.get(f) == "":
+                r[f] = None
 
     # Drop rows with no real city -- per Yash, these should not appear in any
     # city-level breakdown rather than show up as a fake "blank" bucket.

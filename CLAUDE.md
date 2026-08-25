@@ -17,6 +17,57 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-08-25 (updated — found + fixed a real Customer App data-pipeline
+regression that had been silently live for about a week, pushed):**
+
+- **⚠️ The Customer App pipeline had been silently pulling only 2,000 of
+  ~60,244 projects since around 2026-08-18 13:24 UTC — roughly a week of
+  every Customer App number being wrong** before Yash caught it by noticing
+  the Login Velocity tab showing ~226 lifetime installs pan-India (expected
+  ~7,296 for a 2-month cohort). Root cause: Metabase stopped honoring the
+  `"constraints": {"max-results": ...}` override in the `/api/dataset` JSON
+  endpoint payload (confirmed 2026-08-25 via a live diagnostic query — the
+  response's own `json_query.constraints` came back `None` even though we
+  sent it, i.e. Metabase/the API gateway now drops the field rather than just
+  ignoring its value) — so every pull since 08-18 13:24 UTC silently reverted
+  to the ~2,000-row display cap, with **no error, timeout, or other signal**
+  that anything was wrong. Nothing in this repo changed to cause it —
+  confirmed via `git log` on `scripts/pull_customer_app.py`/
+  `customer_app_query.sql` (no edits since 2026-08-05) and by diffing row
+  counts across the auto-pull commit history (59,367 rows on the 08-18 09:59
+  UTC pull → exactly 2,000 on every pull since, for a full week). This is a
+  **Metabase-side behavior change**, not a query/schema change — a live
+  `COUNT(*)` against `project WHERE project_state IN ('active','completed')`
+  confirmed the true population is 60,244.
+- **Fix (in `scripts/pull_customer_app.py`, `run_metabase_query()`): switched
+  from the JSON `/api/dataset` endpoint to the CSV export endpoint
+  (`/api/dataset/csv`)** — confirmed this returns the full, uncapped result
+  set with no constraints override needed (this is the same endpoint
+  Metabase's own UI "Download results" button uses, so it's an
+  intentionally-uncapped path, not a workaround likely to get patched away).
+  Two small follow-on normalizations were needed since CSV round-trips values
+  differently than the old JSON response did: `date_anomaly` comes back as
+  the string `"true"`/`"false"` (normalized to a real bool), and NULL
+  timestamp fields come back as `""` rather than absent/`null` (normalized to
+  `None` for the 5 date fields before writing JSON) — both purely
+  representational, no logic changes. **If this ever regresses again**, the
+  script's own comment on `run_metabase_query()` has the exact 4-query
+  diagnostic to re-run (bare `COUNT(*)`, bare `SELECT` via `/api/dataset`,
+  bare `SELECT` via `/api/dataset/csv`) before assuming anything else changed.
+- **Re-pulled with the fix, verified, committed and pushed**
+  (`data/customer_app.json` now 60,234 rows / 34 cities after the null-city
+  drop + merge map — up from the broken 2,000). Re-checked the exact cohort
+  Yash flagged (Installation reached in Jun 1–Jul 31 2026): **7,282 in the
+  fixed data vs Yash's own reported ~7,296** — matches closely, confirms the
+  fix. The GitHub Actions scheduled pull (`pull_customer_app.yml`) needed no
+  changes itself — it just runs this script, so it picks up the fix
+  automatically on its next scheduled run.
+- **Every Customer App number pulled between 2026-08-18 13:24 UTC and this fix
+  landing (2026-08-25) was silently wrong (undercounted, ~97% of projects
+  missing)** — if Yash pulled any figures from the Customer App tabs during
+  that ~week-long window for reporting, they should be re-checked against the
+  now-fixed data.
+
 **As of 2026-08-19 (updated — new "Actuals vs MOP" tab + City Summary/sort/freeze
 polish, LIVE and pushed):**
 
@@ -746,10 +797,22 @@ independent pipeline from everything else in this file.
   never printed/read directly into a chat transcript — scripts read it from disk at
   runtime only).
 - **Metabase's `/api/dataset` silently caps results at ~2,000 rows** even for a plain
-  unaggregated `SELECT` — confirmed 2026-08 (a 116,666-row query came back as exactly
-  2,000 with no error). Fix: pass `"constraints": {"max-results": 1000000,
-  "max-results-bare-rows": 1000000}` in the query payload. Already baked into
-  `scripts/pull_customer_app.py` — don't drop this if the script is ever rewritten.
+  unaggregated `SELECT` — confirmed 2026-08. **Two different fixes across two
+  incidents, don't confuse them:**
+  1. Originally (2026-08-03), passing `"constraints": {"max-results": 1000000,
+     "max-results-bare-rows": 1000000}` in the query payload worked around it.
+  2. **Metabase silently stopped honoring that override sometime around
+     2026-08-18** — the cap came back with no error/warning, undercounting the
+     Customer App pipeline by ~97% for ~1 day before Yash caught it via an
+     obviously-wrong Login Velocity number. **Current fix (2026-08-19,
+     confirmed working): use the CSV export endpoint (`/api/dataset/csv`)
+     instead of the JSON one — it returns the full, uncapped result set with no
+     constraints override needed at all**, and is what Metabase's own "Download
+     results" button hits. Baked into `scripts/pull_customer_app.py`'s
+     `run_metabase_query()` — if row counts ever look wrong again, re-run the
+     diagnostic in that function's own comment before assuming anything else
+     changed (don't just re-add the old constraints-override fix, it's proven
+     not to be durable).
 
 ### Business logic (confirmed with Yash, 2026-08)
 - **Login definition:** `otps` table, `"isVerified" = 'True'` AND `source IN
