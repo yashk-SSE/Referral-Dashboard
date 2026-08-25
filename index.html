@@ -6787,6 +6787,43 @@ function capVelocityStats(scope,dateKey,from,to){
   };
 }
 
+// Generic CSV download helper -- Blob + temporary <a download> link, works in
+// any real browser (this is the live dashboard site, not a sandboxed preview).
+function csvEscape(v){
+  const s=String(v==null?'':v);
+  return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+function downloadCSV(filename,rows){
+  const csv=rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+// Exports exactly what the "By City" table is currently showing -- same stage,
+// date range, and city selection as the on-screen filters, recomputed fresh
+// (not scraped from the rendered HTML) so formatting/rounding stays consistent.
+function exportCAppVelCSV(){
+  const dateKey=CAPPVEL_STAGE_CFG[CAPPVEL_STAGE].key;
+  const stageLbl=CAPPVEL_STAGE_CFG[CAPPVEL_STAGE].label;
+  const india=capVelocityStats(CAC.base,dateKey,CAPPVEL_FROM,CAPPVEL_TO);
+  const rows=CAC.cities.map(c=>({c,tier:TIERS[c]||'',st:capVelocityStats(CAC.base.filter(l=>l.city===c),dateKey,CAPPVEL_FROM,CAPPVEL_TO)}));
+  const fmtPct=v=>v==null?'':v.toFixed(1);
+  const fmtDay=v=>v==null?'':v.toFixed(1);
+  const header=['City','Tier','Cohort','Ever Logged In','% Ever','Logged In (At/After)','% At/After','P50 Days','P90 Days','P95 Days','Avg Days'];
+  const dataRows=[
+    ['India','',india.cohortCount,india.everLoggedInCount,fmtPct(india.pctEverLoggedIn),india.loggedInCount,fmtPct(india.pctLoggedIn),fmtDay(india.p50),fmtDay(india.p90),fmtDay(india.p95),fmtDay(india.avg)],
+    ...rows.map(r=>[r.c,r.tier,r.st.cohortCount,r.st.everLoggedInCount,r.st.cohortCount?fmtPct(r.st.pctEverLoggedIn):'',r.st.loggedInCount,r.st.cohortCount?fmtPct(r.st.pctLoggedIn):'',fmtDay(r.st.p50),fmtDay(r.st.p90),fmtDay(r.st.p95),fmtDay(r.st.avg)])
+  ];
+  const fmtD=d=>d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:'';
+  const rangeLbl=(CAPPVEL_FROM||CAPPVEL_TO)?`${fmtD(CAPPVEL_FROM)||'start'}_to_${fmtD(CAPPVEL_TO)||'now'}`:'lifetime';
+  const cityFArr=getMSVal('cappvel-city',CAPP_ALL_CITIES);
+  const cityPart=cityFArr.length?`_${cityFArr.length}cities`:'_allcities';
+  downloadCSV(`login_velocity_${stageLbl.replace(/\s+/g,'')}_${rangeLbl}${cityPart}.csv`,[header,...dataRows]);
+}
 function setCAppVelStage(key){CAPPVEL_STAGE=key;renderCAppVel();}
 function setCAppVelFrom(val){CAPPVEL_FROM=val?new Date(val+'T00:00:00'):null;renderCAppVel();}
 function setCAppVelTo(val){CAPPVEL_TO=val?new Date(val+'T23:59:59'):null;renderCAppVel();}
@@ -6851,6 +6888,7 @@ function renderCAppVel(){
   <span style="font-size:11px;color:var(--t3)">To</span>
   <input type="date" id="cappvel-to" value="${fmtD(CAPPVEL_TO)}" onchange="setCAppVelTo(this.value)" style="padding:5px 8px;border-radius:7px;border:1px solid var(--bd2);background:var(--sur);color:var(--t2);font-size:12px;font-family:'DM Sans',sans-serif">
   <button onclick="resetCAppVelRange()" style="background:var(--sur);color:var(--t2);border:1px solid var(--bd2);padding:5px 12px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Reset (lifetime)</button>
+  <button onclick="exportCAppVelCSV()" title="Export the By City table below as CSV, using the stage/date-range/city filters currently selected" style="background:#166534;color:#fff;border:1px solid #166534;padding:5px 12px;border-radius:7px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-left:auto">⬇ Export CSV</button>
 </div>
 <div style="font-size:10px;color:var(--t3);margin-bottom:6px">Blank From/To = no bound on that side (lifetime by default). "Days" = calendar days between the ${stageLbl} date and a project's FIRST login, counted only for logins at/after ${stageLbl} — a login before this stage belongs to an earlier milestone window, not a data error.</div>
 <div class="mgrid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
