@@ -17,6 +17,135 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-09-02 (September MOP loaded + a new 5-way MOP variant selector built
+— data change applied, dashboard change is IN PREVIEW, not merged, not pushed):**
+
+- **September MOP is loaded into `data/referral_mop.json`** from Yash's new
+  `MOP Sep Referral.xlsx`. **The file's schema changed** — it now carries **5**
+  target blocks per city instead of 3:
+  `sales` / `nonSales` / `btl` / `noBtl` / `combined`, each `{BQL,MS,MD,ORDER,HOTO}`.
+  `noBtl` and `combined` keep their exact pre-Sep names and meanings, so **an
+  unmodified `index.html` consumes the new file with zero code changes** — the
+  variant selector below is purely additive.
+  - `noBtl` = the workbook's own "Total (Sales+Non-Sales)" column, **taken as
+    given** (Yash's explicit call 2026-09-02 — see the rounding note below).
+    `combined` = `noBtl + btl`, computed.
+  - **Non-Sales = `Online` + `Ops / AMC` + `Referral_Others`** (confirmed against
+    the actual `sc` values present in `ED_ALL`). Sales = `Sales`, BTL = `BTL`.
+- **New `scripts/build_mop_json.py`** converts the monthly workbook to the JSON —
+  the 3-way split is too many numbers to retype safely each month. Run
+  `python scripts/build_mop_json.py "MOP Sep Referral.xlsx"` (`--dry-run` to
+  inspect). It **asserts the workbook's column layout** before trusting its
+  hardcoded column offsets, so a shifted/renamed column fails loudly instead of
+  silently producing wrong targets. `SUM_TOTALS=False` at the top of the file is
+  the rounding decision below — flip it if that call ever changes.
+- **⚠️ The source workbook is internally inconsistent by ±1 in places, and this is
+  inherent to it, not a transcription error.** Every column is rounded
+  independently, so:
+  - `Total (Sales+Non-Sales)` ≠ `Sales + Non Sales` in **27 of 140 cells**, always
+    by exactly ±1.
+  - The **India row ≠ the sum of its city rows** in 14 of 20 metric/block
+    combinations, by 1–3 units.
+  **Resolved 2026-09-02, Yash's explicit call: use the workbook's figures verbatim**
+  (the plan as signed off) and accept that the parts don't always tie. Don't
+  "fix" this by recomputing without a fresh ask — the script reports the deltas
+  on every run so the drift stays visible.
+- **⚠️ Two genuine-looking data errors in the Sep BTL block, flagged to Yash, not
+  altered:** **Varanasi BTL has `ORDER=0` but `HOTO=5`** (HOTO can't exceed Order)
+  and **`MS=11` but `MD=13`** (MD can't exceed MS). Both are new in Sep — Aug's
+  Varanasi BTL row was `ORDER=0, HOTO=0`. Separately, BTL `MS > BQL` shows up for
+  Ahmedabad and Aurangabad, but that pattern is **pre-existing and accepted** (Aug
+  had 9 such cases, Sep only 2) — don't re-flag it.
+- **⚠️ `index.preview.html` is AHEAD of `index.html` again — a new 5-way MOP
+  variant selector. Reviewed by Claude and browser-verified, but NOT yet reviewed
+  by Yash, NOT merged, NOT pushed.** What it does:
+  - A **tab-local** 5-option selector (`Sales` / `Non-Sales` / `BTL` /
+    `Sales + Non-Sales` / `All`) in the `.fbar` of the **4 MOP-target tabs only**:
+    `mop` (MOP vs MTD), `avm` (Actuals vs MOP), `india` (India Summary), `city`
+    (City Summary). **Per Yash's explicit choice 2026-09-02** over the two
+    alternatives offered (replacing the global BTL toggle with a 5-way switch, or
+    adding a second global control) — so **the global top-bar BTL toggle is
+    deliberately untouched** and still scopes every other tab exactly as before.
+  - The selector scopes **both the target and the actuals** it's compared against,
+    so the two always describe the same population. Globals: `MOP_VARIANTS` (label
+    + target table + the `scs` sub-channel list per variant), `MOP_VARIANT_ORDER`,
+    `MOP_VARIANT` (defaults `'all'`), and 3 new target tables `MOP_SALES` /
+    `MOP_NONSALES` / `MOP_BTL` alongside the existing `MOP_NOBTL` / `MOP_COMBINED`.
+  - **`setBtlSwitch()` now also sets `MOP_VARIANT` (`'all'`/`'noBtl'`)**, so the
+    pre-Sep behaviour ("exclude BTL" ⇒ MOP tabs compare against the W/O-BTL
+    target) still holds by default. Picking a variant afterwards is a deliberate
+    local override, left alone until the global toggle moves again.
+  - **Actuals come from a new `C.cscAll` / `C.cscAllL`** (city × sub-channel, MTD
+    and LMTD) built in `precompute()` **from `ED_ALL`, not `ED`** — deliberately,
+    so picking the BTL variant still shows BTL actuals even while the top bar has
+    BTL excluded. Accessors: `mvT` (target block), `mvMTD` (prorated target,
+    variant-aware twin of `C.mopMTD`), `mvA`/`mvAL` (actuals), `hasMopV`
+    (variant-aware twin of `hasMop`), `mvScs` (variant's sub-channels, optionally
+    intersected with a tab's own sub-channel filter). **`C.india`/`C.cMTD`/
+    `C.mopMTD`/`hasMop` are all left untouched** and still serve the ~14
+    out-of-scope tabs on the global BTL toggle.
+  - `hasMopV` means **the BTL variant lists only the 15 cities with a BTL plan**
+    (MOP vs MTD and Actuals vs MOP drop from 28 rows to 16 incl. India) with no
+    separate city list to maintain — `applyMopBlock()` already skips all-zero
+    blocks, so a BTL-less city never gets a `MOP_BTL` entry at all.
+  - On India/City Summary the existing sub-channel filter now lists **only the
+    active variant's** sub-channels and narrows *within* it. `setMopVariant()`
+    clears `_msState`/`_msPending` for `i-sc` and `city-sc-f`, because
+    `getMSVal()` infers "all selected" from the option count and would otherwise
+    misread a selection made under the previous variant.
+  - **Verified in the browser** (local server, `index.preview.html`): all 5 target
+    tables load with values matching the workbook exactly; the rendered India row
+    matches the workbook for all 5 variants; variant actuals cross-check against an
+    independent `ED_ALL` aggregation at India **and** city level; `sales+nonSales
+    = noBtl` and `noBtl+btl = all` both reconcile exactly; the BTL toggle still
+    syncs the variant; all 14 out-of-scope tabs still build and none shows the
+    selector; stale sub-channel selections are discarded on variant switch. No
+    console errors.
+- **⚠️ The silent production-fallback trap bit again 2026-09-02 — now made
+  visible (in the preview file, same review batch).** Yash reviewed the preview
+  and reported "the numbers look old, Aug only" — screenshot showed India
+  combined BQL 6,289 / Order 2,193 (August) instead of 5,244 / 1,929
+  (September). **The data was never stale**: `data/referral_mop.json` on disk had
+  the correct Sep figures the whole time, and the same page served over
+  `http://localhost:8743` rendered 5,244 correctly. The cause was `fetchJSON()`'s
+  fallback — opening `index.preview.html` directly (`file://`) makes the local
+  `data/` fetch throw, so it silently loads from the live GitHub Pages copy, which
+  still had August because nothing had been pushed. **This is the third time this
+  exact trap has cost a review cycle** (Section 12 documents the first, 2026-08-03,
+  with the identical "MOP looks wrong locally" symptom). Fixes applied:
+  1. **A `.srcwarn` banner** (`#src-warn`, rendered by `renderSourceWarning()`
+     at the end of `init()`, anchored just before `#p-exec` so it sits at the top
+     of the content area on every tab). Shows only when something actually fell
+     back, lists which files, and — when `location.protocol==='file:'` — says
+     explicitly to close the tab and run `preview-local.bat` instead. New
+     `FELL_BACK[]` global records the fallbacks.
+  2. **Cache-busting on the local fetch** (`?_=<Date.now()>` + `cache:'no-store'`),
+     because a browser-cached data file produces the identical
+     "my update didn't apply" symptom by a different route.
+  **Note for future sessions: the browser also caches `index.preview.html` itself.**
+  Hitting the page after editing it can silently serve the old HTML — this bit
+  Claude once during this very session's verification (a newly-added global read
+  as `undefined` until a `?v=N` cache-buster was appended). Always load the
+  preview with a changing query param when verifying an edit.
+- **⚠️ Unrelated but important: there is NO September actuals data yet.**
+  `referral_effort.json` ends **2026-08-24**, so with `C.yd` = Sep 1 every
+  current-month MTD figure is 0 and the MOP tabs read **-100% vs MOP across the
+  board**. This is a **pipeline-freshness issue, not a bug in any of the above** —
+  `C.india` was already all-zero before any change this session. The Apps Script
+  needs to run (or Yash needs to redeploy/trigger it) before the Sep dashboard
+  shows anything meaningful.
+- **⚠️ Pre-existing gap found while verifying (NOT introduced here, not fixed):**
+  8 cities appear in the Aug'26 effort data but are absent from `index.html`'s
+  `CITIES` list — **`Raipur` (38 BQL), `Jodhpur` (10 BQL / 4 Order / 3 HOTO),
+  `Inactive` (76 BQL), `Ajmer`, `Erode`, `Salem`, `Surat`, `Visakhapatnam`**.
+  Because `precompute()` builds the India aggregate from *all* rows but city rows
+  only from `CITIES`, these **count into every India total while having no visible
+  city row** — India Aug'26 BQL is 4,091 vs 3,958 summed across city rows, a
+  133-BQL invisible remainder. `Raipur` is the one CLAUDE.md already anticipated
+  ("expected to be added to the tier list next month"); `Jodhpur` and the
+  `Inactive` bucket were not. Needs a decision from Yash (add to `TIERS`/`CITIES`,
+  fold via a merge map, or exclude) — don't guess.
+
 **As of 2026-08-25 (updated — found + fixed a real Customer App data-pipeline
 regression that had been silently live for about a week, pushed):**
 
@@ -727,6 +856,13 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   path to actually run — use `preview-local.bat` (double-click) for this, which starts
   a server on `http://localhost:8743` and opens `index.preview.html` (falling back to
   `index.html` if no preview copy exists).
+  **As of 2026-09-02 this fallback is no longer silent** — it renders a prominent
+  amber banner naming the files that fell back and, on `file://`, telling you to use
+  `preview-local.bat` instead (see Section 0). It had already cost a review cycle
+  twice by then, both times presenting as "the MOP numbers look like last month's".
+  **If a reviewer ever reports stale numbers in a local preview, check for that
+  banner first** — and check whether they opened the file by double-clicking —
+  before re-investigating the data pipeline.
 
 ---
 
@@ -734,9 +870,17 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
 
 - ~~MOP data structure expansion: explicit Order stage~~ — **done.** `referral_mop.json`
   has an explicit `ORDER` field per city, consumed directly (Section 8, rule 1).
-  **Still pending:** Funnel MOP (% targets) and Sub-Channel MOP (BQL/Order by
-  Sales/Online/BTL at city level) — confirmed **not implemented** in `index.html` as of
-  2026-08-03.
+  **Sub-Channel MOP — now largely DONE as of 2026-09-02**, at the *group* level
+  (Sales / Non-Sales / BTL) rather than per individual sub-channel: the Sep'26
+  workbook supplies all 5 metrics for each group at India **and** city level, and
+  the tab-local MOP variant selector consumes them on the 4 MOP-target tabs (see
+  Section 0). Still **not** available per individual sub-channel (no separate
+  `Online` vs `Ops / AMC` vs `Referral_Others` targets — the workbook only splits
+  them as one "Non Sales" column), and still not on the ~14 out-of-scope tabs.
+  **Still pending:** Funnel MOP (% targets) as an independent input — though note
+  the `avm` tab and City Summary's BQL→MD% / MD→Ord% columns already *derive*
+  implied target rates from the MOP volumes, which may make an explicit % target
+  input unnecessary; worth re-asking before building it.
 - Open question (still unresolved): should Funnel MOP target percentages be
   independently entered, or derived by formula from City MOP volumes? Ask before
   implementing either.

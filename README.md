@@ -25,8 +25,15 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
 - `data/` — the JSON files the Apps Script produces, read directly by `index.html`:
   `referral_effort.json`, `referral_leads.json`, `digital_effort.json`,
   `digital_leads.json`, plus `referral_mop.json` (MOP targets, maintained separately —
-  edit this file directly in GitHub each month; it won't have every city, and that's
+  see `scripts/build_mop_json.py` below; it won't have every city, and that's
   expected for Expansion-tier cities without a monthly MOP).
+- `scripts/build_mop_json.py` — regenerates `data/referral_mop.json` from the monthly
+  `MOP <Mon> Referral.xlsx` workbook. Since Sep'26 that workbook splits targets 3 ways
+  by sub-channel group (Sales / Non-Sales / BTL) plus two roll-ups, which is too many
+  numbers to retype by hand. Run `python scripts/build_mop_json.py "MOP Sep Referral.xlsx"`
+  (add `--dry-run` to inspect first). It validates the workbook's column layout before
+  trusting it, and reports rather than silently reconciling the source's own rounding
+  drift between `Total (Sales+Non-Sales)` and `Sales + Non Sales`.
 - `.github/workflows/test.yml` — placeholder, does not run tests.
 - `preview-local.bat` — double-click to preview the dashboard locally on Windows.
   Starts a local server on `http://localhost:8743` and opens it in your browser.

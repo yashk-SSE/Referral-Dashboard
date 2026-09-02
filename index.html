@@ -258,6 +258,22 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .metric-sw-btn:hover{background:rgba(255,255,255,.14);color:#fff}
 .metric-sw-btn.active{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.55);color:#fbbf24;font-weight:600}
 .metric-sw-sep{width:1px;height:14px;background:rgba(255,255,255,.1);margin:0 2px}
+/* MOP variant selector -- lives inside a panel .fbar (light background), so it
+   needs its own styling rather than reusing .metric-sw-btn (built for the dark
+   top bar). Local to the 4 MOP-target tabs; see mvSwitchHtml(). */
+/* Shown only when fetchJSON fell back to the live GitHub Pages data because the
+   local data/ folder was unreachable (page opened via file://, no server). That
+   fallback used to be silent, which twice led to a local review being done
+   against last month's pushed data -- see CLAUDE.md Section 12. */
+.srcwarn{display:none;margin:0 0 12px;padding:10px 14px;border:1px solid #f59e0b;border-left:4px solid #d97706;border-radius:var(--r);background:#fffbeb;color:#7c2d12;font-size:12px;line-height:1.55}
+.srcwarn.show{display:block}
+.srcwarn strong{color:#7c2d12}
+.srcwarn code{background:#fef3c7;padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11px}
+.mvsw{display:inline-flex;align-items:center;gap:3px;padding:3px 6px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--s2)}
+.mvsw-lbl{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
+.mvsw-btn{background:var(--sur);border:1px solid var(--bd2);color:var(--t2);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .12s}
+.mvsw-btn:hover{background:var(--s2);color:var(--tx)}
+.mvsw-btn.active{background:#1f2937;border-color:#1f2937;color:#fff;font-weight:600}
 #metric-switchers{display:none;align-items:center;gap:6px;flex-wrap:wrap;position:relative}
 #metric-switchers.visible{display:flex}
 /* Collapsed into a single dropdown 2026-08-05 (was 8 always-visible buttons) --
@@ -522,6 +538,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     </div>
     <div id="tf-status-chip" class="tf-status-chip">–</div>
   </div>
+  <div class="srcwarn" id="src-warn"></div>
   <div id="p-exec" class="panel active"><div class="loading"><div class="spin"></div><div>Loading data…</div></div></div>
   <div id="p-mop" class="panel"></div>
   <div id="p-avm" class="panel"></div>
@@ -569,8 +586,94 @@ const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'
 const MOP_SEED={India:{BQL:4880,MS:3906,MD:3515,HOTO:1831},Ahmedabad:{BQL:80,MS:71,MD:64,HOTO:36},Nagpur:{BQL:814,MS:738,MD:664,HOTO:361},Amravati:{BQL:110,MS:92,MD:83,HOTO:44},Aurangabad:{BQL:91,MS:86,MD:77,HOTO:47},Nashik:{BQL:137,MS:141,MD:127,HOTO:68},Pune:{BQL:699,MS:628,MD:565,HOTO:315},Kolhapur:{BQL:69,MS:64,MD:58,HOTO:33},Bhopal:{BQL:367,MS:263,MD:237,HOTO:119},Gwalior:{BQL:447,MS:212,MD:191,HOTO:70},Indore:{BQL:289,MS:223,MD:201,HOTO:79},Jabalpur:{BQL:403,MS:247,MD:222,HOTO:126},Jaipur:{BQL:102,MS:68,MD:61,HOTO:32},Delhi:{BQL:105,MS:82,MD:74,HOTO:36},Gurgaon:{BQL:37,MS:31,MD:28,HOTO:15},Ghaziabad:{BQL:63,MS:50,MD:45,HOTO:22},Noida:{BQL:25,MS:18,MD:16,HOTO:8},Kanpur:{BQL:180,MS:183,MD:165,HOTO:94},Lucknow:{BQL:406,MS:323,MD:291,HOTO:146},Varanasi:{BQL:38,MS:36,MD:32,HOTO:20},Hyderabad:{BQL:145,MS:132,MD:119,HOTO:71},Bangalore:{BQL:131,MS:94,MD:85,HOTO:36},Chennai:{BQL:142,MS:122,MD:110,HOTO:50}};
 let MOP_NOBTL=JSON.parse(JSON.stringify(MOP_SEED));
 let MOP_COMBINED=JSON.parse(JSON.stringify(MOP_SEED));
+// Sep'26 onward the MOP workbook splits targets 3 ways by sub-channel group.
+// No seed values exist for these (MOP_SEED predates the split), so they start
+// empty and fill from referral_mop.json on load. applyMopBlock() skips an
+// all-zero block, so a city with no BTL plan never gets a MOP_BTL entry at all
+// -- which is exactly what drops it out of the BTL variant's tables via
+// hasMopV(), with no separate city list to maintain.
+let MOP_SALES={};
+let MOP_NONSALES={};
+let MOP_BTL={};
 let BTL_INCLUDE=true;   // default: BTL included (matches pre-switch behavior)
 let MOP=MOP_COMBINED;   // active table — reassigned by setBtlSwitch()
+// -- MOP variants (Sep'26 onward) -----------------------------------------
+// referral_mop.json now carries 5 target blocks per city: the 3 sub-channel
+// groups (Sales / Non-Sales = Online + Ops-AMC + Referral_Others / BTL) plus
+// the two roll-ups that already existed -- noBtl (Sales+Non-Sales, the old
+// "W/O BTL" target) and combined (all three, the old "Combined" target).
+//
+// This selector is deliberately LOCAL to the 4 MOP-target tabs (MOP vs MTD,
+// Actuals vs MOP, India Summary, City Summary) -- per Yash 2026-09-02. The
+// global top-bar BTL toggle is untouched and still scopes every other tab;
+// setBtlSwitch() only keeps MOP_VARIANT in sync so the pre-Sep behaviour
+// ("exclude BTL" => compare against the W/O-BTL target) still holds by default.
+// `scs` is the sub-channel set each variant's ACTUALS are summed over, so the
+// target and the actual it is compared against always cover the same population.
+const MOP_VARIANTS={
+  sales:   {label:'Sales',             tbl:()=>MOP_SALES,    scs:['Sales']},
+  nonSales:{label:'Non-Sales',         tbl:()=>MOP_NONSALES, scs:['Online','Ops / AMC','Referral_Others']},
+  btl:     {label:'BTL',               tbl:()=>MOP_BTL,      scs:['BTL']},
+  noBtl:   {label:'Sales + Non-Sales', tbl:()=>MOP_NOBTL,    scs:['Sales','Online','Ops / AMC','Referral_Others']},
+  all:     {label:'All',               tbl:()=>MOP_COMBINED, scs:['Sales','Online','Ops / AMC','Referral_Others','BTL']}
+};
+const MOP_VARIANT_ORDER=['sales','nonSales','btl','noBtl','all'];
+let MOP_VARIANT='all';   // matches BTL_INCLUDE=true, i.e. the pre-Sep default
+function mvCfg(){return MOP_VARIANTS[MOP_VARIANT]||MOP_VARIANTS.all;}
+function mvLabel(){return mvCfg().label;}
+// The variant's own sub-channel list, optionally narrowed by a tab's sub-channel
+// filter. Selections outside the variant drop out; an empty result means filter
+// and variant do not overlap, and the caller then renders honest zeroes.
+function mvScs(extra){
+  const base=mvCfg().scs;
+  return(extra&&extra.length)?base.filter(x=>extra.includes(x)):base;
+}
+function mvScOk(sc){return mvCfg().scs.includes(sc);}
+// Target block for a city under the active variant.
+function mvT(city){return mvCfg().tbl()[city||'India']||{};}
+// Prorated MOP-MTD target -- the variant-aware twin of C.mopMTD, which stays on
+// the global BTL toggle for the tabs outside this selector's scope.
+function mvMTD(city,m){
+  const yd=C&&C.yd;if(!yd)return 0;
+  return Math.round((mvT(city)[m]||0)*yd.getDate()/dim(yd));
+}
+// True once the active variant has a nonzero target for this city -- the
+// variant-aware twin of hasMop(), so e.g. the BTL variant lists only cities
+// that actually have a BTL plan this month.
+function hasMopV(c){const m=mvT(c);return!!(m.BQL||m.MS||m.MD||m.ORDER||m.HOTO);}
+// Variant-scoped actuals, summed out of C.cscAll/C.cscAllL (built from ED_ALL in
+// precompute(), hence independent of the global BTL toggle).
+function mvSum(cache,city,scList){
+  const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+  const row=cache&&cache[city||'India'];if(!row)return r;
+  scList.forEach(sc=>{const x=row[sc];if(x)['BQL','MS','MD','Order','HOTO'].forEach(m=>r[m]+=x[m]||0);});
+  return r;
+}
+function mvA(city,scFilter){return mvSum(C.cscAll,city,mvScs(scFilter));}
+function mvAL(city,scFilter){return mvSum(C.cscAllL,city,mvScs(scFilter));}
+// Button group rendered into each of the 4 MOP tabs' .fbar.
+function mvSwitchHtml(){
+  const tip='Which sub-channel group MOP to track. Scopes both the target and the actuals on this tab. Local to the MOP tabs - the top-bar BTL switch is unaffected.';
+  return'<span class="mvsw" title="'+tip+'">'
+    +'<span class="mvsw-lbl">MOP</span>'
+    +MOP_VARIANT_ORDER.map(k=>'<button class="mvsw-btn'+(k===MOP_VARIANT?' active':'')+'" onclick="setMopVariant(\''+k+'\')">'+MOP_VARIANTS[k].label+'</button>').join('')
+    +'</span>';
+}
+function setMopVariant(k){
+  if(!MOP_VARIANTS[k]||k===MOP_VARIANT)return;
+  MOP_VARIANT=k;
+  // Only the 4 MOP-target tabs read MOP_VARIANT, so only they need invalidating.
+  // No precompute() call either -- C.cscAll/C.cscAllL already hold every
+  // sub-channel, so switching variant is pure re-render.
+  ['mop','avm','india','city'].forEach(t=>{delete rendered[t];});
+  // The India/City sub-channel filters list only the active variant's own
+  // sub-channels, and getMSVal() reads "all selected" off the option count --
+  // so a selection made under the previous variant would be misinterpreted
+  // against the new, shorter list. Clear both so the switch lands on
+  // "all sub-channels within this variant".
+  ['i-sc','city-sc-f'].forEach(id=>{delete _msState[id];delete _msPending[id];});
+  sw(curTab);
+}
 // Customer_App removed 2026-08-05 -- no longer picked up from BigQuery at all
 // (Referral Dashboard.gs no longer classifies any Source_Class as this sub-channel).
 // Not a reclassification, a full removal -- see CLAUDE.md Section 4 for history.
@@ -737,6 +840,11 @@ function setBtlSwitch(on,btn){
   LD=on?LD_ALL:LD_ALL.filter(l=>l.sc!=='BTL');
   MOP=on?MOP_COMBINED:MOP_NOBTL;
   SCS=on?SCS_ALL.slice():SCS_ALL.filter(s=>s!=='BTL');
+  // Keep the tab-local MOP variant selector aligned with this global toggle, so
+  // flipping BTL off still lands the MOP tabs on the W/O-BTL target exactly as it
+  // did before the variant selector existed. Choosing a variant afterwards is a
+  // deliberate local override, and is left alone until this toggle moves again.
+  MOP_VARIANT=on?'all':'noBtl';
   if(dataLoaded&&ACTIVE_CH==='referral'){
     precompute();
     rendered={};
@@ -817,6 +925,12 @@ function captureLastModified(filename,resp){
   const lm=resp.headers.get('last-modified');
   FILE_META[filename]=lm?new Date(lm):null;
 }
+// Filenames that had to be served from the live GitHub Pages copy because the
+// local data/ folder was unreachable. Surfaced by renderSourceWarning() -- this
+// fallback is a genuine convenience when opening the file straight off disk, but
+// it silently shows whatever was last PUSHED, so an unpushed local data change
+// (a new MOP file, say) appears not to have taken effect at all.
+const FELL_BACK=[];
 async function fetchJSON(filename){
   // Always try the local/relative data/ folder first — this is what makes local
   // testing of unpushed data changes (like a new MOP file) actually work. Only fall
@@ -824,13 +938,35 @@ async function fetchJSON(filename){
   // happens when the dashboard is opened directly via file:// (no server), where
   // the browser blocks fetch() of local files entirely.
   try{
-    const r=await fetch('data/'+filename);
+    // Cache-bust: without this the browser can serve a previously-cached copy of
+    // a data file that has since changed on disk, producing the same
+    // "my update didn't apply" symptom as the fallback below.
+    const r=await fetch('data/'+filename+'?_='+Date.now(),{cache:'no-store'});
     if(r.ok){captureLastModified(filename,r);return await r.json();}
   }catch(e){/* fall through to production fallback below */}
   const r2=await fetch('https://yashk-sse.github.io/Referral-Dashboard/data/'+filename);
   if(!r2.ok)throw new Error(`Failed to load ${filename}: ${r2.status}`);
+  if(FELL_BACK.indexOf(filename)===-1)FELL_BACK.push(filename);
   captureLastModified(filename,r2);
   return await r2.json();
+}
+// Renders the banner if anything fell back. Called at the end of init().
+function renderSourceWarning(){
+  const el=document.getElementById('src-warn');
+  if(!el)return;
+  if(!FELL_BACK.length){el.classList.remove('show');el.innerHTML='';return;}
+  const viaFile=location.protocol==='file:';
+  el.innerHTML='<strong>⚠ Showing LIVE (already-pushed) data, not your local files.</strong> '
+    +'The local <code>data/</code> folder could not be read, so '+FELL_BACK.length
+    +' file(s) were loaded from the live GitHub Pages site instead: <code>'
+    +FELL_BACK.join('</code>, <code>')+'</code>.<br>'
+    +(viaFile
+      ?'You opened this file directly (<code>file://</code>), which blocks reading local data. '
+       +'Close this tab and run <code>preview-local.bat</code> instead — it serves the '
+       +'folder on <code>http://localhost:8743</code> so your local data files are used.'
+      :'Check that the server is running from the repo root and that <code>data/</code> is present.')
+    +'<br><em>Any unpushed change to a data file (e.g. a new monthly MOP) will NOT appear here.</em>';
+  el.classList.add('show');
 }
 // Most recent Last-Modified among a set of files, or null if none are known.
 function latestFileUpdate(filenames){
@@ -870,6 +1006,27 @@ function precompute(){
   // it's a fixed company-wide target, same reasoning as it already ignoring the tier filter).
   C.ytdHoto=ED_ALL.filter(r=>r.date>=new Date(2026,3,1)&&r.date<=yd).reduce((s,r)=>s+r.HOTO,0);
   C.mopMTD=(city,m)=>{const mp=MOP[city||'India'];if(!mp)return 0;return Math.round((mp[m]||0)*yd.getDate()/dim(yd));};
+
+  // -- City x sub-channel actuals for the MOP variant selector -------------
+  // Built from ED_ALL, NOT ED, so the tab-local variant selector works whatever
+  // the global BTL toggle is set to (picking the BTL variant has to show BTL
+  // actuals even while the top bar excludes BTL). One pass per period; each
+  // variant then just sums the sub-channels it owns (see mvA/mvAL). Uses the
+  // same getBQL/getMS/getMD getters as agg(), so the Old/New BQL and
+  // First/Total MS/MD toggles apply here exactly as everywhere else.
+  function cscBuild(rows){
+    const out={};
+    ['India'].concat(CITIES).forEach(c=>{out[c]={};SCS_ALL.forEach(sc=>{out[c][sc]={BQL:0,MS:0,MD:0,Order:0,HOTO:0};});});
+    rows.forEach(x=>{
+      [out.India,out[x.city]].forEach(bucket=>{
+        const t=bucket&&bucket[x.sc];if(!t)return;
+        t.BQL+=getBQL(x);t.MS+=getMS(x);t.MD+=getMD(x);t.Order+=x.Order;t.HOTO+=x.HOTO;
+      });
+    });
+    return out;
+  }
+  C.cscAll=cscBuild(ED_ALL.filter(r=>r.date>=cur&&r.date<=yd));
+  C.cscAllL=cscBuild(ED_ALL.filter(r=>r.date>=lmS&&r.date<=lmE));
 
   // Monthly india
   C.indMo=months.map(mo=>agg(ED.filter(r=>r.year===mo.y&&r.month===mo.m)));
@@ -1468,9 +1625,12 @@ async function init(){
     setLoad('Processing data…');
 
     // ── MOP: read from referral_mop.json ─────────────────────────────────
-    // Schema (since the Aug'26 BTL split): each row has noBtl/btl/combined blocks,
-    // each {BQL,MS,MD,ORDER,HOTO}. We only need noBtl + combined for the switch —
-    // the btl-only block is kept in the file for reference but not consumed here.
+    // Schema (since the Sep'26 sub-channel split): each row has 5 blocks --
+    // sales / nonSales / btl / noBtl / combined -- each {BQL,MS,MD,ORDER,HOTO}.
+    // noBtl + combined drive the global BTL toggle exactly as before; the other
+    // three back the tab-local MOP variant selector (see MOP_VARIANTS). A file
+    // predating Sep'26 carries only noBtl/btl/combined, in which case the sales
+    // and nonSales tables stay empty and those two variants show no targets.
     // To update MOP each month: edit data/referral_mop.json in your GitHub repo.
     function applyMopBlock(target,city,blk){
       if(!blk)return false;
@@ -1486,15 +1646,18 @@ async function init(){
       return true;
     }
     if(mopR&&mopR.length>0){
-      let updNoBtl=0,updCombined=0;
+      let updNoBtl=0,updCombined=0,updSales=0,updNonSales=0,updBtl=0;
       mopR.forEach(row=>{
         if(!row.city)return;
         let city=String(row.city).trim();
         if(city==='Bengaluru')city='Bangalore';
         if(applyMopBlock(MOP_NOBTL,city,row.noBtl))updNoBtl++;
         if(applyMopBlock(MOP_COMBINED,city,row.combined))updCombined++;
+        if(applyMopBlock(MOP_SALES,city,row.sales))updSales++;
+        if(applyMopBlock(MOP_NONSALES,city,row.nonSales))updNonSales++;
+        if(applyMopBlock(MOP_BTL,city,row.btl))updBtl++;
       });
-      console.log(`MOP loaded from referral_mop.json: ${updNoBtl} cities (W/O BTL), ${updCombined} cities (Combined)`);
+      console.log(`MOP loaded from referral_mop.json: ${updNoBtl} cities (W/O BTL), ${updCombined} (Combined), ${updSales} (Sales), ${updNonSales} (Non-Sales), ${updBtl} (BTL)`);
     }
     MOP=BTL_INCLUDE?MOP_COMBINED:MOP_NOBTL;
 
@@ -1638,6 +1801,11 @@ async function init(){
     // Mark data as loaded — channel switcher now fully functional
     dataLoaded=true;
     document.body.classList.remove('loading-data');
+
+    // Warn loudly if any data file came from the live pushed copy rather than the
+    // local data/ folder -- that fallback is silent otherwise, and has twice caused
+    // a local review to be done against last month's data (CLAUDE.md Section 12).
+    renderSourceWarning();
 
     // Show metric switchers (default channel is Referral)
     const msEl=document.getElementById('metric-switchers');
@@ -1853,9 +2021,9 @@ function bMop(){
   // Build city rows - now includes actual Order column after HOTO actuals
   function cityRowHtml(city,isIndia){
     const key=isIndia?'India':city;
-    const mFull=MOP[key]||{};
-    const v=isIndia?C.india:C.cMTD[city];
-    const pv=isIndia?C.indiaL:C.cLMTD[city];
+    const mFull=mvT(key);
+    const v=isIndia?mvA('India'):mvA(city);
+    const pv=isIndia?mvAL('India'):mvAL(city);
     const tier=isIndia?'India':TIERS[city]||'';
     const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-top:2px solid var(--bl)"':'';
 
@@ -1893,21 +2061,21 @@ function bMop(){
 
   const tableRows=[
     cityRowHtml(null,true),
-    ...CITIES.filter(hasMop).map(c=>cityRowHtml(c,false))
+    ...CITIES.filter(hasMopV).map(c=>cityRowHtml(c,false))
   ].join('');
 
   const mHead=m=>`<th style="text-align:right">${m}</th>`;
 
   document.getElementById('p-mop').innerHTML=`
 <div class="ptitle">MOP vs Actual MTD</div>
-<div class="psub">May '26 . Full month MOP . MOP till yesterday (Day ${doneD}/${dim(yd)}) . Actual MTD . % deficit / surplus vs MOP MTD . MoM comparison</div>
+<div class="psub">May '26 . Full month MOP . MOP till yesterday (Day ${doneD}/${dim(yd)}) . Actual MTD . % deficit / surplus vs MOP MTD . MoM comparison . <strong>MOP variant: ${mvLabel()}</strong> (targets and actuals both scoped to it)</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;align-items:center">
   <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-weight:600">Red ≥20% deficit</span>
   <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:600">Amber 0–20% deficit</span>
   <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600">Green = surplus</span>
   <span style="background:var(--s2);color:var(--t2);padding:2px 8px;border-radius:6px">Hover cells for detail</span>
 </div>
-<div class="fbar"><span id="mop-tier-mc-wrap"></span><span id="mop-city-mc-wrap"></span></div>
+<div class="fbar">${mvSwitchHtml()}<span id="mop-tier-mc-wrap"></span><span id="mop-city-mc-wrap"></span></div>
 <div class="tw freeze" id="mop-tbl"><table>
   <thead>
     <tr>
@@ -1940,9 +2108,9 @@ function filterMop(cfArr,tf){
   const metrics=['BQL','MS','MD','HOTO'];
   function cityRowHtml(city,isIndia){
     const key=isIndia?'India':city;
-    const mFull=MOP[key]||{};
-    const v=isIndia?C.india:C.cMTD[city];
-    const pv=isIndia?C.indiaL:C.cLMTD[city];
+    const mFull=mvT(key);
+    const v=isIndia?mvA('India'):mvA(city);
+    const pv=isIndia?mvAL('India'):mvAL(city);
     const tier=isIndia?'India':TIERS[city]||'';
     const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-top:2px solid var(--bl)"':'';
     const cells=metrics.map(m=>({m,mopFull:mFull[m]||0,mopMtd:Math.round((mFull[m]||0)*doneD/dim(yd)),actual:v[m]||0,prevActual:pv[m]||0}));
@@ -1960,7 +2128,7 @@ function filterMop(cfArr,tf){
     const ordMtdCell=`<td class="neu">${f(mopOrdMtd)}</td>`;
     return`<tr ${rowStyle}><td style="font-weight:600;white-space:nowrap">${isIndia?'India':city}${!isIndia?`<span class="ctag">${tier}</span>`:''}</td>${baseCells.map((c,i)=>`<td class="neu" style="font-weight:600;${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopFull)}</td>`).join('')}${ordFullCell}${hotoCell?`<td class="neu" style="font-weight:600">${f(hotoCell.mopFull)}</td>`:''}${baseCells.map((c,i)=>`<td class="neu" style="${i===0?'border-left:2px solid #adb5bd':''}">${f(c.mopMtd)}</td>`).join('')}${ordMtdCell}${hotoCell?`<td class="neu">${f(hotoCell.mopMtd)}</td>`:''}${baseCells.map((c,i)=>defCellAbs(c.actual,c.mopMtd,i===0?'border-left:3px solid #166534':'')).join('')}${ordCell}${hotoCell?defCellAbs(hotoCell.actual,hotoCell.mopMtd,''):''}${baseCells.map((c,i)=>defCell(c.actual,c.mopMtd,i===0?'border-left:3px solid #92400e':'')).join('')}${ordPctCell}${(()=>{if(!hotoCell)return'';const hm=hotoCell.mopMtd,hd=hotoCell.actual-hm,hp=hm?Math.round(hd/hm*100):0,hcls=hd<0?(Math.abs(hp)>=20?'def-hi':'def-md'):'sur-hi';return`<td class="${hcls}">${hp>=0?'+':''}${hp}%</td>`;})()}${baseCells.map((c,i)=>`<td style="${i===0?'border-left:3px solid #6d28d9':''}">${mb(c.actual,c.prevActual)}</td>`).join('')}<td>${mb(actOrder,lmtdOrder)}</td>${hotoCell?`<td>${mb(hotoCell.actual,hotoCell.prevActual)}</td>`:''}</tr>`;
   }
-  const mopCities=CITIES.filter(hasMop);
+  const mopCities=CITIES.filter(hasMopV);
   const cities=cfArr.length?mopCities.filter(c=>cfArr.includes(c)):(tf.length?mopCities.filter(c=>tierOk(tf,TIERS[c])):mopCities);
   const tbody=document.querySelector('#mop-tbl tbody');
   if(tbody)tbody.innerHTML=cityRowHtml(null,true)+cities.map(c=>cityRowHtml(c,false)).join('');
@@ -1994,8 +2162,8 @@ function avmNum(n,dec){return n==null||isNaN(n)?'-':n.toLocaleString('en-IN',{mi
 function avmSigned(n,dec,suffix){const s=n>=0?'+':'';return`<span class="${n>=0?'green':'red'}">${s}${avmNum(n,dec)}${suffix||''}</span>`;}
 function avmRowHtml(city,isIndia,doneD,totalDays){
   const key=isIndia?'India':city;
-  const t=MOP[key]||{};
-  const v=isIndia?C.india:(C.cMTD[city]||{BQL:0,MD:0,Order:0});
+  const t=mvT(key);
+  const v=isIndia?mvA('India'):mvA(city);
   const tier=isIndia?'India':(TIERS[city]||'');
   const rowStyle=isIndia?'style="font-weight:700;background:#f8faff;border-top:2px solid var(--bl)"':'';
   const r=avmCalc(v,t,doneD,totalDays);
@@ -2025,10 +2193,10 @@ function avmRowHtml(city,isIndia,doneD,totalDays){
 }
 function bAVM(){
   const yd=C.yd,doneD=yd.getDate(),totalDays=dim(yd);
-  const indiaCalc=avmCalc(C.india,MOP.India||{},doneD,totalDays);
+  const indiaCalc=avmCalc(mvA('India'),mvT('India'),doneD,totalDays);
   document.getElementById('p-avm').innerHTML=`
 <div class="ptitle">Actuals vs MOP — Order Deficit &amp; Loss Attribution</div>
-<div class="psub">MTD Day ${doneD}/${totalDays} · Order deficit decomposed using MOP's own BQL→MD &amp; MD→Order implied rates (not the BQL-MS-MD-Order funnel) · Toggle BTL with the top-bar switch — this table follows it live</div>
+<div class="psub">MTD Day ${doneD}/${totalDays} · Order deficit decomposed using MOP's own BQL→MD &amp; MD→Order implied rates (not the BQL-MS-MD-Order funnel) · <strong>MOP variant: ${mvLabel()}</strong> · the top-bar BTL switch also moves this selector</div>
 <div class="mgrid">
   <div class="mc"><div class="mc-lbl">India MTD Order Deficit</div><div class="mc-val ${indiaCalc.ordDef<0?'red':'green'}">${avmNum(indiaCalc.ordDef,0)}</div></div>
   <div class="mc"><div class="mc-lbl">Loss: BQL Volume</div><div class="mc-val ${indiaCalc.bqlEff<0?'red':'green'}">${avmNum(indiaCalc.bqlEff,0)}</div></div>
@@ -2036,7 +2204,7 @@ function bAVM(){
   <div class="mc"><div class="mc-lbl">Loss: MD→Order Conv.</div><div class="mc-val ${indiaCalc.conv2<0?'red':'green'}">${avmNum(indiaCalc.conv2,0)}</div></div>
   <div class="mc"><div class="mc-lbl">Primary Driver (India)</div><div class="mc-val" style="font-size:14px">${indiaCalc.driver}</div></div>
 </div>
-<div class="fbar"><span id="avm-tier-mc-wrap"></span><span id="avm-city-mc-wrap"></span></div>
+<div class="fbar">${mvSwitchHtml()}<span id="avm-tier-mc-wrap"></span><span id="avm-city-mc-wrap"></span></div>
 <div class="tw freeze" id="avm-tbl"><table>
   <thead>
     <tr>
@@ -2070,7 +2238,7 @@ function bAVM(){
       <th style="background:#fdf2f8">Order Projected</th>
     </tr>
   </thead>
-  <tbody>${avmRowHtml(null,true,doneD,totalDays)}${CITIES.filter(hasMop).sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);}).map(c=>avmRowHtml(c,false,doneD,totalDays)).join('')}</tbody>
+  <tbody>${avmRowHtml(null,true,doneD,totalDays)}${CITIES.filter(hasMopV).sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);}).map(c=>avmRowHtml(c,false,doneD,totalDays)).join('')}</tbody>
 </table></div>
 <div style="font-size:11px;color:var(--t3);margin-top:8px">Note: cities with MTD activity but no MOP target this month aren't shown here but are included in the India row (small, expected gap per CLAUDE.md Sec.6).</div>`;
   initAvmMC();
@@ -2085,7 +2253,7 @@ function filterAvmTable(){
   const yd=C.yd,doneD=yd.getDate(),totalDays=dim(yd);
   const tf=getMSVal('avm-tier',TIER_OPTIONS);
   const cfArr=getMCVal('avm-city');
-  const mopCities=CITIES.filter(hasMop);
+  const mopCities=CITIES.filter(hasMopV);
   const cities=cfArr.length?mopCities.filter(c=>cfArr.includes(c)):(tf.length?mopCities.filter(c=>tierOk(tf,TIERS[c])):mopCities);
   const sorted=cities.sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);});
   const tbody=document.querySelector('#avm-tbl tbody');
@@ -2098,18 +2266,18 @@ function filterAvmTable(){
 // autoSort on MOP table done in filterMopTable
 function bIndia(){
   const p=document.getElementById('p-india');
-  p.innerHTML=`<div class="ptitle">India Summary</div><div class="psub">All cities . Referral Channel</div>
-<div class="fbar"><span id="i-tier-mc-wrap"></span><span id="i-city-mc-wrap"></span><span id="i-sc-mc-wrap"></span></div>
+  p.innerHTML=`<div class="ptitle">India Summary</div><div class="psub">All cities . Referral Channel . <strong>MOP variant: ${mvLabel()}</strong></div>
+<div class="fbar">${mvSwitchHtml()}<span id="i-tier-mc-wrap"></span><span id="i-city-mc-wrap"></span><span id="i-sc-mc-wrap"></span></div>
 <div id="i-body"></div>`;
   insertMSWidget('i-tier-mc-wrap','i-tier',TIER_OPTIONS,TIER_CFG,()=>rebuildIndia());
   insertMCWidget('i-city-mc-wrap','i-city',()=>rebuildIndia());
-  insertMSWidget('i-sc-mc-wrap','i-sc',SCS,SC_CFG,()=>rebuildIndia());
+  insertMSWidget('i-sc-mc-wrap','i-sc',mvScs(),SC_CFG,()=>rebuildIndia());
   rebuildIndia();
 }
 function rebuildIndia(){
   const tf=getMSVal('i-tier',TIER_OPTIONS);
   const tierCities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):null;
-  renderIndia(getMCVal('i-city'),getMSVal('i-sc',SCS),tierCities);
+  renderIndia(getMCVal('i-city'),getMSVal('i-sc',mvScs()),tierCities);
 }
 function renderIndia(cfArr,sfArr,tierCities){
   const yd=C.yd,months=C.months;
@@ -2119,9 +2287,20 @@ function renderIndia(cfArr,sfArr,tierCities){
   const inScope=(c)=>!scopeCities||scopeCities.includes(c);
   function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
   const cur=MS0(yd),lmS=new Date(yd.getFullYear(),yd.getMonth()-1,1),lmE=new Date(yd.getFullYear(),yd.getMonth()-1,yd.getDate());
-  const v=agg(ED.filter(r=>r.date>=cur&&r.date<=yd&&inScope(r.city)&&scOk(sfArr,r.sc)));
-  const pv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&inScope(r.city)&&scOk(sfArr,r.sc)));
-  const mop=scopeCities?{BQL:scopeCities.reduce((s,c)=>s+(MOP[c]?.BQL||0),0),MS:scopeCities.reduce((s,c)=>s+(MOP[c]?.MS||0),0),MD:scopeCities.reduce((s,c)=>s+(MOP[c]?.MD||0),0),ORDER:scopeCities.reduce((s,c)=>s+(MOP[c]?.ORDER||0),0),HOTO:scopeCities.reduce((s,c)=>s+(MOP[c]?.HOTO||0),0)}:MOP.India;
+  // Variant-scoped row set for this tab. Off ED_ALL (not ED) so the MOP
+  // variant selector is independent of the global BTL toggle, and used for
+  // every table on the tab so the MOP block and the MoM/MTD trends below it
+  // always describe the same population as the target they sit under.
+  const EDV=ED_ALL.filter(r=>mvScOk(r.sc));
+  const v=agg(EDV.filter(r=>r.date>=cur&&r.date<=yd&&inScope(r.city)&&scOk(sfArr,r.sc)));
+  const pv=agg(EDV.filter(r=>r.date>=lmS&&r.date<=lmE&&inScope(r.city)&&scOk(sfArr,r.sc)));
+  // Targets come from the active variant's table. Summed over the scoped
+  // cities when a tier/city filter is on, else the variant's own India row
+  // (which is the workbook's India figure, not a re-sum of the cities --
+  // the two differ by 1-3 units from independent rounding in the source).
+  const mop=scopeCities
+    ?['BQL','MS','MD','ORDER','HOTO'].reduce((o,m)=>{o[m]=scopeCities.reduce((t,c)=>t+(mvT(c)[m]||0),0);return o;},{})
+    :mvT('India');
   const metrics=['BQL','MS','MD','Order','HOTO'];
   const mK={BQL:'BQL',MS:'MS',MD:'MD',Order:'ORDER',HOTO:'HOTO'};
   const mopRows=metrics.map(m=>{
@@ -2131,17 +2310,17 @@ function renderIndia(cfArr,sfArr,tierCities){
   }).join('');
 
   const moRows=months.map((mo,i)=>{
-    const r=agg(ED.filter(x=>x.year===mo.y&&x.month===mo.m&&inScope(x.city)&&scOk(sfArr,x.sc)));
-    const pr=i>0?agg(ED.filter(x=>x.year===months[i-1].y&&x.month===months[i-1].m&&inScope(x.city)&&scOk(sfArr,x.sc))):{BQL:0,MS:0,MD:0,Order:0};
+    const r=agg(EDV.filter(x=>x.year===mo.y&&x.month===mo.m&&inScope(x.city)&&scOk(sfArr,x.sc)));
+    const pr=i>0?agg(EDV.filter(x=>x.year===months[i-1].y&&x.month===months[i-1].m&&inScope(x.city)&&scOk(sfArr,x.sc))):{BQL:0,MS:0,MD:0,Order:0};
     const isCur=i===months.length-1;
     const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),pBMs=(pr.MS/Math.max(pr.BQL,1)*100).toFixed(1),mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),pMMd=(pr.MD/Math.max(pr.MS,1)*100).toFixed(1),mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1),pMO=(pr.Order/Math.max(pr.MD,1)*100).toFixed(1);
     const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1),pMH=(pr.HOTO||0/Math.max(pr.MD||1,1)*100).toFixed(1);
     return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">MTD</span>':''}</td><td>${isCur?cv(r.BQL,pr.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td><td>${isCur?cv(r.MS,pr.MS):`<span class="mono">${f(r.MS)}</span>`}</td><td>${isCur?`<span class="${parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'}" title="Current: ${bMs}% | Prior month: ${pBMs}%">${bMs}%</span>`:bMs+'%'}</td><td>${isCur?cv(r.MD,pr.MD):`<span class="mono">${f(r.MD)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'}" title="Current: ${mMd}% | Prior: ${pMMd}%">${mMd}%</span>`:mMd+'%'}</td><td>${isCur?cv(r.Order,pr.Order):`<span class="mono">${f(r.Order)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mO)>=parseFloat(pMO)?'green':'red'}" title="Current: ${mO}% | Prior: ${pMO}%">${mO}%</span>`:mO+'%'}</td><td>${isCur?cv(r.HOTO,pr.HOTO||0):`<span class="mono">${f(r.HOTO)}</span>`}</td><td>${isCur?`<span class="${parseFloat(mH)>=parseFloat(pMH)?'green':'red'}" title="Current: ${mH}%">${mH}%</span>`:mH+'%'}</td></tr>`;
   }).join('');
 
-  const scRows=SCS.map(s=>{
-    const cur2=MS0(yd),sv=agg(ED.filter(r=>r.date>=cur2&&r.date<=yd&&inScope(r.city)&&r.sc===s));
-    const spv=agg(ED.filter(r=>r.date>=lmS&&r.date<=lmE&&inScope(r.city)&&r.sc===s));
+  const scRows=mvScs().map(s=>{
+    const cur2=MS0(yd),sv=agg(EDV.filter(r=>r.date>=cur2&&r.date<=yd&&inScope(r.city)&&r.sc===s));
+    const spv=agg(EDV.filter(r=>r.date>=lmS&&r.date<=lmE&&inScope(r.city)&&r.sc===s));
     const tot=v.BQL;return{s,sv,spv,share:tot?pN(sv.BQL,tot):0};
   }).filter(r=>r.sv.BQL>0||r.sv.HOTO>0);
 
@@ -2149,8 +2328,8 @@ function renderIndia(cfArr,sfArr,tierCities){
   const mtdDay=yd.getDate();
   const moMtdRows=months.map((mo,i)=>{
     const mStart=new Date(mo.y,mo.m-1,1),mEnd=new Date(mo.y,mo.m-1,mtdDay);
-    const r2=agg(ED.filter(x=>x.date>=mStart&&x.date<=mEnd&&inScope(x.city)&&scOk(sfArr,x.sc)));
-    const pr2=i>0?agg(ED.filter(x=>{const ps=new Date(months[i-1].y,months[i-1].m-1,1),pe=new Date(months[i-1].y,months[i-1].m-1,mtdDay);return x.date>=ps&&x.date<=pe&&inScope(x.city)&&scOk(sfArr,x.sc);})):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    const r2=agg(EDV.filter(x=>x.date>=mStart&&x.date<=mEnd&&inScope(x.city)&&scOk(sfArr,x.sc)));
+    const pr2=i>0?agg(EDV.filter(x=>{const ps=new Date(months[i-1].y,months[i-1].m-1,1),pe=new Date(months[i-1].y,months[i-1].m-1,mtdDay);return x.date>=ps&&x.date<=pe&&inScope(x.city)&&scOk(sfArr,x.sc);})):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
     const isCur=i===months.length-1;
     const bMs2=(r2.MS/Math.max(r2.BQL,1)*100).toFixed(1),pBMs2=(pr2.MS/Math.max(pr2.BQL,1)*100).toFixed(1),mMd2=(r2.MD/Math.max(r2.MS,1)*100).toFixed(1),pMMd2=(pr2.MD/Math.max(pr2.MS,1)*100).toFixed(1),mO2=(r2.Order/Math.max(r2.MD,1)*100).toFixed(1),pMO2=(pr2.Order/Math.max(pr2.MD,1)*100).toFixed(1),mH2=(r2.HOTO/Math.max(r2.MD,1)*100).toFixed(1),pMH2=(pr2.HOTO/Math.max(pr2.MD,1)*100).toFixed(1);
     return`<tr ${isCur?'style="background:#f0f9ff"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">Current</span>':` <span style="font-size:9px;color:var(--t3)">till ${mtdDay}</span>`}</td><td>${isCur?cv(r2.BQL,pr2.BQL):`<span class="mono">${f(r2.BQL)}</span>`}</td><td>${isCur?cv(r2.MS,pr2.MS):`<span class="mono">${f(r2.MS)}</span>`}</td><td title="Cur: ${bMs2}% | Prior MTD: ${pBMs2}%"><span class="${isCur?(parseFloat(bMs2)>=parseFloat(pBMs2)?'green':'red'):''}">${bMs2}%</span></td><td>${isCur?cv(r2.MD,pr2.MD):`<span class="mono">${f(r2.MD)}</span>`}</td><td title="Cur: ${mMd2}% | Prior MTD: ${pMMd2}%"><span class="${isCur?(parseFloat(mMd2)>=parseFloat(pMMd2)?'green':'red'):''}">${mMd2}%</span></td><td>${isCur?cv(r2.Order,pr2.Order):`<span class="mono">${f(r2.Order)}</span>`}</td><td title="Cur: ${mO2}% | Prior MTD: ${pMO2}%"><span class="${isCur?(parseFloat(mO2)>=parseFloat(pMO2)?'green':'red'):''}">${mO2}%</span></td><td>${isCur?cv(r2.HOTO,pr2.HOTO||0):`<span class="mono">${f(r2.HOTO)}</span>`}</td><td title="Cur: ${mH2}% | Prior MTD: ${pMH2}%"><span class="${isCur?(parseFloat(mH2)>=parseFloat(pMH2)?'green':'red'):''}">${mH2}%</span></td></tr>`;
@@ -2246,7 +2425,7 @@ function bCity(){
   const funnelPctMop=(a,b,cityKey,numKey,denKey,pa,pb)=>{
     if(!b)return'-';
     const curr=a/b*100;
-    const mp=MOP[cityKey]||{};
+    const mp=mvT(cityKey);
     const mopDen=mp[denKey]||0,mopNum=mp[numKey]||0;
     const mopRate=mopDen?mopNum/mopDen*100:null;
     const lmtd=pb?pa/pb*100:null;
@@ -2257,8 +2436,8 @@ function bCity(){
     return`<span ${tip}><span class="mono ${cls}">${curr.toFixed(1)}%</span>${mopBadge}${lmtdBadge}</span>`;
   };
   const rows=CITIES.map(c=>{
-    const v=C.cMTD[c],pv=C.cLMTD[c];
-    return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mO:C.mopMTD(c,'ORDER'),mB:C.mopMTD(c,'BQL'),mMS:C.mopMTD(c,'MS'),mMD:C.mopMTD(c,'MD'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
+    const v=mvA(c),pv=mvAL(c);
+    return{c,v,pv,mH:mvMTD(c,'HOTO'),mO:mvMTD(c,'ORDER'),mB:mvMTD(c,'BQL'),mMS:mvMTD(c,'MS'),mMD:mvMTD(c,'MD'),mF:mvT(c).HOTO||0,tier:TIERS[c]||''};
   }).sort((a,b)=>{
     // Primary: tier order (Focus=0, Big=1, Mid=2, Small=3, Exp=4)
     const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
@@ -2269,14 +2448,14 @@ function bCity(){
     return dropA-dropB; // most negative first
   });
   // India row
-  const indV=C.india,indPV=C.indiaL;
+  const indV=mvA('India'),indPV=mvAL('India');
   const indRow=`<tr style="font-weight:700;background:#f8faff;border-bottom:2px solid var(--bd2)">
     <td><strong>India</strong><span class="ctag" style="background:#1a56db;color:#fff">All</span></td>
-    <td>${vsMop(indV.BQL,C.mopMTD(null,'BQL'),indPV.BQL)}</td>
-    <td>${vsMop(indV.MS,C.mopMTD(null,'MS'),indPV.MS)}</td>
-    <td>${vsMop(indV.MD,C.mopMTD(null,'MD'),indPV.MD)}</td>
-    <td>${vsMop(indV.Order,C.mopMTD(null,'ORDER'),indPV.Order)}</td>
-    <td>${vsMop(indV.HOTO,C.mopMTD(null,'HOTO'),indPV.HOTO)}</td>
+    <td>${vsMop(indV.BQL,mvMTD('India','BQL'),indPV.BQL)}</td>
+    <td>${vsMop(indV.MS,mvMTD('India','MS'),indPV.MS)}</td>
+    <td>${vsMop(indV.MD,mvMTD('India','MD'),indPV.MD)}</td>
+    <td>${vsMop(indV.Order,mvMTD('India','ORDER'),indPV.Order)}</td>
+    <td>${vsMop(indV.HOTO,mvMTD('India','HOTO'),indPV.HOTO)}</td>
     <td style="background:#e5e7eb;padding:0"></td>
     <td>${funnelPct(indV.MS,indV.BQL,indPV.MS,indPV.BQL)}</td>
     <td>${funnelPct(indV.MD,indV.MS,indPV.MD,indPV.MS)}</td>
@@ -2301,7 +2480,7 @@ function bCity(){
     <td>${funnelPct(r.v.Order,r.v.BQL,r.pv.Order,r.pv.BQL)}</td>
   </tr>`).join('');
   const drills=rows.filter(r=>r.v.BQL>0||r.v.HOTO>0).map(r=>{
-    const scd=SCS.map(s=>({s,v:C.cscMTD[r.c][s],pv:C.cscLMTD[r.c][s]})).filter(x=>x.v.BQL>0||x.v.HOTO>0);
+    const scd=mvScs().map(s=>({s,v:mvSum(C.cscAll,r.c,[s]),pv:mvSum(C.cscAllL,r.c,[s])})).filter(x=>x.v.BQL>0||x.v.HOTO>0);
     const topS=[...scd].sort((a,b)=>b.v.HOTO-a.v.HOTO)[0];
     const weakS=scd.filter(x=>x.v.MD>3).sort((a,b)=>pN(a.v.Order,a.v.MD)-pN(b.v.Order,b.v.MD))[0];
     return`<div class="coll-wrap"><div class="coll-hd" onclick="tog(this)">
@@ -2384,8 +2563,8 @@ function bCity(){
     }).join('')}
     </tbody></table></div></div></div>`;
   }).join('');
-  document.getElementById('p-city').innerHTML=`<div class="ptitle">City Summary</div><div class="psub">India row at top . Cities sorted by Order drop vs LMTD (worst first) . MTD vs MOP &amp; LMTD</div>
-<div class="fbar"><span id="city-tier-mc-wrap"></span><span id="city-city-mc-wrap"></span><span id="city-sc-f-mc-wrap"></span></div>
+  document.getElementById('p-city').innerHTML=`<div class="ptitle">City Summary</div><div class="psub">India row at top . Cities sorted by Order drop vs LMTD (worst first) . MTD vs MOP &amp; LMTD . <strong>MOP variant: ${mvLabel()}</strong></div>
+<div class="fbar">${mvSwitchHtml()}<span id="city-tier-mc-wrap"></span><span id="city-city-mc-wrap"></span><span id="city-sc-f-mc-wrap"></span></div>
 <div class="stitle">Performance - Absolute vs MOP MTD &amp; LMTD . Funnel % vs LMTD</div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--t2);margin-bottom:8px">
   <span style="background:#dbeafe;color:#1a56db;padding:2px 7px;border-radius:5px;font-weight:600">Absolute: Actual / MOP MTD / LMTD</span>
@@ -2417,7 +2596,7 @@ function bCity(){
   // three widgets up here now.
   initCityMC();
   insertMSWidget('city-tier-mc-wrap','city-tier',TIER_OPTIONS,TIER_CFG,()=>filterCityTable());
-  insertMSWidget('city-sc-f-mc-wrap','city-sc-f',SCS,SC_CFG,()=>filterCityTable());
+  insertMSWidget('city-sc-f-mc-wrap','city-sc-f',mvScs(),SC_CFG,()=>filterCityTable());
   autoSort(document.getElementById('city-perf-tw'));
 }
 function initCityMC(){
@@ -2425,7 +2604,7 @@ function initCityMC(){
   if(w&&!w.dataset.init){w.dataset.init='1';const mc=buildMultiCity('city-city',()=>filterCityTable());w.appendChild(mc);}
 }
 function filterCityTable(){
-  const sf=getMSVal('city-sc-f',SCS);
+  const sf=getMSVal('city-sc-f',mvScs());
   const tf=getMSVal('city-tier',TIER_OPTIONS);
   const tfLbl=tf.map(t=>TIER_LABELS[t]||t).join(', ');
   const cityFArr=getMCVal('city-city');
@@ -2433,10 +2612,11 @@ function filterCityTable(){
   // Determine cities: explicit multi-select > tier filter > all
   const allCities=cityFArr.length>0?cityFArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
   // Sum across every selected sub-channel (was a single-key lookup, only supported one at a time)
-  function scAgg(cache,c,list){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};list.forEach(s=>{const x=cache[c][s];if(x)['BQL','MS','MD','Order','HOTO'].forEach(m=>r[m]+=x[m]||0);});return r;}
+  // mvA/mvAL already intersect the sub-channel filter with the active variant,
+  // so the old scAgg() helper is no longer needed here.
   const rows=allCities.map(c=>{
-    const v=sf.length?scAgg(C.cscMTD,c,sf):C.cMTD[c],pv=sf.length?scAgg(C.cscLMTD,c,sf):C.cLMTD[c];
-    return{c,v,pv,mH:C.mopMTD(c,'HOTO'),mO:C.mopMTD(c,'ORDER'),mB:C.mopMTD(c,'BQL'),mF:MOP[c]?.HOTO||0,tier:TIERS[c]||''};
+    const v=mvA(c,sf),pv=mvAL(c,sf);
+    return{c,v,pv,mH:mvMTD(c,'HOTO'),mO:mvMTD(c,'ORDER'),mB:mvMTD(c,'BQL'),mF:mvT(c).HOTO||0,tier:TIERS[c]||''};
   }).sort((a,b)=>(tierOrd[a.tier]||5)-(tierOrd[b.tier]||5)||b.v.HOTO-a.v.HOTO);
   // Aggregate India row from filtered cities
   const aggV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
@@ -2444,7 +2624,7 @@ function filterCityTable(){
   const aggMop={BQL:0,MS:0,MD:0,HOTO:0,ORDER:0};
   rows.forEach(r=>{
     ['BQL','MS','MD','Order','HOTO'].forEach(m=>{aggV[m]+=r.v[m]||0;aggPV[m]+=r.pv[m]||0;});
-    ['BQL','MS','MD','HOTO','ORDER'].forEach(m=>{aggMop[m]+=C.mopMTD(r.c,m);});
+    ['BQL','MS','MD','HOTO','ORDER'].forEach(m=>{aggMop[m]+=mvMTD(r.c,m);});
   });
   const indMH=aggMop.HOTO,indMO=aggMop.ORDER,indMB=aggMop.BQL,indMMS=aggMop.MS,indMMD=aggMop.MD;
   const tb=document.getElementById('city-tbody');
@@ -2471,7 +2651,7 @@ function filterCityTable(){
   };
   const fPMop2=(a,b,cityKey,numKey,denKey,pa,pb)=>{
     if(!b)return'-';
-    const mp=MOP[cityKey]||{};
+    const mp=mvT(cityKey);
     return fPMopCore(a/b*100,mp[numKey]||0,mp[denKey]||0,pb?pa/pb*100:null);
   };
   // For the "India (filtered)" aggregate row -- MOP num/den already summed across the
