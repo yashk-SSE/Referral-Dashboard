@@ -17,8 +17,9 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
-**As of 2026-09-02 (September MOP loaded + a new 5-way MOP variant selector built
-— data change applied, dashboard change is IN PREVIEW, not merged, not pushed):**
+**As of 2026-09-02 (September MOP + a new 5-way MOP variant selector — reviewed,
+merged, and PUSHED as commit `ca3f513`; `index.preview.html` deleted, nothing
+pending):**
 
 - **September MOP is loaded into `data/referral_mop.json`** from Yash's new
   `MOP Sep Referral.xlsx`. **The file's schema changed** — it now carries **5**
@@ -56,9 +57,9 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   Varanasi BTL row was `ORDER=0, HOTO=0`. Separately, BTL `MS > BQL` shows up for
   Ahmedabad and Aurangabad, but that pattern is **pre-existing and accepted** (Aug
   had 9 such cases, Sep only 2) — don't re-flag it.
-- **⚠️ `index.preview.html` is AHEAD of `index.html` again — a new 5-way MOP
-  variant selector. Reviewed by Claude and browser-verified, but NOT yet reviewed
-  by Yash, NOT merged, NOT pushed.** What it does:
+- **The 5-way MOP variant selector is LIVE in `index.html`/`origin/main`**
+  (commit `ca3f513`, merged and pushed 2026-09-02 after Yash's explicit go-ahead).
+  What it does:
   - A **tab-local** 5-option selector (`Sales` / `Non-Sales` / `BTL` /
     `Sales + Non-Sales` / `All`) in the `.fbar` of the **4 MOP-target tabs only**:
     `mop` (MOP vs MTD), `avm` (Actuals vs MOP), `india` (India Summary), `city`
@@ -127,13 +128,23 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
   Claude once during this very session's verification (a newly-added global read
   as `undefined` until a `?v=N` cache-buster was appended). Always load the
   preview with a changing query param when verifying an edit.
-- **⚠️ Unrelated but important: there is NO September actuals data yet.**
-  `referral_effort.json` ends **2026-08-24**, so with `C.yd` = Sep 1 every
-  current-month MTD figure is 0 and the MOP tabs read **-100% vs MOP across the
-  board**. This is a **pipeline-freshness issue, not a bug in any of the above** —
-  `C.india` was already all-zero before any change this session. The Apps Script
-  needs to run (or Yash needs to redeploy/trigger it) before the Sep dashboard
-  shows anything meaningful.
+- **⚠️ Lesson: a stale LOCAL clone made September's data look missing entirely.**
+  Mid-session Claude reported "there is NO September actuals data" because the
+  local `data/referral_effort.json` had last been pulled 2026-08-25 and ended
+  2026-08-24, so every MTD figure rendered as 0 / -100% vs MOP. **That was wrong** —
+  `origin/main` had 59 newer automated commits including
+  `📊 Referral effort: 02 Sep 2026 11:24 AM IST`. After `git pull --rebase` the Sep
+  data was there (52 rows, all Sep 1: 93 BQL / 8 Order / 6 HOTO). **The Apps Script
+  and Customer App workflows push to `main` many times a day, so a local clone goes
+  stale within hours.** `git fetch` before drawing ANY conclusion about data
+  freshness or completeness — an "empty" current month is far more likely to be a
+  stale clone than a broken pipeline.
+- **Day-1 MOP percentages look alarming and are not.** With `C.yd` = Sep 1 the MOP
+  tab shows India Actual 93 vs MOP MTD 175 (-47% BQL) but **-87% Order / -89% HOTO**.
+  That asymmetry is the structural month-end skew already documented in Section 3
+  (Order and HOTO both trend very high at month-end) plus the Order→HOTO lag —
+  not a data or logic problem. Don't treat early-month lower-funnel deficits as
+  signal.
 - **⚠️ Pre-existing gap found while verifying (NOT introduced here, not fixed):**
   8 cities appear in the Aug'26 effort data but are absent from `index.html`'s
   `CITIES` list — **`Raipur` (38 BQL), `Jodhpur` (10 BQL / 4 Order / 3 HOTO),
