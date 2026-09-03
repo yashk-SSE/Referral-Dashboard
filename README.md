@@ -27,13 +27,24 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
   `digital_leads.json`, plus `referral_mop.json` (MOP targets, maintained separately —
   see `scripts/build_mop_json.py` below; it won't have every city, and that's
   expected for Expansion-tier cities without a monthly MOP).
+- `data/referral_mop_history.json` — every past month's MOP, keyed by month, each
+  carrying the list of splits that month has targets for. Written by
+  `build_mop_json.py` alongside the flat current-month file (which only ever holds
+  the running month and is overwritten each time a workbook lands). This is what
+  the "Last Month Performance" tab compares a closed month against; seeded from
+  git history by `scripts/backfill_mop_history.py`.
 - `scripts/build_mop_json.py` — regenerates `data/referral_mop.json` from the monthly
   `MOP <Mon> Referral.xlsx` workbook. Since Sep'26 that workbook splits targets 3 ways
   by sub-channel group (Sales / Non-Sales / BTL) plus two roll-ups, which is too many
   numbers to retype by hand. Run `python scripts/build_mop_json.py "MOP Sep Referral.xlsx"`
   (add `--dry-run` to inspect first). It validates the workbook's column layout before
   trusting it, and reports rather than silently reconciling the source's own rounding
-  drift between `Total (Sales+Non-Sales)` and `Sales + Non Sales`.
+  drift between `Total (Sales+Non-Sales)` and `Sales + Non Sales`. Pass
+  `--month YYYY-MM` if the targets are not for the current calendar month.
+- `scripts/backfill_mop_history.py` — one-off/re-runnable seed of the history file
+  from past versions of `referral_mop.json` in git. Only Jul/Aug/Sep '26 are
+  recoverable: June and earlier predate the explicit Order target, and the whole
+  analysis is an Order-deficit decomposition.
 - `.github/workflows/test.yml` — placeholder, does not run tests.
 - `preview-local.bat` — double-click to preview the dashboard locally on Windows.
   Starts a local server on `http://localhost:8743` and opens it in your browser.

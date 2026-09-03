@@ -64,7 +64,86 @@ but NOT STARTED — see the plan below before building anything):**
   (discontinued: 81 orders / 76 HOTOs lifetime but only 1 order in FY27 —
   near-dead, low priority), and **`Ajmer`** (zero volume anywhere, ever).
 
-**PLANNED, AGREED, NOT BUILT — "Last Month Performance" tab (scoped 2026-09-03):**
+**As of 2026-09-03, later — "Last Month Performance" tab is BUILT and browser-verified,
+sitting in `index.preview.html`, NOT merged, NOT pushed (awaiting Yash's review).
+The MOP-history prerequisite IS merged and pushed (`0b7a1e8`).**
+
+- **New tab `lmp`, sidebar "Last Month Performance"**, directly under Actuals vs MOP.
+  Deliberately **not** in `REFERRAL_TABS`, so Timeframe mode skips it (same
+  precedent as `avm`). Code lives just above the `REFERRAL_TABS` declaration:
+  `bLMP()` / `lmpRender()` plus `lmpBridge()`, `lmpWaterfall()`, `lmpBars()`,
+  `lmpCards()`, `lmpSubTable()`, and the `LMP` state object.
+- **Controls: Month . MOP split . Metric (Order/HOTO) . City.** The month picker
+  lists only months in `referral_mop_history.json`, and **excludes the current
+  month on purpose** — its MOP is a full-month figure, so comparing it to a few
+  days of actuals reads as a catastrophic miss (Sep 1–2 alone: 58 orders against
+  a 1,929 plan). MOP vs MTD and Actuals vs MOP already cover the running month
+  with the target prorated. Defaults to last closed month.
+- **The split buttons come from each month's own `variants` list** — Jul'26 offers
+  1 (All), Aug'26 offers 3, Sep'26 offers 5. `lmpFixSplit()` re-points the split
+  when the month changes, and the city falls back to India if it has no plan in
+  the newly-picked month/split.
+- **Order/HOTO switcher, per Yash 2026-09-03.** `LMP_MODES` drives an **N-stage**
+  generalisation of `avmCalc()`'s sequential substitution: Order decomposes over
+  2 rate stages (BQL→MD, MD→Order), HOTO over 3 (adding **Order→HOTO**). The
+  Order→HOTO plan rate is **MOP's own implied HOTO/ORDER per city, not a flat 95%
+  assumption** — Yash offered either; the implied rate was chosen for consistency
+  with how every other stage rate is derived, and because it is per-city.
+  India Aug is 88.8%, Sep 89.2%. **Order and HOTO headline tiles are always both
+  visible** regardless of which one is being decomposed.
+- **⚠️ The bridge can have an irreducible remainder, and it is surfaced, not
+  hidden.** The effects telescope to
+  `aBQL*prod(actualRates) - tBQL*prod(targetRates)`, which equals
+  `actual - target` only while every intermediate stage is nonzero. **Both sides
+  can break it:**
+  - *actuals* — Effort basis counts actions in the month they happen whatever
+    month the lead came from, so a scope can book an Order in a month it recorded
+    no MD at all (Agra Sep'26 Sales: BQL 0, MD 0, Order 1);
+  - *targets* — Varanasi's Sep'26 BTL row is `ORDER=0` with `HOTO=5`, so its plan
+    implies HOTOs with no orders to come from.
+  Where a rate does not exist the multiplicative split is genuinely undefined, so
+  an explicit **"Unattributed"** effect (its own amber bar + a banner) carries the
+  remainder. **Compute it as `deficit − sum(effects)`** — deriving it from the
+  actual side alone silently missed the target-side case, which is exactly the bug
+  that showed up as Varanasi failing the tie-out sweep.
+  **All 10 affected cases are Sep'26 (a part-month) or that Varanasi row; Jul'26
+  and Aug'26 — real closed months, which is all this tab will ever show — are
+  completely clean.** A `lmpCoverage()` check also banners any month whose effort
+  data covers fewer days than the month has.
+- **Comparison cards are month-aware, which is subtler than it looks.** Whether
+  `noBtl` is a real channel group or a roll-up **depends on the month**: from
+  Sep'26 it rolls up sales+nonSales (so exclude it, showing Sales / Non-Sales /
+  BTL), but for Aug'26 no such split existed and `noBtl` IS the base group (so
+  show Non-BTL / BTL). `all` is always a roll-up. Getting this wrong silently
+  dropped a card — August rendered only BTL until it was made month-aware.
+  Verified the base groups sum to the combined total (Aug: 1,334 + 244 = 1,578).
+- **Sub-channel table** measures each sub-channel against the **active split's
+  own** plan rate, since no month has per-sub-channel MOP. Reproduces the Aug'26
+  finding at India/All: Online −292 orders, Sales +88.
+- **Reuses existing machinery** — `MOP_VARIANTS` for labels and sub-channel sets,
+  `TIERS` for city sort, `autoSort`, and the same largest-remainder allocation so
+  displayed effects always tie to the displayed gap.
+- **`LMP_ACT_CACHE` is cleared in `precompute()`** so the Old/New BQL and
+  First/Total MS/MD toggles re-aggregate past months too (verified: India Aug BQL
+  752 → 728 → 752 across a toggle round-trip).
+- **Verified in the browser:** 456 month × split × metric × city combinations all
+  tie exactly (raw floats to 1e-6 AND after integer allocation); 200 combinations
+  across the *selectable* months have zero unattributed remainder; the Varanasi
+  guard still fires when Sep is forced; all 23 tabs build; no console errors; no
+  horizontal body overflow. Aug Order reads 2,193 → −337 → −350 → +72 → 1,578 and
+  Aug HOTO reads 1,948 → −299 → −311 → +64 → +29 → 1,431.
+- **⚠️ Note on a 1-unit drift vs the published artifact:** the standalone Aug'26
+  artifact says Order actual 1,579 / gap −614; the tab says 1,578 / −615. **The
+  tab is right** — the Apps Script rewrites full history on every run, so a closed
+  month can still shift by a unit as source data is corrected. Expect a static
+  report and this live tab to diverge slightly over time; that is the pipeline
+  working, not a bug.
+- **Cosmetic, not fixed:** for Aug the two cards render BTL before Sales+Non-Sales
+  (they follow `MOP_VARIANT_ORDER`, where `btl` precedes `noBtl`). Sep's order is
+  natural (Sales / Non-Sales / BTL).
+
+**Original plan for the tab, as scoped and agreed before building (2026-09-03) —
+kept because it records the decisions and their reasons:**
 
 A new Referral tab reproducing the Aug'26 Actuals-vs-MOP analysis Claude built as
 a standalone artifact this session, but native to the dashboard and auto-rolling
