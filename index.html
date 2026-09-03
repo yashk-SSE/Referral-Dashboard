@@ -267,6 +267,10 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
    against last month's pushed data -- see CLAUDE.md Section 12. */
 .srcwarn{display:none;margin:0 0 12px;padding:10px 14px;border:1px solid #f59e0b;border-left:4px solid #d97706;border-radius:var(--r);background:#fffbeb;color:#7c2d12;font-size:12px;line-height:1.55}
 .srcwarn.show{display:block}
+/* Same shape as .srcwarn but blue -- an FYI to act on, not a broken-state warning. */
+.mergewarn{border-color:#3b82f6;border-left-color:#1d4ed8;background:#eff6ff;color:#1e3a8a}
+.mergewarn strong{color:#1e3a8a}
+.mergewarn code{background:#dbeafe}
 .srcwarn strong{color:#7c2d12}
 .srcwarn code{background:#fef3c7;padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11px}
 .mvsw{display:inline-flex;align-items:center;gap:3px;padding:3px 6px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--s2)}
@@ -539,6 +543,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     <div id="tf-status-chip" class="tf-status-chip">–</div>
   </div>
   <div class="srcwarn" id="src-warn"></div>
+  <div class="srcwarn mergewarn" id="merge-warn"></div>
   <div id="p-exec" class="panel active"><div class="loading"><div class="spin"></div><div>Loading data…</div></div></div>
   <div id="p-mop" class="panel"></div>
   <div id="p-avm" class="panel"></div>
@@ -576,7 +581,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 <script>
 // Data loaded from GitHub repo JSON files (no API keys needed)
 const FY_T=40000;
-const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp',Meerut:'Exp',Bareilly:'Exp',Vijayawada:'Exp',Kota:'Exp',Ahilyanagar:'Exp'};
+const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp',Meerut:'Exp',Bareilly:'Exp',Vijayawada:'Exp',Kota:'Exp',Ahilyanagar:'Exp',Raipur:'Exp',Jodhpur:'Exp',Salem:'Exp',Visakhapatnam:'Exp',Erode:'Exp'};
 // City is shown in MOP-target tables only once referral_mop.json actually has an entry for it
 // (checked live via hasMop() below — no manual list to maintain as new cities get added to MOP)
 // ── BTL switch: MOP now has two parallel target tables — Combined (all sub-channels,
@@ -689,7 +694,13 @@ function sumCityMTD(dataByCity,cityArr){
 }
 // Master city list — hardcoded explicitly (not derived from MOP keys) so the tab list
 // stays correct even if a city is temporarily missing from referral_mop.json.
-const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore','Meerut','Bareilly','Vijayawada','Kota','Ahilyanagar'];
+const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore','Meerut','Bareilly','Vijayawada','Kota','Ahilyanagar',
+  // Added 2026-09-02 (Yash): these were present in the BigQuery data but missing
+  // from this list, so their rows counted into India totals with no city row to
+  // show them -- ~1.9% of FY27 BQL was invisible. All Expansion tier. None has a
+  // referral_mop.json entry, so hasMop()/hasMopV() keep them out of the MOP
+  // tables automatically while City Summary and the funnels now reconcile.
+  'Raipur','Jodhpur','Salem','Visakhapatnam','Erode'];
 const FOCUS=['Nagpur','Lucknow','Pune'];
 const BIG=['Indore','Jabalpur','Chennai','Bhopal','Delhi','Nashik','Kanpur'];
 const MID=['Gwalior','Aurangabad','Hyderabad','Bangalore','Amravati','Jaipur','Ahmedabad','Kolhapur','Varanasi'];
@@ -931,6 +942,47 @@ function captureLastModified(filename,resp){
 // it silently shows whatever was last PUSHED, so an unpushed local data change
 // (a new MOP file, say) appears not to have taken effect at all.
 const FELL_BACK=[];
+// city -> {to, rows}: populated by cityFix() during ingestion. Reset per load.
+let MERGE_STATS={};
+// A merged-away city is fine while it is a rounding error on its destination.
+// Once it isn't, folding it in hides a real city's performance -- so surface it
+// and let Yash decide whether to promote it to its own row (his standing ask,
+// 2026-09-02, re: Vadodara->Ahmedabad).
+// Measured over a trailing 3 calendar months rather than the current month,
+// because early in a month both numbers are tiny and a share ratio is noise.
+const MERGE_ALERT_SHARE=0.10;   // >=10% of the destination's BQL
+const MERGE_ALERT_ABS=150;      // ...or >=150 BQL of its own, regardless of share
+function checkMergeVolumes(){
+  const el=document.getElementById('merge-warn');
+  if(!el||!ED_ALL.length)return;
+  const names=Object.keys(MERGE_STATS);
+  if(!names.length){el.classList.remove('show');return;}
+  // Trailing 3 calendar months ending with the current one.
+  const yd=C.yd||YD(),from=new Date(yd.getFullYear(),yd.getMonth()-2,1);
+  // ED_ALL rows already carry the MERGED city name, so the source city's own
+  // volume has to be read off rawCity, kept for exactly this purpose.
+  const win=ED_ALL.filter(r=>r.date>=from&&r.date<=yd);
+  const bqlOf=rows=>rows.reduce((t,r)=>t+getBQL(r),0);
+  const hits=[];
+  names.forEach(src=>{
+    const to=MERGE_STATS[src].to;
+    const srcBQL=bqlOf(win.filter(r=>r.rawCity===src));
+    const dstBQL=bqlOf(win.filter(r=>r.city===to));
+    const share=dstBQL?srcBQL/dstBQL:0;
+    if(srcBQL>=MERGE_ALERT_ABS||(share>=MERGE_ALERT_SHARE&&dstBQL>=20))
+      hits.push({src:src,to:to,srcBQL:srcBQL,dstBQL:dstBQL,share:share});
+  });
+  if(!hits.length){el.classList.remove('show');el.innerHTML='';return;}
+  el.innerHTML='<strong>\u2691 A merged-away city has grown large enough to reconsider.</strong> '
+    +'Last 3 months: '
+    +hits.map(h=>'<code>'+h.src+'</code> contributed <strong>'+f(h.srcBQL)+' BQL</strong> ('
+      +(h.share*100).toFixed(1)+'% of <code>'+h.to+'</code>\u2019s '+f(h.dstBQL)+')').join('; ')
+    +'. It is currently folded into its destination and has no row of its own, so that '
+    +'volume is invisible at city level. Worth deciding whether to promote it to its own city.';
+  el.classList.add('show');
+  hits.forEach(h=>console.warn('[merge] '+h.src+' -> '+h.to+': '+h.srcBQL
+    +' BQL over last 3 months ('+(h.share*100).toFixed(1)+'% of destination)'));
+}
 async function fetchJSON(filename){
   // Always try the local/relative data/ folder first — this is what makes local
   // testing of unpushed data changes (like a new MOP file) actually work. Only fall
@@ -1664,11 +1716,32 @@ async function init(){
     // ── Effort data: JSON rows → ED[] ─────────────────────────────────────
     // Fields: action_date, month, year, city, sub_channel,
     //         BQL_Old, BQL_New, First_MS, First_MD, Total_MS, Total_MD, Order, HOTO
-    const cityFix=c=>c==='Bengaluru'?'Bangalore':c;
+    // Source-name merges, applied to Referral AND Digital, effort AND leads.
+    // Was a single inline Bengaluru check; made a named map 2026-09-02 when
+    // Vadodara->Ahmedabad was added, so future merges have one obvious home.
+    // NOTE: this is deliberately NOT the same list as the Customer App
+    // pipeline's CITY_MERGE_MAP in scripts/pull_customer_app.py -- that one
+    // also folds Salem->Bangalore, Ajmer->Jaipur etc., whereas here Salem is
+    // its own Expansion city per Yash 2026-09-02. Don't sync them blindly.
+    const CITY_MERGE={'Bengaluru':'Bangalore','Vadodara':'Ahmedabad'};
+    // Tracks how much volume each merge actually moved, so a merged-away city
+    // growing big enough to deserve its own row gets noticed instead of
+    // silently inflating its destination -- see checkMergeVolumes().
+    MERGE_STATS={};
+    const cityFix=c=>{
+      const to=CITY_MERGE[c];
+      if(!to)return c;
+      if(!MERGE_STATS[c])MERGE_STATS[c]={to:to,rows:0};
+      MERGE_STATS[c].rows++;
+      return to;
+    };
     ED_ALL=eR.map(r=>({
       date:     pd(r.action_date),
       year:     num(r.year),
       month:    num(r.month),
+      // rawCity = the pre-merge source name, kept only so checkMergeVolumes()
+      // can size a merged-away city against the one it was folded into.
+      rawCity:  (r.city||'').trim(),
       city:     cityFix((r.city||'').trim()),
       sc:       (r.sub_channel||'').trim(),
       BQL_Old:  num(r.BQL_Old),
@@ -1806,6 +1879,7 @@ async function init(){
     // local data/ folder -- that fallback is silent otherwise, and has twice caused
     // a local review to be done against last month's data (CLAUDE.md Section 12).
     renderSourceWarning();
+    checkMergeVolumes();
 
     // Show metric switchers (default channel is Referral)
     const msEl=document.getElementById('metric-switchers');
