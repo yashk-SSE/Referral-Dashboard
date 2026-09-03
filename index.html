@@ -273,6 +273,63 @@ th.sort-desc::after{content:' ↓';color:var(--bl);opacity:1}
 .mergewarn code{background:#dbeafe}
 .srcwarn strong{color:#7c2d12}
 .srcwarn code{background:#fef3c7;padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11px}
+/* Last Month Performance tab */
+.lmp-sw{display:inline-flex;align-items:center;gap:3px;padding:3px 6px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--s2)}
+.lmp-swl{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-right:3px}
+.lmp-sw select{font-size:12px;padding:4px 7px;border-radius:5px;border:1px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:'DM Sans',sans-serif;cursor:pointer}
+.lmp-btn{background:var(--sur);border:1px solid var(--bd2);color:var(--t2);padding:3px 9px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .12s}
+.lmp-btn:hover{background:var(--s2);color:var(--tx)}
+.lmp-btn.on{background:#1f2937;border-color:#1f2937;color:#fff;font-weight:600}
+.lmp-btn.ghost{border-style:dashed;font-size:10px;margin-left:4px}
+.lmp-empty{color:var(--t2);font-size:12px;padding:14px 2px}
+/* Headers and their numbers were fighting -- header right, cell left. Centre
+   both so a column reads as one thing; the label column stays left. */
+.lmp-tbl th,.lmp-tbl td{text-align:center}
+.lmp-tbl th:first-child,.lmp-tbl td:first-child{text-align:left}
+.lmp-btn.xl{margin-left:auto;border-color:var(--bl);color:var(--bl);font-weight:600}
+.lmp-btn.xl:hover{background:var(--bl);color:#fff}
+.lmp-btn.xl:disabled{opacity:.6;cursor:progress}
+/* Faint, small, and it removes itself after LMP_NEW_DAYS. */
+.ni-new{margin-left:6px;font-size:8px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--bl);opacity:.55;vertical-align:middle}
+.lmp-warn{border:1px solid #f59e0b;border-left:4px solid #d97706;background:#fffbeb;color:#7c2d12;border-radius:var(--r);padding:9px 13px;font-size:12px;margin-bottom:12px;line-height:1.5}
+.lmpw,.lmpb{width:100%;max-width:1120px;height:auto;display:block;overflow:visible}
+.lmpw-grid{stroke:var(--bd);stroke-width:1}
+.lmpw-conn{stroke:var(--bd2);stroke-width:1.5;stroke-dasharray:3 3}
+.lmpw-bar{stroke:var(--sur);stroke-width:2}
+.lmpw-tot{fill:#8a929e}.lmpw-loss{fill:#c0392b}.lmpw-gain{fill:#1d7a45}
+.lmpw-resid{fill:#b08328}
+.lmpw-g{transition:opacity .12s}.lmpw-g:hover{opacity:.78}
+.lmpw-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;text-anchor:middle;fill:var(--tx)}
+.lmpw-val.red{fill:var(--rd)}.lmpw-val.green{fill:var(--gn)}
+.lmpw-cat{font-size:10.5px;text-anchor:middle;fill:var(--t2)}
+.lmpw-ax{font-family:'DM Mono',monospace;font-size:9.5px;text-anchor:end;fill:var(--t3)}
+.lmp-key{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);font-size:11px;color:var(--t2)}
+.lmp-k{display:inline-flex;align-items:center;gap:6px}
+.lmp-i{width:10px;height:10px;border-radius:2px;display:inline-block}
+i.lmpw-tot{background:#8a929e}i.lmpw-loss{background:#c0392b}i.lmpw-gain{background:#1d7a45}
+i.lmpw-resid{background:#b08328}
+.lmpb-zero{stroke:var(--bd2);stroke-width:1}
+.lmpb-bar{stroke:var(--sur);stroke-width:1.5}
+.lmpb-neg{fill:#c0392b}.lmpb-pos{fill:#1d7a45}
+.lmpb-hit{fill:transparent}
+.lmpb-g{cursor:pointer}
+.lmpb-g:hover .lmpb-hit{fill:var(--s2)}
+.lmpb-g:hover .lmpb-bar{opacity:.8}
+.lmpb-g:focus-visible .lmpb-hit{fill:#dbeafe}
+.lmpb-lbl{font-size:10.5px;text-anchor:end;fill:var(--t2)}
+.lmpb-val{font-family:'DM Mono',monospace;font-size:9.5px;fill:var(--t3)}
+/* Value sitting inside its own bar -- needs to read against the fill. */
+.lmpb-val.in{fill:#fff;font-weight:500}
+.lmpb-val.red{fill:var(--rd)}.lmpb-val.green{fill:var(--gn)}
+.lmpc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.lmpc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--bd)}
+.lmpc-r{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:baseline;padding:4px 0;font-size:12px}
+.lmpc-r .mono:last-child{min-width:52px;text-align:right}
+.lmpc-k{color:var(--t2);font-size:11px}
+.lmpc-vs{color:var(--t3);font-size:10px}
+.lmpc-tot{border-top:1px solid var(--bd);margin-top:5px;padding-top:7px;font-weight:600}
+.lmpc-none{font-size:11.5px;color:var(--t3);line-height:1.5}
 .mvsw{display:inline-flex;align-items:center;gap:3px;padding:3px 6px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--s2)}
 .mvsw-lbl{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
 .mvsw-btn{background:var(--sur);border:1px solid var(--bd2);color:var(--t2);padding:3px 8px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .12s}
@@ -450,6 +507,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     <div class="ni" onclick="sw('funnel',this)">▽ Funnel (Effort)</div>
     <div class="ni" onclick="sw('m0funnel',this)">▽ Funnel (M0)</div>
     <div class="ni" onclick="sw('bqlq',this)">◆ BQL Quality</div>
+    <div class="ni" onclick="sw('lmp',this)">◷ Last Month Performance</div>
   </div>
   <div class="sh" onclick="toggleNavGroup(this)">Deep Dive<span class="sh-arrow">▾</span></div>
   <div class="nav-group">
@@ -547,6 +605,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-exec" class="panel active"><div class="loading"><div class="spin"></div><div>Loading data…</div></div></div>
   <div id="p-mop" class="panel"></div>
   <div id="p-avm" class="panel"></div>
+  <div id="p-lmp" class="panel"></div>
   <div id="p-india" class="panel"></div>
   <div id="p-city" class="panel"></div>
   <div id="p-sc" class="panel"></div>
@@ -942,6 +1001,9 @@ function captureLastModified(filename,resp){
 // it silently shows whatever was last PUSHED, so an unpushed local data change
 // (a new MOP file, say) appears not to have taken effect at all.
 const FELL_BACK=[];
+// Files that could not be loaded from EITHER source. Distinct from FELL_BACK,
+// which records a fallback that worked.
+const FETCH_FAILED=[];
 // city -> {to, rows}: populated by cityFix() during ingestion. Reset per load.
 let MERGE_STATS={};
 // A merged-away city is fine while it is a rounding error on its destination.
@@ -996,8 +1058,13 @@ async function fetchJSON(filename){
     const r=await fetch('data/'+filename+'?_='+Date.now(),{cache:'no-store'});
     if(r.ok){captureLastModified(filename,r);return await r.json();}
   }catch(e){/* fall through to production fallback below */}
-  const r2=await fetch('https://yashk-sse.github.io/Referral-Dashboard/data/'+filename);
-  if(!r2.ok)throw new Error(`Failed to load ${filename}: ${r2.status}`);
+  let r2=null;
+  try{ r2=await fetch('https://yashk-sse.github.io/Referral-Dashboard/data/'+filename); }
+  catch(e){ /* production unreachable too -- recorded below */ }
+  if(!r2||!r2.ok){
+    if(FETCH_FAILED.indexOf(filename)===-1)FETCH_FAILED.push(filename);
+    throw new Error(`Failed to load ${filename}`+(r2?`: ${r2.status}`:' (both local and live)'));
+  }
   if(FELL_BACK.indexOf(filename)===-1)FELL_BACK.push(filename);
   captureLastModified(filename,r2);
   return await r2.json();
@@ -1006,6 +1073,17 @@ async function fetchJSON(filename){
 function renderSourceWarning(){
   const el=document.getElementById('src-warn');
   if(!el)return;
+  if(FETCH_FAILED.length){
+    el.innerHTML='<strong>⚠ Some data files could not be loaded at all:</strong> <code>'
+      +FETCH_FAILED.join('</code>, <code>')+'</code>. Neither the local <code>data/</code> '
+      +'folder nor the live site returned them, so anything depending on them is blank. '
+      +(location.protocol==='file:'
+        ?'You opened this file directly (<code>file://</code>) — run '
+         +'<code>preview-local.bat</code> instead.'
+        :'If you are previewing locally, check the server is still running.');
+    el.classList.add('show');
+    return;
+  }
   if(!FELL_BACK.length){el.classList.remove('show');el.innerHTML='';return;}
   const viaFile=location.protocol==='file:';
   el.innerHTML='<strong>⚠ Showing LIVE (already-pushed) data, not your local files.</strong> '
@@ -1077,6 +1155,7 @@ function precompute(){
     });
     return out;
   }
+  LMP_ACT_CACHE={};   // metric-definition toggles must re-aggregate past months too
   C.cscAll=cscBuild(ED_ALL.filter(r=>r.date>=cur&&r.date<=yd));
   C.cscAllL=cscBuild(ED_ALL.filter(r=>r.date>=lmS&&r.date<=lmE));
 
@@ -1181,7 +1260,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','avm','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel','cappdod'];
+  const allTabs=['exec','mop','avm','lmp','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel','cappdod'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -1196,7 +1275,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',avm:'Actuals vs MOP',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',avm:'Actuals vs MOP',lmp:'Last Month Performance',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -1243,7 +1322,7 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,avm:bAVM,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
+  const m={exec:bExec,mop:bMop,avm:bAVM,lmp:bLMP,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
   if(m[t])m[t]();
   rendered[t]=true;
 }
@@ -1673,6 +1752,10 @@ async function init(){
 
     setLoad('Loading Customer App data… (6/6)');
     const capR = await fetchJSON('customer_app.json').catch(()=>[]);
+    // Month-keyed MOP history for the Last Month Performance tab. Optional: if it
+    // is absent the tab says so and everything else is unaffected.
+    MOPH = await fetchJSON('referral_mop_history.json').catch(()=>null);
+    if(MOPH&&MOPH.months)console.log(`MOP history: ${Object.keys(MOPH.months).length} months (${Object.keys(MOPH.months).join(', ')})`);
 
     setLoad('Processing data…');
 
@@ -1880,6 +1963,7 @@ async function init(){
     // a local review to be done against last month's data (CLAUDE.md Section 12).
     renderSourceWarning();
     checkMergeVolumes();
+    markLmpNew();
 
     // Show metric switchers (default channel is Referral)
     const msEl=document.getElementById('metric-switchers');
@@ -2278,7 +2362,7 @@ function bAVM(){
   <div class="mc"><div class="mc-lbl">Loss: MD→Order Conv.</div><div class="mc-val ${indiaCalc.conv2<0?'red':'green'}">${avmNum(indiaCalc.conv2,0)}</div></div>
   <div class="mc"><div class="mc-lbl">Primary Driver (India)</div><div class="mc-val" style="font-size:14px">${indiaCalc.driver}</div></div>
 </div>
-<div class="fbar">${mvSwitchHtml()}<span id="avm-tier-mc-wrap"></span><span id="avm-city-mc-wrap"></span></div>
+<div class="fbar">${mvSwitchHtml()}<span id="avm-tier-mc-wrap"></span><span id="avm-city-mc-wrap"></span><button class="lmp-btn xl" data-label="Export to Excel" onclick="exportAVM(this)" title="This table exactly as filtered, as a formatted workbook">Export to Excel</button></div>
 <div class="tw freeze" id="avm-tbl"><table>
   <thead>
     <tr>
@@ -7318,6 +7402,954 @@ const TF = {
 };
 
 // Referral tabs that show the view mode switcher
+
+// ??????????????????????????????????????
+// LAST MONTH PERFORMANCE (tab 'lmp')
+// ??????????????????????????????????????
+// A named past month's actuals bridged to that month's MOP. Deliberately NOT in
+// REFERRAL_TABS, so Timeframe mode skips it -- same precedent as 'avm', since a
+// named month is inherently a fixed period.
+//
+// Targets come from data/referral_mop_history.json, which keeps every month
+// (referral_mop.json itself only ever holds the current month and is overwritten
+// each time a workbook lands). Each month carries its own `variants` list, so
+// Aug'26 offers 3 splits and Sep'26 offers 5 without this code guessing.
+//
+// The bridge generalises the 'avm' tab's sequential substitution to N stages, so
+// the same engine decomposes an Order deficit (2 rate stages) or a HOTO deficit
+// (3, adding Order->HOTO). It uses MOP's OWN implied rates at every stage --
+// including Order->HOTO, taken as HOTO/ORDER per city rather than a flat 95%
+// assumption, which keeps it consistent with how avm derives its other rates.
+let MOPH = null;                 // parsed referral_mop_history.json
+let LMP_ACT_CACHE = {};          // 'YYYY-MM' -> {city:{sc:{BQL,MS,MD,Order,HOTO}}}
+const LMP_BLOCK = {sales:'sales', nonSales:'nonSales', btl:'btl',
+                   noBtl:'noBtl', all:'combined'};
+// Target blocks use ORDER; actuals use Order. Everything else matches.
+const LMP_AKEY = {BQL:'BQL', MS:'MS', MD:'MD', ORDER:'Order', HOTO:'HOTO'};
+const LMP_MODES = {
+  ORDER: {label:'Order', metric:'ORDER',
+          stages:[{lbl:'BQL→MD', num:'MD', den:'BQL'},
+                  {lbl:'MD→Order', num:'ORDER', den:'MD'}]},
+  HOTO:  {label:'HOTO', metric:'HOTO',
+          stages:[{lbl:'BQL→MD', num:'MD', den:'BQL'},
+                  {lbl:'MD→Order', num:'ORDER', den:'MD'},
+                  {lbl:'Order→HOTO', num:'HOTO', den:'ORDER'}]}
+};
+let LMP = {month:null, split:null, city:'India', mode:'ORDER'};
+// "New" flag on the nav item, self-expiring so nobody has to remember to remove it.
+// Bump this date if the tab gets another round of changes worth flagging.
+const LMP_RELEASE = '2026-09-03';
+const LMP_NEW_DAYS = 7;
+function lmpIsNew(){
+  const d = new Date(LMP_RELEASE + 'T00:00:00');
+  if(isNaN(d)) return false;
+  return (Date.now() - d.getTime()) < LMP_NEW_DAYS * 864e5;
+}
+// Applied after init so it survives the nav being rebuilt by a channel switch.
+function markLmpNew(){
+  const el = [...document.querySelectorAll('.ni')]
+    .find(e => (e.getAttribute('onclick') || '').indexOf('lmp') !== -1);
+  if(!el || el.querySelector('.ni-new')) return;
+  if(!lmpIsNew()) return;
+  const b = document.createElement('span');
+  b.className = 'ni-new'; b.textContent = 'New';
+  b.title = 'Added ' + LMP_RELEASE + '; this flag clears itself after '
+          + LMP_NEW_DAYS + ' days';
+  el.appendChild(b);
+}
+
+// Past months only. The current month is deliberately excluded: its MOP is a
+// full-month target, so comparing it to a few days of actuals reads as a
+// catastrophic miss (Sep 1 alone: 58 orders against a 1,929 plan). The MOP vs MTD
+// and Actuals vs MOP tabs already cover the running month properly, with the
+// target prorated to the day.
+function lmpMonths(){
+  if(!(MOPH && MOPH.months)) return [];
+  const now = new Date();
+  const cur = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  return Object.keys(MOPH.months).filter(m => m < cur).sort();
+}
+// How much of a month the effort data actually covers. A month can be in the past
+// and still be short of data, so the tab checks rather than assuming.
+function lmpCoverage(ym){
+  const y = +ym.slice(0,4), m = +ym.slice(5,7);
+  const dim = new Date(y, m, 0).getDate();
+  const days = {};
+  ED_ALL.forEach(r => { if(r.year === y && r.month === m && r.date) days[r.date.getDate()] = 1; });
+  const have = Object.keys(days).length;
+  return {dim:dim, have:have, complete:have >= dim};
+}
+function lmpMonth(){ return MOPH && MOPH.months ? MOPH.months[LMP.month] : null; }
+// Default to last calendar month, falling back to the newest month we hold.
+function lmpDefaultMonth(){
+  const ms = lmpMonths();
+  if(!ms.length) return null;
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1);
+  const want = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  return ms.indexOf(want) !== -1 ? want : ms[ms.length - 1];
+}
+// Target block for a city under the active month+split.
+function lmpT(city){
+  const mo = lmpMonth(); if(!mo) return null;
+  const row = mo.cities.find(c => c.city === (city || 'India'));
+  return row ? (row[LMP_BLOCK[LMP.split]] || null) : null;
+}
+function lmpHasT(city){
+  const t = lmpT(city);
+  return !!(t && (t.BQL || t.MS || t.MD || t.ORDER || t.HOTO));
+}
+// Cities the active month+split actually has a plan for, tier-sorted like the
+// rest of the dashboard.
+function lmpCities(){
+  const mo = lmpMonth(); if(!mo) return [];
+  const ord = {Focus:0, Big:1, Mid:2, Small:3, Exp:4};
+  return mo.cities.map(c => c.city).filter(c => c !== 'India' && lmpHasT(c))
+    .sort((a,b) => ((ord[TIERS[a]] ?? 5) - (ord[TIERS[b]] ?? 5)) || a.localeCompare(b));
+}
+// City x sub-channel actuals for one calendar month, off ED_ALL so this is
+// independent of the global BTL toggle. Cached; precompute() clears the cache so
+// the Old/New BQL and First/Total MS/MD toggles still flow through.
+function lmpActuals(ym){
+  if(LMP_ACT_CACHE[ym]) return LMP_ACT_CACHE[ym];
+  const y = +ym.slice(0,4), m = +ym.slice(5,7);
+  const out = {};
+  ['India'].concat(CITIES).forEach(c => {
+    out[c] = {};
+    SCS_ALL.forEach(sc => { out[c][sc] = {BQL:0, MS:0, MD:0, Order:0, HOTO:0}; });
+  });
+  ED_ALL.forEach(r => {
+    if(r.year !== y || r.month !== m) return;
+    [out.India, out[r.city]].forEach(b => {
+      const t = b && b[r.sc]; if(!t) return;
+      t.BQL += getBQL(r); t.MS += getMS(r); t.MD += getMD(r);
+      t.Order += r.Order; t.HOTO += r.HOTO;
+    });
+  });
+  LMP_ACT_CACHE[ym] = out;
+  return out;
+}
+function lmpA(city, splitKey){
+  const cache = lmpActuals(LMP.month);
+  const row = cache[city || 'India'];
+  const r = {BQL:0, MS:0, MD:0, Order:0, HOTO:0};
+  if(!row) return r;
+  const scs = (MOP_VARIANTS[splitKey || LMP.split] || MOP_VARIANTS.all).scs;
+  scs.forEach(sc => {
+    const x = row[sc]; if(!x) return;
+    ['BQL','MS','MD','Order','HOTO'].forEach(k => { r[k] += x[k] || 0; });
+  });
+  return r;
+}
+
+// ?? THE BRIDGE ??
+// N-stage sequential substitution. With 2 stages this is exactly avmCalc(); with
+// 3 it decomposes HOTO instead. The effects telescope to
+// aBQL*prod(actualRates) - tBQL*prod(targetRates); see the note further down for
+// the one case where that is not the whole gap and an explicit remainder appears.
+function lmpBridge(a, t, mode){
+  if(!t || !t.BQL) return null;
+  const cfg = LMP_MODES[mode || LMP.mode];
+  const tB = t.BQL || 0, aB = a.BQL || 0;
+  const tR = [], aR = [], bad = [];
+  cfg.stages.forEach(st => {
+    const td = t[st.den] || 0, tn = t[st.num] || 0;
+    const ad = a[LMP_AKEY[st.den]] || 0, an = a[LMP_AKEY[st.num]] || 0;
+    // A zero denominator with a nonzero numerator is a broken target, not a
+    // 0% rate -- Varanasi's Sep BTL row is ORDER=0 with HOTO=5. Flag it so the
+    // caller can say so instead of rendering an impossible rate.
+    if(!td && tn) bad.push(st.lbl);
+    tR.push(td ? tn/td : 0);
+    aR.push(ad ? an/ad : 0);
+  });
+  const prod = (arr, from, to) => {
+    let p = 1; for(let i = from; i <= to; i++) p *= arr[i]; return p;
+  };
+  const n = cfg.stages.length;
+  const eff = [{lbl:'BQL Volume', v:(aB - tB) * prod(tR, 0, n-1)}];
+  for(let k = 0; k < n; k++){
+    eff.push({lbl:cfg.stages[k].lbl + ' Conv.',
+              v: aB * prod(aR, 0, k-1) * (aR[k] - tR[k]) * prod(tR, k+1, n-1)});
+  }
+  const tM = t[cfg.metric] || 0, aM = a[LMP_AKEY[cfg.metric]] || 0;
+  // The effects telescope to aBQL*prod(actualRates) - tBQL*prod(targetRates), which
+  // equals (actual - target) only while every intermediate stage is nonzero. Either
+  // side can break that:
+  //   actuals -- on an Effort basis actions count in the month they happen whatever
+  //     month the lead came from, so a scope can book an Order in a month it recorded
+  //     no MD at all (the meeting was last month);
+  //   targets -- Varanasi's Sep BTL row is ORDER=0 with HOTO=5, so its plan implies
+  //     HOTOs with no orders to come from.
+  // Where a rate does not exist the multiplicative split is genuinely undefined, so
+  // whatever the effects fail to explain is surfaced as its own labelled effect
+  // instead of being quietly dropped. Taking it as (deficit - sum of effects) covers
+  // both sides at once; deriving it from the actual side alone silently missed the
+  // target-side case.
+  const residual = (aM - tM) - eff.reduce((s, x) => s + x.v, 0);
+  if(Math.abs(residual) > 0.5){
+    eff.push({lbl:'Unattributed', v:residual, resid:true});
+  }
+  return {
+    tB:tB, aB:aB, tM:tM, aM:aM,
+    def: aM - tM, defPct: tM ? (aM - tM)/tM*100 : 0,
+    bqlDef: aB - tB, bqlDefPct: tB ? (aB - tB)/tB*100 : 0,
+    rates: cfg.stages.map((st,i) => ({lbl:st.lbl, t:tR[i]*100, a:aR[i]*100,
+                                      drop:(aR[i] - tR[i])*100})),
+    eff: eff, badRates: bad, residual: Math.abs(residual) > 0.5 ? residual : 0,
+    // Both headline metrics, so the tab can always show Order and HOTO side by
+    // side regardless of which one the switcher is decomposing.
+    order:{t:t.ORDER || 0, a:a.Order || 0}, hoto:{t:t.HOTO || 0, a:a.HOTO || 0}
+  };
+}
+
+// ?? LMP RENDER HELPERS ??
+const lmpN = (v,d) => (v==null||isNaN(v)) ? '-' :
+  v.toLocaleString('en-IN',{minimumFractionDigits:d||0, maximumFractionDigits:d||0});
+const lmpS = (v,d) => (v>=0?'+':'−') + lmpN(Math.abs(v), d);
+const lmpPP = v => (v>=0?'+':'−') + Math.abs(v).toFixed(1) + 'pp';
+const lmpC = v => v>=0 ? 'green' : 'red';
+function lmpSev(pct){
+  if(pct >= 0) return ['bg','Surplus'];
+  if(pct > -20) return ['ba','Under'];
+  return ['br','Below'];
+}
+// Largest-remainder allocation so the displayed effects always sum EXACTLY to the
+// displayed deficit. Rounding each float on its own leaves them a unit adrift,
+// which reads as an arithmetic error in a table people check.
+function lmpAlloc(vals, total){
+  const tgt = Math.round(total), base = vals.map(Math.floor);
+  let rem = tgt - base.reduce((a,b) => a+b, 0);
+  const idx = vals.map((v,i) => i).sort((a,b) => (vals[b]-base[b]) - (vals[a]-base[a]));
+  const out = base.slice(), step = rem >= 0 ? 1 : -1;
+  for(let k = 0; k < Math.abs(rem); k++){
+    out[rem >= 0 ? idx[k % idx.length] : idx[idx.length-1 - (k % idx.length)]] += step;
+  }
+  return out;
+}
+
+// ?? WATERFALL (N stages) ??
+function lmpWaterfall(br){
+  // viewBox width is matched by a max-width in CSS, so the SVG renders at 1:1 on a
+  // normal-width panel instead of scaling up -- a 100%-wide SVG on an 820 viewBox
+  // magnified every label about 2x, which is what made this look enlarged.
+  const W = 1120, H = 300, padL = 66, padR = 18, padT = 26, padB = 46;
+  const e = lmpAlloc(br.eff.map(x => x.v), br.def);
+  const steps = [{lbl:'MOP Target', v:Math.round(br.tM), tot:1}]
+    .concat(br.eff.map((x,i) => ({lbl:x.lbl, v:e[i], tot:0, resid:!!x.resid})))
+    .concat([{lbl:'Actual', v:Math.round(br.aM), tot:1}]);
+  let run = 0, lo = 0, hi = Math.max(br.tM, br.aM);
+  steps.forEach(s => { run = s.tot ? s.v : run + s.v; lo = Math.min(lo, run); hi = Math.max(hi, run); });
+  const top = hi * 1.1 || 1, bot = Math.min(0, lo * 1.1);
+  const ph = H - padT - padB, pw = W - padL - padR;
+  const y = v => padT + ph - ((v - bot)/(top - bot)) * ph;
+  const gap = pw/steps.length, bw = Math.min(gap * 0.46, 88);
+  let grid = '', bars = '', conns = '', labs = '';
+  for(let k = 0; k <= 4; k++){
+    const gv = bot + (top - bot) * k/4, gy = y(gv);
+    grid += `<line class="lmpw-grid" x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-padR}" y2="${gy.toFixed(1)}"/>`
+         +  `<text class="lmpw-ax" x="${padL-10}" y="${(gy+3.5).toFixed(1)}">${lmpN(gv)}</text>`;
+  }
+  run = 0;
+  steps.forEach((s,i) => {
+    const cx = padL + gap*i + gap/2, x = cx - bw/2;
+    let y0, y1, key;
+    if(s.tot){ y0 = y(Math.max(s.v,0)); y1 = y(Math.min(s.v,0)); key = 'tot'; run = s.v; }
+    else { const st = run, en = run + s.v;
+           y0 = y(Math.max(st,en)); y1 = y(Math.min(st,en));
+           key = s.resid ? 'resid' : (s.v >= 0 ? 'gain' : 'loss'); run = en; }
+    const bh = Math.max(Math.abs(y1-y0), 2.5);
+    bars += `<g class="lmpw-g"><title>${s.lbl}: ${s.tot?lmpN(s.v):lmpS(s.v)}</title>`
+         +  `<rect class="lmpw-bar lmpw-${key}" x="${x.toFixed(1)}" y="${y0.toFixed(1)}" `
+         +  `width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3"/></g>`;
+    labs += `<text class="lmpw-val ${s.tot?'':lmpC(s.v)}" x="${cx.toFixed(1)}" y="${(y0-8).toFixed(1)}">`
+         +  `${s.tot?lmpN(s.v):lmpS(s.v)}</text>`
+         +  `<text class="lmpw-cat" x="${cx.toFixed(1)}" y="${H-padB+20}">${s.lbl.replace(' Conv.','')}</text>`;
+    if(i < steps.length-1){
+      const nx = padL + gap*(i+1) + gap/2 - bw/2;
+      conns += `<line class="lmpw-conn" x1="${(x+bw).toFixed(1)}" y1="${y(run).toFixed(1)}" `
+            +  `x2="${nx.toFixed(1)}" y2="${y(run).toFixed(1)}"/>`;
+    }
+  });
+  return `<svg class="lmpw" viewBox="0 0 ${W} ${H}" role="img" aria-label="`
+       + `${LMP.city} ${LMP_MODES[LMP.mode].label} target ${lmpN(br.tM)} bridged to actual ${lmpN(br.aM)}">`
+       + grid + conns + bars + labs + '</svg>';
+}
+
+// ?? RANKED CITY BARS ??
+function lmpBars(){
+  const rows = lmpCities().map(c => {
+    const br = lmpBridge(lmpA(c), lmpT(c));
+    return br ? {city:c, def:br.def, eff:br.eff, br:br} : null;
+  }).filter(Boolean).sort((a,b) => a.def - b.def);
+  if(!rows.length) return '<p class="lmp-empty">No cities with a plan for this split.</p>';
+  const rh = 19, padL = 112, padR = 52, padT = 6, W = 1120;
+  const H = padT + rows.length*rh + 8;
+  const maxAbs = Math.max.apply(null, rows.map(r => Math.abs(r.def))) || 1;
+  const pw = W - padL - padR, half = pw/2, zero = padL + half;
+  let out = `<line class="lmpb-zero" x1="${zero}" y1="${padT}" x2="${zero}" y2="${H-8}"/>`;
+  rows.forEach((r,i) => {
+    const yy = padT + i*rh, w = Math.abs(r.def)/maxAbs * half;
+    const x = r.def < 0 ? zero - w : zero;
+    // The longest bar reaches the axis, so a label drawn outside it lands on top
+    // of the city name. Put the value inside the bar once there is room for it.
+    const inside = w >= 46;
+    const e = lmpAlloc(r.eff.map(z => z.v), r.def);
+    const tip = r.city + ': ' + lmpS(Math.round(r.def)) + ' ' + LMP_MODES[LMP.mode].label
+      + ' | ' + r.eff.map((z,k) => z.lbl.replace(' Conv.','') + ' ' + lmpS(e[k])).join(', ');
+    out += `<g class="lmpb-g" data-lmpcity="${r.city}" tabindex="0" role="button" aria-label="${tip}">`
+        +  `<title>${tip}</title>`
+        +  `<rect class="lmpb-hit" x="0" y="${yy}" width="${W}" height="${rh}"/>`
+        +  `<text class="lmpb-lbl" x="${padL-10}" y="${yy+rh/2+3.5}">${r.city}</text>`
+        +  `<rect class="lmpb-bar ${r.def<0?'lmpb-neg':'lmpb-pos'}" x="${x.toFixed(1)}" y="${yy+3}" `
+        +  `width="${Math.max(w,1.5).toFixed(1)}" height="${rh-6}" rx="2.5"/>`
+        +  `<text class="lmpb-val ${inside?'in':lmpC(r.def)}" x="${
+              inside ? (r.def<0 ? (x+7).toFixed(1) : (x+w-7).toFixed(1))
+                     : (r.def<0 ? (zero-w-6).toFixed(1) : (zero+w+6).toFixed(1))}" `
+        +  `y="${yy+rh/2+3.3}" text-anchor="${
+              inside ? (r.def<0?'start':'end') : (r.def<0?'end':'start')}">`
+        +  `${lmpS(Math.round(r.def))}</text></g>`;
+  });
+  return `<svg class="lmpb" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cities ranked by `
+       + `${LMP_MODES[LMP.mode].label} gap">${out}</svg>`;
+}
+
+// ?? PER-VARIANT COMPARISON CARDS ??
+// One card per real channel group this month has (roll-ups excluded, so Sep
+// gives Sales / Non-Sales / BTL and Aug gives Non-BTL / BTL).
+function lmpCards(){
+  const mo = lmpMonth(); if(!mo) return '';
+  // Which variants are real, disjoint channel groups depends on the month. From
+  // Sep'26 the workbook splits Non-Sales out, so noBtl becomes a roll-up of
+  // sales+nonSales -- but for Aug'26, where no such split existed, noBtl IS the
+  // base group. `all` is always a roll-up. Getting this wrong silently drops a
+  // card: Aug showed only BTL until this was month-aware.
+  const fine = mo.variants.indexOf('sales') !== -1 && mo.variants.indexOf('nonSales') !== -1;
+  const rollups = fine ? ['noBtl', 'all'] : ['all'];
+  const groups = MOP_VARIANT_ORDER.filter(v => mo.variants.indexOf(v) !== -1
+                                            && rollups.indexOf(v) === -1);
+  if(!groups.length) return `<p class="lmp-empty">${mo.label} has no sub-channel split `
+    + `in its MOP, so there is nothing to compare -- only the combined plan exists.</p>`;
+  const cards = groups.map(v => {
+    const t = (function(){
+      const row = mo.cities.find(c => c.city === (LMP.city || 'India'));
+      return row ? (row[LMP_BLOCK[v]] || null) : null;
+    })();
+    const label = MOP_VARIANTS[v].label;
+    if(!t || !(t.BQL || t.ORDER || t.HOTO)){
+      return `<div class="card"><div class="lmpc-h"><strong>${label}</strong>`
+        + `<span class="badge ba">No plan</span></div>`
+        + `<div class="lmpc-none">${LMP.city} carries no ${label} target in ${mo.label}. `
+        + `Its actuals roll into the combined view above.</div></div>`;
+    }
+    const a = lmpA(LMP.city, v);
+    const br = lmpBridge(a, t);
+    if(!br) return '';
+    const sv = lmpSev(br.defPct);
+    const r3a = br.aB ? br.aM/br.aB*100 : 0, r3t = br.tB ? br.tM/br.tB*100 : 0;
+    const rateRows = br.rates.map(r => `<div class="lmpc-r"><span class="lmpc-k">${r.lbl}</span>`
+      + `<span class="mono">${r.a.toFixed(1)}%<span class="lmpc-vs"> vs ${r.t.toFixed(1)}%</span></span>`
+      + `<span class="mono ${lmpC(r.drop)}">${lmpPP(r.drop)}</span></div>`).join('');
+    return `<div class="card"><div class="lmpc-h"><strong>${label}</strong>`
+      + `<span class="badge ${sv[0]}">${sv[1]} ${lmpS(br.defPct,0)}%</span></div>`
+      + `<div class="lmpc-r"><span class="lmpc-k">BQL</span>`
+      + `<span class="mono">${lmpN(br.aB)}<span class="lmpc-vs"> of ${lmpN(br.tB)}</span></span>`
+      + `<span class="mono ${lmpC(br.bqlDef)}">${lmpS(br.bqlDefPct,1)}%</span></div>`
+      + rateRows
+      + `<div class="lmpc-r"><span class="lmpc-k">BQL→${LMP_MODES[LMP.mode].label}</span>`
+      + `<span class="mono">${r3a.toFixed(1)}%<span class="lmpc-vs"> vs ${r3t.toFixed(1)}%</span></span>`
+      + `<span class="mono ${lmpC(r3a-r3t)}">${lmpPP(r3a-r3t)}</span></div>`
+      + `<div class="lmpc-r lmpc-tot"><span class="lmpc-k">${LMP_MODES[LMP.mode].label}</span>`
+      + `<span class="mono">${lmpN(br.aM)}<span class="lmpc-vs"> of ${lmpN(br.tM)}</span></span>`
+      + `<span class="mono ${lmpC(br.def)}">${lmpS(Math.round(br.def))}</span></div>`
+      + `</div>`;
+  }).join('');
+  return `<div class="lmpc-grid">${cards}</div>`;
+}
+
+// ?? SUB-CHANNEL BREAKDOWN WITHIN THE ACTIVE SPLIT ??
+// No month has per-sub-channel MOP (the workbook splits Non-Sales as one column),
+// so each sub-channel is measured against the ACTIVE SPLIT's own plan rate. That
+// still isolates which one is moving the blended rate, which is the useful part.
+function lmpSubTable(){
+  const t = lmpT(LMP.city); if(!t || !t.BQL) return '';
+  const cfg = LMP_MODES[LMP.mode];
+  const planR = t.BQL ? (t[cfg.metric]||0)/t.BQL : 0;      // plan BQL->metric
+  const planR1 = t.BQL ? (t.MD||0)/t.BQL : 0;              // plan BQL->MD
+  const scs = MOP_VARIANTS[LMP.split].scs;
+  if(scs.length < 2) return `<p class="lmp-empty">The ${MOP_VARIANTS[LMP.split].label} split `
+    + `is a single sub-channel, so there is nothing to break down.</p>`;
+  const cache = lmpActuals(LMP.month);
+  const row = cache[LMP.city || 'India'] || {};
+  const tot = lmpA(LMP.city);
+  const body = scs.map(sc => {
+    const a = row[sc] || {BQL:0,MS:0,MD:0,Order:0,HOTO:0};
+    const m = a[LMP_AKEY[cfg.metric]] || 0;
+    const r1 = a.BQL ? a.MD/a.BQL*100 : 0;
+    const rM = a.BQL ? m/a.BQL*100 : 0;
+    const atPlan = a.BQL * planR;
+    const effect = m - atPlan;
+    return {sc:sc, a:a, m:m, r1:r1, rM:rM, atPlan:atPlan, effect:effect,
+            mix:tot.BQL ? a.BQL/tot.BQL*100 : 0};
+  }).filter(x => x.a.BQL > 0 || x.m > 0)
+    .sort((a,b) => a.effect - b.effect);
+  if(!body.length) return '<p class="lmp-empty">No sub-channel activity in this scope.</p>';
+  const sumEff = body.reduce((s,x) => s + x.effect, 0);
+  const rows = body.map(x => `<tr><td style="font-weight:600">${x.sc}</td>`
+    + `<td class="mono">${lmpN(x.a.BQL)}</td><td class="mono" style="color:var(--t3)">${x.mix.toFixed(1)}%</td>`
+    + `<td class="mono">${lmpN(x.a.MD)}</td><td class="mono">${lmpN(x.m)}</td>`
+    + `<td class="mono">${x.r1.toFixed(1)}%</td>`
+    + `<td class="mono ${lmpC(x.r1 - planR1*100)}">${lmpPP(x.r1 - planR1*100)}</td>`
+    + `<td class="mono">${x.rM.toFixed(1)}%</td>`
+    + `<td class="mono">${lmpN(x.atPlan,0)}</td>`
+    + `<td class="mono ${lmpC(x.effect)}" style="font-weight:600">${lmpS(x.effect,0)}</td></tr>`).join('');
+  return `<div class="tw"><table class="lmp-tbl">
+    <thead><tr>
+      <th>Sub-Channel</th><th>BQL</th><th>Mix</th>
+      <th>MD</th><th>${cfg.label}</th>
+      <th>BQL→MD</th><th>vs plan</th>
+      <th>BQL→${cfg.label}</th>
+      <th title="What this sub-channel would have produced at the split's own plan BQL→${cfg.label} rate">${cfg.label} at plan</th>
+      <th>Effect</th>
+    </tr></thead><tbody>${rows}
+    <tr style="background:var(--s2);font-weight:600;border-top:2px solid var(--bd2)">
+      <td>Total</td><td class="mono">${lmpN(tot.BQL)}</td>
+      <td class="mono" style="color:var(--t3)">100.0%</td><td class="mono">${lmpN(tot.MD)}</td>
+      <td class="mono">${lmpN(tot[LMP_AKEY[cfg.metric]])}</td>
+      <td class="mono">${tot.BQL?(tot.MD/tot.BQL*100).toFixed(1):'0.0'}%</td>
+      <td class="mono ${lmpC((tot.BQL?tot.MD/tot.BQL:0)-planR1)}">${lmpPP(((tot.BQL?tot.MD/tot.BQL:0)-planR1)*100)}</td>
+      <td class="mono">${tot.BQL?(tot[LMP_AKEY[cfg.metric]]/tot.BQL*100).toFixed(1):'0.0'}%</td>
+      <td class="mono">&mdash;</td>
+      <td class="mono ${lmpC(sumEff)}">${lmpS(sumEff,0)}</td>
+    </tr></tbody></table></div>`;
+}
+
+// ?? LMP MAIN BUILDER ??
+function bLMP(){
+  const p = document.getElementById('p-lmp');
+  // Three different reasons this tab can have nothing to show. They used to share
+  // one message, which made a dead local server look identical to a missing file
+  // and cost a review cycle -- so say which it actually is.
+  if(!MOPH){
+    const failed = (typeof FETCH_FAILED !== 'undefined')
+      && FETCH_FAILED.indexOf('referral_mop_history.json') !== -1;
+    p.innerHTML = '<div class="ptitle">Last Month Performance</div>'
+      + '<div class="tf-mop-banner"><strong>Could not load '
+      + '<code>data/referral_mop_history.json</code>.</strong> '
+      + (failed
+          ? 'The fetch failed from both the local <code>data/</code> folder and the live '
+            + 'site. If you are previewing locally, the server is probably not running -- '
+            + 'start <code>preview-local.bat</code> and reload. '
+          : 'The file is absent or unreadable. ')
+      + 'It is written by <code>scripts/build_mop_json.py</code> each time a monthly '
+      + 'workbook is processed, and seeded from git by '
+      + '<code>scripts/backfill_mop_history.py</code>.</div>';
+    return;
+  }
+  if(!lmpMonths().length){
+    const held = Object.keys(MOPH.months || {});
+    p.innerHTML = '<div class="ptitle">Last Month Performance</div>'
+      + '<div class="tf-mop-banner">No <strong>closed</strong> month is available yet. '
+      + 'The history file holds ' + (held.length ? held.join(', ') : 'nothing')
+      + ', and this tab deliberately skips the current month because its MOP is a '
+      + 'full-month target. Use MOP vs MTD or Actuals vs MOP for the running month.</div>';
+    return;
+  }
+  if(!LMP.month || !lmpMonth()) LMP.month = lmpDefaultMonth();
+  lmpFixSplit();
+  p.innerHTML = '<div class="ptitle">Last Month Performance</div>'
+    + '<div class="psub" id="lmp-sub"></div>'
+    + '<div class="fbar" id="lmp-bar"></div>'
+    + '<div id="lmp-body"></div>';
+  lmpRender();
+}
+// Keep the split valid for the active month: Aug has no Sales block, so a split
+// carried over from Sep would resolve to nothing. Fall back to the widest one.
+function lmpFixSplit(){
+  const mo = lmpMonth(); if(!mo) return;
+  const v = mo.variants || [];
+  if(!v.length){ LMP.split = null; return; }
+  if(v.indexOf(LMP.split) === -1) LMP.split = v.indexOf('all') !== -1 ? 'all' : v[v.length-1];
+}
+function setLmpMonth(ym){
+  LMP.month = ym; lmpFixSplit();
+  // A city with a plan last month may have none in the month just picked.
+  if(LMP.city !== 'India' && !lmpHasT(LMP.city)) LMP.city = 'India';
+  lmpRender();
+}
+function setLmpSplit(v){ LMP.split = v; if(LMP.city !== 'India' && !lmpHasT(LMP.city)) LMP.city = 'India'; lmpRender(); }
+function setLmpCity(c){ LMP.city = c; lmpRender(); }
+function setLmpMode(m){ LMP.mode = m; lmpRender(); }
+
+function lmpRender(){
+  const mo = lmpMonth(); if(!mo) return;
+  const cfg = LMP_MODES[LMP.mode];
+  const cities = lmpCities();
+  const t = lmpT(LMP.city), a = lmpA(LMP.city);
+  const br = lmpBridge(a, t);
+
+  // ?? controls ??
+  document.getElementById('lmp-bar').innerHTML =
+    '<span class="lmp-sw"><span class="lmp-swl">Month</span>'
+    + '<select onchange="setLmpMonth(this.value)" aria-label="Month">'
+    + lmpMonths().slice().reverse().map(m => `<option value="${m}"${m===LMP.month?' selected':''}>`
+        + `${MOPH.months[m].label}</option>`).join('')
+    + '</select></span>'
+    + '<span class="lmp-sw"><span class="lmp-swl">MOP</span>'
+    + (mo.variants||[]).map(v => `<button class="lmp-btn${v===LMP.split?' on':''}" `
+        + `onclick="setLmpSplit('${v}')" aria-pressed="${v===LMP.split}">`
+        + `${MOP_VARIANTS[v].label}</button>`).join('')
+    + '</span>'
+    + '<span class="lmp-sw"><span class="lmp-swl">Metric</span>'
+    + ['ORDER','HOTO'].map(m => `<button class="lmp-btn${m===LMP.mode?' on':''}" `
+        + `onclick="setLmpMode('${m}')" aria-pressed="${m===LMP.mode}">`
+        + `${LMP_MODES[m].label}</button>`).join('')
+    + '</span>'
+    + '<span class="lmp-sw"><span class="lmp-swl">City</span>'
+    + '<select onchange="setLmpCity(this.value)" aria-label="City">'
+    + ['India'].concat(cities).map(c => `<option value="${c}"${c===LMP.city?' selected':''}>`
+        + `${c}</option>`).join('')
+    + '</select>'
+    + (LMP.city!=='India' ? '<button class="lmp-btn ghost" onclick="setLmpCity(\'India\')">'
+        + 'Back to India</button>' : '')
+    + '</span>'
+    + '<button class="lmp-btn xl" data-label="Export to Excel" onclick="exportLMP(this)" '
+    + 'title="Every table on this tab, plus both charts, as a formatted workbook">'
+    + 'Export to Excel</button>';
+
+  const cov = lmpCoverage(LMP.month);
+  document.getElementById('lmp-sub').innerHTML =
+    `${mo.label} . ${cov.complete ? 'full month, closed'
+      : `<strong>only ${cov.have} of ${cov.dim} days have data</strong>`} . `
+    + `${MOP_VARIANTS[LMP.split].label} . <strong>${LMP.city}</strong> . `
+    + `${cfg.label} deficit decomposed using MOP's own implied stage rates . `
+    + `${(mo.variants||[]).length} split${(mo.variants||[]).length===1?'':'s'} in this month's MOP`;
+
+  const body = document.getElementById('lmp-body');
+  if(!br){
+    body.innerHTML = `<div class="tf-mop-banner">${LMP.city} carries no `
+      + `${MOP_VARIANTS[LMP.split].label} target in ${mo.label}, so there is no plan to `
+      + `bridge from. Pick another city or split.</div>`;
+    return;
+  }
+  const e = lmpAlloc(br.eff.map(x => x.v), br.def);
+
+  // Both headline metrics always visible, then the selected metric's effects.
+  const tiles =
+    `<div class="mc"><div class="mc-lbl">Order</div>`
+    + `<div class="mc-val">${lmpN(br.order.a)}</div>`
+    + `<div class="mc-mop">of ${lmpN(br.order.t)} . <span class="${lmpC(br.order.a-br.order.t)}" `
+    + `style="font-weight:600">${lmpS(br.order.a-br.order.t)}</span></div></div>`
+    + `<div class="mc"><div class="mc-lbl">HOTO</div>`
+    + `<div class="mc-val">${lmpN(br.hoto.a)}</div>`
+    + `<div class="mc-mop">of ${lmpN(br.hoto.t)} . <span class="${lmpC(br.hoto.a-br.hoto.t)}" `
+    + `style="font-weight:600">${lmpS(br.hoto.a-br.hoto.t)}</span></div></div>`
+    + br.eff.map((x,i) => {
+        const share = Math.abs(br.def) > 0.0001
+          ? Math.abs(x.v)/br.eff.reduce((s,z) => s+Math.abs(z.v), 0)*100 : 0;
+        return `<div class="mc"><div class="mc-lbl">${x.lbl.replace(' Conv.','')}</div>`
+          + `<div class="mc-val ${lmpC(e[i])}">${lmpS(e[i])}</div>`
+          + `<div class="mc-mop">${share.toFixed(0)}% of the movement</div></div>`;
+      }).join('');
+
+  let warn = '';
+  if(!cov.complete){
+    // The MOP is a whole-month figure, so a short month reads as a huge miss for
+    // reasons that have nothing to do with performance. Say so before the numbers.
+    warn += `<div class="lmp-warn">⚠ <strong>${mo.label} has data for only `
+      + `${cov.have} of its ${cov.dim} days</strong>, but the MOP it is being compared `
+      + `against is a full-month target. Every deficit below is overstated for that `
+      + `reason alone. For a running month use MOP vs MTD or Actuals vs MOP, which `
+      + `prorate the target to the day.</div>`;
+  }
+  if(br.badRates.length){
+    warn += `<div class="lmp-warn">⚠ ${LMP.city}'s ${mo.label} `
+      + `${MOP_VARIANTS[LMP.split].label} plan has a zero denominator at `
+      + `<strong>${br.badRates.join(', ')}</strong> (a nonzero target downstream of a zero one), `
+      + `so that stage's plan rate is undefined. This is a source-workbook error, `
+      + `left as supplied rather than patched.</div>`;
+  }
+  if(br.residual){
+    warn += `<div class="lmp-warn">⚠ <strong>${lmpS(Math.round(br.residual))} `
+      + `${cfg.label} is unattributed.</strong> The split into volume and rate effects `
+      + `needs every intermediate stage to be nonzero, and here one is not — on an `
+      + `Effort basis actions count in the month they happen regardless of when the lead `
+      + `was created, so a scope can book ${cfg.label} in a month it recorded no MD. `
+      + `The remainder is shown as its own bar rather than hidden, so the bridge still `
+      + `ties exactly. Common on a part-month; rare on a closed one.</div>`;
+  }
+
+  body.innerHTML = warn
+    + `<div class="mgrid">${tiles}</div>`
+    + `<div class="card"><div class="ctitle">${cfg.label} bridge . MOP target to actual</div>`
+    + lmpWaterfall(br)
+    + `<div class="lmp-key"><span class="lmp-k"><i class="lmp-i lmpw-tot"></i>Target / actual</span>`
+    + `<span class="lmp-k"><i class="lmp-i lmpw-loss"></i>Reduces ${cfg.label}</span>`
+    + `<span class="lmp-k"><i class="lmp-i lmpw-gain"></i>Adds ${cfg.label}</span>`
+    + (br.residual ? `<span class="lmp-k"><i class="lmp-i lmpw-resid"></i>Unattributed</span>` : '')
+    + `<span style="margin-left:auto;color:var(--t3)">The bars sum exactly to the gap</span>`
+    + `</div></div>`
+    + `<div class="stitle">Stage rates . actual vs MOP's own implied rate</div>`
+    + `<div class="tw"><table class="lmp-tbl"><thead><tr><th>Stage</th>`
+    + `<th>MOP plan</th><th>Actual</th>`
+    + `<th>Drop</th>`
+    + `<th>${cfg.label} effect</th></tr></thead><tbody>`
+    + br.rates.map((r,i) => `<tr><td style="font-weight:600">${r.lbl}</td>`
+        + `<td class="mono">${r.t.toFixed(1)}%</td><td class="mono">${r.a.toFixed(1)}%</td>`
+        + `<td class="mono ${lmpC(r.drop)}">${lmpPP(r.drop)}</td>`
+        + `<td class="mono ${lmpC(e[i+1])}" style="font-weight:600">${lmpS(e[i+1])}</td></tr>`).join('')
+    + `<tr><td style="font-weight:600">BQL volume</td><td class="mono">&mdash;</td>`
+    + `<td class="mono">${lmpN(br.aB)} vs ${lmpN(br.tB)}</td>`
+    + `<td class="mono ${lmpC(br.bqlDef)}">${lmpS(br.bqlDefPct,1)}%</td>`
+    + `<td class="mono ${lmpC(e[0])}" style="font-weight:600">${lmpS(e[0])}</td></tr>`
+    + `</tbody></table></div>`
+    + `<div class="stitle">Every city, ranked by ${cfg.label} gap `
+    + `<span style="font-weight:400;font-size:10px;color:var(--t3)">(click a bar to load that city)</span></div>`
+    + `<div class="card">${lmpBars()}</div>`
+    + `<div class="stitle">Channel groups . ${LMP.city}, ${mo.label}</div>`
+    + lmpCards()
+    + `<div class="stitle">Sub-channels within ${MOP_VARIANTS[LMP.split].label} `
+    + `<span style="font-weight:400;font-size:10px;color:var(--t3)">`
+    + `(no month has per-sub-channel MOP, so each is measured against this split's own plan rate)</span></div>`
+    + lmpSubTable();
+
+  document.querySelectorAll('#p-lmp .lmpb-g').forEach(g => {
+    const pick = () => setLmpCity(g.getAttribute('data-lmpcity'));
+    g.addEventListener('click', pick);
+    g.addEventListener('keydown', ev => {
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); pick(); }
+    });
+  });
+  autoSort(document.querySelector('#p-lmp'));
+}
+
+// ??????????????????????????????????????
+// EXCEL EXPORT -- Last Month Performance + Actuals vs MOP
+// ??????????????????????????????????????
+// ExcelJS is ~900KB, and export is an occasional action, so it is loaded ON FIRST
+// CLICK rather than on every page load -- the dashboard's own load time is
+// unchanged. Chart.js is already pulled from cdnjs, so the host is not new.
+let XLSX_LIB = null;
+const XLSX_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+function loadExcelJS(){
+  if(XLSX_LIB) return Promise.resolve(XLSX_LIB);
+  if(window.ExcelJS){ XLSX_LIB = window.ExcelJS; return Promise.resolve(XLSX_LIB); }
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = XLSX_CDN;
+    s.onload = () => { XLSX_LIB = window.ExcelJS; XLSX_LIB ? res(XLSX_LIB) : rej(new Error('ExcelJS did not register')); };
+    s.onerror = () => rej(new Error('Could not load ExcelJS from cdnjs'));
+    document.head.appendChild(s);
+  });
+}
+
+// -- shared styling ---------------------------------------------------------
+const XL_HDR = {bold:true, color:{argb:'FF1F2937'}, size:10};
+const XL_HDRFILL = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF1F3F6'}};
+const XL_BORD = {style:'thin', color:{argb:'FFD1D5DB'}};
+const XL_RED = {argb:'FF991B1B'}, XL_GRN = {argb:'FF166534'};
+
+function xlHeader(ws, row){
+  row.eachCell(c => {
+    c.font = XL_HDR; c.fill = XL_HDRFILL;
+    c.alignment = {horizontal:'center', vertical:'middle', wrapText:true};
+    c.border = {top:XL_BORD, left:XL_BORD, bottom:XL_BORD, right:XL_BORD};
+  });
+  row.height = 26;
+}
+// Centre-aligned everywhere except the first (label) column, matching the tab.
+function xlBody(ws, fromRow){
+  for(let i = fromRow; i <= ws.rowCount; i++){
+    ws.getRow(i).eachCell((c, col) => {
+      c.alignment = {horizontal: col === 1 ? 'left' : 'center', vertical:'middle'};
+      c.border = {bottom:XL_BORD};
+      if(typeof c.value === 'number' && col > 1){
+        // Signed integers get a +/- so a deficit reads the same as on screen.
+        c.numFmt = Number.isInteger(c.value) ? '#,##0;[Red]-#,##0' : '#,##0.0;[Red]-#,##0.0';
+        if(c.value < 0) c.font = {color:XL_RED};
+        else if(c.value > 0) c.font = {color:XL_GRN};
+      }
+    });
+  }
+}
+function xlWidths(ws, widths){ widths.forEach((w,i) => { ws.getColumn(i+1).width = w; }); }
+
+function xlSave(wb, name){
+  return wb.xlsx.writeBuffer().then(buf => {
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  });
+}
+
+// -- SVG -> PNG so the charts can ride along in the workbook ----------------
+// The SVGs are styled by document CSS, which does not travel with a serialized
+// clone, so the properties actually used are inlined onto each node first.
+const XL_SVG_PROPS = ['fill','stroke','stroke-width','stroke-dasharray','opacity',
+                      'font-size','font-weight','font-family','text-anchor'];
+function svgToPng(svg, scale){
+  return new Promise((res, rej) => {
+    try{
+      const clone = svg.cloneNode(true);
+      const live = svg.querySelectorAll('*'), cl = clone.querySelectorAll('*');
+      for(let i = 0; i < live.length; i++){
+        const cs = getComputedStyle(live[i]);
+        let css = '';
+        XL_SVG_PROPS.forEach(p => {
+          const v = cs.getPropertyValue(p);
+          if(v && v !== 'none' && v !== 'normal') css += p + ':' + v + ';';
+        });
+        // Google-hosted faces will not resolve inside an isolated <img>, so pin a
+        // stack that certainly will rather than letting it pick something random.
+        cl[i].setAttribute('style', css + "font-family:'DejaVu Sans Mono',Consolas,monospace;");
+      }
+      const vb = svg.viewBox.baseVal;
+      const w = vb.width || svg.clientWidth, h = vb.height || svg.clientHeight;
+      clone.setAttribute('width', w); clone.setAttribute('height', h);
+      // Opaque backing, otherwise the PNG is transparent and unreadable on a sheet.
+      const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bg.setAttribute('x',0); bg.setAttribute('y',0);
+      bg.setAttribute('width',w); bg.setAttribute('height',h);
+      bg.setAttribute('fill','#ffffff');
+      clone.insertBefore(bg, clone.firstChild);
+      const xml = new XMLSerializer().serializeToString(clone);
+      const img = new Image();
+      img.onload = () => {
+        const k = scale || 2;
+        const cv = document.createElement('canvas');
+        cv.width = w * k; cv.height = h * k;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        res({base64: cv.toDataURL('image/png'), w: w, h: h});
+      };
+      img.onerror = () => rej(new Error('SVG rasterise failed'));
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+    }catch(e){ rej(e); }
+  });
+}
+
+function xlBusy(btn, on, label){
+  if(!btn) return;
+  btn.disabled = !!on;
+  btn.textContent = on ? (label || 'Building...') : (btn.dataset.label || 'Export to Excel');
+}
+function xlFail(btn, e){
+  console.error('[export]', e);
+  if(btn){ btn.disabled = false; btn.textContent = 'Export failed - retry'; }
+  alert('Could not build the Excel file.\n\n' + (e && e.message ? e.message : e)
+    + '\n\nThe export library loads from cdnjs on first use, so this usually means '
+    + 'no internet connection or a blocked CDN.');
+}
+
+// ?? LAST MONTH PERFORMANCE ??
+function exportLMP(btn){
+  const mo = lmpMonth();
+  if(!mo){ alert('Nothing to export -- no month is loaded.'); return; }
+  xlBusy(btn, true, 'Loading...');
+  loadExcelJS().then(EX => {
+    xlBusy(btn, true, 'Building...');
+    const cfg = LMP_MODES[LMP.mode];
+    const wb = new EX.Workbook();
+    wb.creator = 'SolarSquare Referral Dashboard';
+    wb.created = new Date();
+
+    // --- Sheet 1: the bridge for the current selection --------------------
+    const t = lmpT(LMP.city), a = lmpA(LMP.city), br = lmpBridge(a, t);
+    const s1 = wb.addWorksheet('Bridge', {views:[{state:'frozen', ySplit:0}]});
+    s1.addRow(['Last Month Performance']).font = {bold:true, size:14};
+    s1.addRow([mo.label + '  .  ' + MOP_VARIANTS[LMP.split].label + '  .  ' + LMP.city
+               + '  .  ' + cfg.label + ' deficit']).font = {color:{argb:'FF6B7280'}, size:10};
+    const cov = lmpCoverage(LMP.month);
+    s1.addRow([cov.complete ? 'Full month, closed ('+cov.dim+' days of data)'
+      : 'INCOMPLETE: only '+cov.have+' of '+cov.dim+' days have data -- deficits are overstated'])
+      .font = {color:{argb: cov.complete ? 'FF6B7280' : 'FF991B1B'}, size:10, bold:!cov.complete};
+    s1.addRow(['Targets from MOP; stage rates are MOP’s own implied rates'])
+      .font = {color:{argb:'FF6B7280'}, size:9, italic:true};
+    s1.addRow([]);
+    if(br){
+      let r = s1.addRow(['Metric','Target','Actual','Deficit','vs plan %']);
+      xlHeader(s1, r);
+      const hdrRow = r.number;
+      s1.addRow(['Order', br.order.t, br.order.a, br.order.a - br.order.t,
+                 br.order.t ? (br.order.a-br.order.t)/br.order.t*100 : 0]);
+      s1.addRow(['HOTO', br.hoto.t, br.hoto.a, br.hoto.a - br.hoto.t,
+                 br.hoto.t ? (br.hoto.a-br.hoto.t)/br.hoto.t*100 : 0]);
+      s1.addRow(['BQL', br.tB, br.aB, br.bqlDef, br.bqlDefPct]);
+      xlBody(s1, hdrRow + 1);
+      s1.addRow([]);
+      const e = lmpAlloc(br.eff.map(x => x.v), br.def);
+      r = s1.addRow([cfg.label + ' bridge', 'Effect', 'Share of movement %']);
+      xlHeader(s1, r);
+      const b2 = r.number;
+      s1.addRow(['MOP target', br.tM, null]);
+      const tot = br.eff.reduce((sm,z) => sm + Math.abs(z.v), 0) || 1;
+      br.eff.forEach((x,i) => s1.addRow([x.lbl, e[i], Math.abs(x.v)/tot*100]));
+      s1.addRow(['Actual', br.aM, null]);
+      xlBody(s1, b2 + 1);
+      s1.addRow([]);
+      r = s1.addRow(['Stage','MOP plan %','Actual %','Drop pp', cfg.label+' effect']);
+      xlHeader(s1, r);
+      const b3 = r.number;
+      br.rates.forEach((x,i) => s1.addRow([x.lbl, x.t, x.a, x.drop, e[i+1]]));
+      s1.addRow(['BQL volume', null, null, br.bqlDefPct, e[0]]);
+      xlBody(s1, b3 + 1);
+      if(br.residual){
+        s1.addRow([]);
+        s1.addRow(['Unattributed: ' + Math.round(br.residual) + ' ' + cfg.label
+          + ' -- a stage rate does not exist (zero denominator), so the multiplicative'
+          + ' split is undefined for that part.']).font = {color:{argb:'FF92400E'}, size:9, italic:true};
+      }
+    }
+    xlWidths(s1, [30, 14, 14, 14, 18]);
+
+    // --- Sheet 2: every city ----------------------------------------------
+    const s2 = wb.addWorksheet('Cities', {views:[{state:'frozen', xSplit:1, ySplit:1}]});
+    const cityHdr = ['City','BQL target','BQL actual','BQL deficit','BQL def %'];
+    (br ? br.rates : []).forEach(x => { cityHdr.push(x.lbl+' plan %', x.lbl+' actual %', x.lbl+' drop pp'); });
+    cityHdr.push(cfg.label+' target', cfg.label+' actual', cfg.label+' deficit', cfg.label+' def %');
+    (br ? br.eff : []).forEach(x => cityHdr.push(x.lbl + ' effect'));
+    xlHeader(s2, s2.addRow(cityHdr));
+    ['India'].concat(lmpCities()).forEach(city => {
+      const cb = lmpBridge(lmpA(city), lmpT(city));
+      if(!cb) return;
+      const ce = lmpAlloc(cb.eff.map(x => x.v), cb.def);
+      const row = [city, cb.tB, cb.aB, cb.bqlDef, cb.bqlDefPct];
+      cb.rates.forEach(x => row.push(x.t, x.a, x.drop));
+      row.push(cb.tM, cb.aM, cb.def, cb.defPct);
+      ce.forEach(v => row.push(v));
+      s2.addRow(row);
+    });
+    xlBody(s2, 2);
+    xlWidths(s2, [16].concat(new Array(cityHdr.length-1).fill(13)));
+
+    // --- Sheet 3: channel groups ------------------------------------------
+    const fine = mo.variants.indexOf('sales') !== -1 && mo.variants.indexOf('nonSales') !== -1;
+    const rollups = fine ? ['noBtl','all'] : ['all'];
+    const groups = MOP_VARIANT_ORDER.filter(v => mo.variants.indexOf(v) !== -1 && rollups.indexOf(v) === -1);
+    if(groups.length){
+      const s3 = wb.addWorksheet('Channel groups', {views:[{state:'frozen', ySplit:1}]});
+      const gh = ['Channel group','BQL target','BQL actual','BQL def %'];
+      (br ? br.rates : []).forEach(x => gh.push(x.lbl+' plan %', x.lbl+' actual %', x.lbl+' drop pp'));
+      gh.push(cfg.label+' target', cfg.label+' actual', cfg.label+' deficit');
+      xlHeader(s3, s3.addRow(gh));
+      groups.forEach(v => {
+        const row0 = mo.cities.find(c => c.city === LMP.city);
+        const gt = row0 ? row0[LMP_BLOCK[v]] : null;
+        const gb = gt ? lmpBridge(lmpA(LMP.city, v), gt) : null;
+        if(!gb){ s3.addRow([MOP_VARIANTS[v].label, 'no plan']); return; }
+        const row = [MOP_VARIANTS[v].label, gb.tB, gb.aB, gb.bqlDefPct];
+        gb.rates.forEach(x => row.push(x.t, x.a, x.drop));
+        row.push(gb.tM, gb.aM, gb.def);
+        s3.addRow(row);
+      });
+      xlBody(s3, 2);
+      xlWidths(s3, [22].concat(new Array(gh.length-1).fill(13)));
+    }
+
+    // --- Sheet 4: sub-channels --------------------------------------------
+    const scs = MOP_VARIANTS[LMP.split].scs;
+    if(scs.length > 1 && t && t.BQL){
+      const s4 = wb.addWorksheet('Sub-channels', {views:[{state:'frozen', ySplit:1}]});
+      xlHeader(s4, s4.addRow(['Sub-channel','BQL','Mix %','MD', cfg.label,
+        'BQL→MD %','vs plan pp','BQL→'+cfg.label+' %', cfg.label+' at plan rate','Effect']));
+      const planR = t.BQL ? (t[cfg.metric]||0)/t.BQL : 0;
+      const planR1 = t.BQL ? (t.MD||0)/t.BQL : 0;
+      const cache = lmpActuals(LMP.month), rowc = cache[LMP.city] || {};
+      const totA = lmpA(LMP.city);
+      scs.map(sc => {
+        const av = rowc[sc] || {BQL:0,MD:0,Order:0,HOTO:0};
+        const m = av[LMP_AKEY[cfg.metric]] || 0;
+        return {sc:sc, av:av, m:m, eff: m - av.BQL*planR};
+      }).filter(x => x.av.BQL > 0 || x.m > 0).sort((x,y) => x.eff - y.eff).forEach(x => {
+        s4.addRow([x.sc, x.av.BQL, totA.BQL ? x.av.BQL/totA.BQL*100 : 0, x.av.MD, x.m,
+          x.av.BQL ? x.av.MD/x.av.BQL*100 : 0,
+          (x.av.BQL ? x.av.MD/x.av.BQL : 0)*100 - planR1*100,
+          x.av.BQL ? x.m/x.av.BQL*100 : 0, x.av.BQL*planR, x.eff]);
+      });
+      xlBody(s4, 2);
+      xlWidths(s4, [20,11,10,11,11,13,13,16,18,11]);
+    }
+
+    // --- charts as images, best-effort ------------------------------------
+    const wf = document.querySelector('#p-lmp .lmpw');
+    const bars = document.querySelector('#p-lmp .lmpb');
+    const shots = [];
+    if(wf) shots.push(svgToPng(wf, 2).then(p => ({p:p, sheet:s1, label:'bridge'})));
+    if(bars) shots.push(svgToPng(bars, 2).then(p => ({p:p, sheet:s2, label:'cities'})));
+    return Promise.all(shots.map(x => x.catch(e => { console.warn('[export] chart skipped', e); return null; })))
+      .then(imgs => {
+        imgs.filter(Boolean).forEach(({p, sheet, label}) => {
+          const id = wb.addImage({base64:p.base64, extension:'png'});
+          const anchorRow = sheet.rowCount + 2;
+          sheet.addImage(id, {tl:{col:0.2, row:anchorRow},
+            ext:{width:Math.min(p.w, 900), height:Math.min(p.w,900)/p.w*p.h}});
+          sheet.getRow(anchorRow).getCell(1).value = label === 'bridge'
+            ? cfg.label + ' bridge (chart)' : 'Cities ranked by ' + cfg.label + ' gap (chart)';
+          sheet.getRow(anchorRow).getCell(1).font = {bold:true, size:10};
+        });
+        const fn = 'LastMonthPerformance_' + LMP.month + '_' + LMP.split + '_'
+          + cfg.label + '_' + LMP.city.replace(/\s+/g,'') + '.xlsx';
+        return xlSave(wb, fn);
+      });
+  }).then(() => xlBusy(btn, false)).catch(e => xlFail(btn, e));
+}
+
+// ?? ACTUALS vs MOP ??
+// Reads the rendered table rather than recomputing, so the file always matches
+// exactly what is on screen, including whatever tier/city filter is applied.
+function exportAVM(btn){
+  xlBusy(btn, true, 'Loading...');
+  loadExcelJS().then(EX => {
+    xlBusy(btn, true, 'Building...');
+    const tbl = document.querySelector('#avm-tbl table');
+    if(!tbl) throw new Error('The Actuals vs MOP table is not rendered.');
+    const wb = new EX.Workbook();
+    wb.creator = 'SolarSquare Referral Dashboard';
+    wb.created = new Date();
+    const ws = wb.addWorksheet('Actuals vs MOP', {views:[{state:'frozen', xSplit:1, ySplit:3}]});
+    ws.addRow(['Actuals vs MOP — Order deficit & loss attribution']).font = {bold:true, size:14};
+    const sub = document.querySelector('#p-avm .psub');
+    ws.addRow([sub ? sub.textContent.replace(/\s+/g,' ').trim() : '']).font = {color:{argb:'FF6B7280'}, size:9};
+    // Two header rows: group titles then column names, mirroring the tab.
+    const hRows = [...tbl.querySelectorAll('thead tr')];
+    hRows.forEach(tr => {
+      const cells = [];
+      [...tr.children].forEach(th => {
+        cells.push(th.textContent.replace(/\s+/g,' ').trim());
+        // colspan groups get blank spacers so the two rows line up
+        for(let k = 1; k < (th.colSpan || 1); k++) cells.push('');
+      });
+      xlHeader(ws, ws.addRow(cells));
+    });
+    const firstBody = ws.rowCount + 1;
+    [...tbl.querySelectorAll('tbody tr')].forEach(tr => {
+      const vals = [...tr.children].map((td,i) => {
+        // The City cell concatenates a tier-badge span into its own text, which
+        // would export as "NagpurFocus" -- read the cell without the badge.
+        if(i === 0){
+          const c = td.cloneNode(true);
+          c.querySelectorAll('.ctag').forEach(x => x.remove());
+          return c.textContent.replace(/\s+/g,' ').trim();
+        }
+        const txt = td.textContent.replace(/\s+/g,' ').trim();
+        // strip formatting so Excel gets real numbers it can chart and sort
+        const n = parseFloat(txt.replace(/,/g,'').replace(/[+%]/g,'')
+                                .replace(/−/g,'-').replace(/pp$/,''));
+        return (txt === '' || txt === '-' || isNaN(n)) ? txt : n;
+      });
+      ws.addRow(vals);
+    });
+    xlBody(ws, firstBody);
+    const colCount = ws.columnCount;
+    xlWidths(ws, [18].concat(new Array(colCount-1).fill(12)));
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    return xlSave(wb, 'ActualsVsMOP_' + stamp + '.xlsx');
+  }).then(() => xlBusy(btn, false)).catch(e => xlFail(btn, e));
+}
+
 const REFERRAL_TABS = ['exec','mop','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep'];
 const TF_CAPABLE_TABS = ['exec','india','city','sc','funnel','m0funnel','bqlq','vel','wow','act','dod','dodfunnel']; // tabs that re-render in TF mode
 
