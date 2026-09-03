@@ -64,9 +64,10 @@ but NOT STARTED — see the plan below before building anything):**
   (discontinued: 81 orders / 76 HOTOs lifetime but only 1 order in FY27 —
   near-dead, low priority), and **`Ajmer`** (zero volume anywhere, ever).
 
-**As of 2026-09-03, later — "Last Month Performance" tab is BUILT and browser-verified,
-sitting in `index.preview.html`, NOT merged, NOT pushed (awaiting Yash's review).
-The MOP-history prerequisite IS merged and pushed (`0b7a1e8`).**
+**As of 2026-09-03, later — "Last Month Performance" tab is LIVE in
+`index.html`/`origin/main` (commit `49558b9`, reviewed and pushed after two rounds
+of Yash's feedback). `index.preview.html` deleted; nothing pending. The MOP-history
+prerequisite went in separately as `0b7a1e8`.**
 
 - **New tab `lmp`, sidebar "Last Month Performance"**, directly under Actuals vs MOP.
   Deliberately **not** in `REFERRAL_TABS`, so Timeframe mode skips it (same
@@ -181,11 +182,14 @@ The MOP-history prerequisite IS merged and pushed (`0b7a1e8`).**
     `LMP_NEW_DAYS` (7), applied by `markLmpNew()` after `init()` so a channel
     switch cannot lose it. 8px, 0.55 opacity. It removes itself; nobody has to
     remember. Bump `LMP_RELEASE` to re-flag the tab after a future change.
-  - **⚠️ Open question left with Yash:** he wrote "make this last tab in the
-    Overview list", which could mean *move it to the end of Overview* or could
-    just be referring to it as the newest tab. It was left 4th, directly under
-    Actuals vs MOP, so the two MOP tabs stay adjacent — flagged to him rather
-    than guessed at.
+  - **Resolved: the nav item sits LAST in the Overview group** (Yash confirmed
+    2026-09-03 he meant it as an instruction, not a description). The `rep('nav')`
+    anchor in the injector is `BQL Quality`, not `Actuals vs MOP`.
+  - **No tier column in either export** (Yash, 2026-09-03). The LMP Cities sheet
+    dropped its `Tier` column, and the Actuals vs MOP export reads the City cell
+    with the `.ctag` badge removed — that cell's `textContent` is otherwise
+    `"NagpurFocus"`, the same markup quirk that once broke City Summary's
+    India-row pin check.
 
 **Original plan for the tab, as scoped and agreed before building (2026-09-03) —
 kept because it records the decisions and their reasons:**
