@@ -38,11 +38,19 @@ model, not transcription error. This script preserves the workbook's own
 figures verbatim and reports the deltas rather than silently reconciling them
 -- if that call ever changes, flip SUM_TOTALS below.
 """
-import json, sys, argparse
+import json, sys, argparse, datetime
 from pathlib import Path
 import openpyxl
 
 METRICS = ['BQL', 'MS', 'MD', 'ORDER', 'HOTO']
+
+# Dashboard variant key -> the JSON block that backs it. The dashboard's own
+# MOP_VARIANTS uses 'all' for what this file calls 'combined'; everything else
+# matches. Order here is the order the dashboard renders its split buttons in.
+VARIANT_BLOCK = [('sales', 'sales'), ('nonSales', 'nonSales'), ('btl', 'btl'),
+                 ('noBtl', 'noBtl'), ('all', 'combined')]
+
+HISTORY_FILE = 'data/referral_mop_history.json'
 # First column of each metric's 4-column block (1-indexed): B, G, L, Q, V
 METRIC_COL = {'BQL': 2, 'MS': 7, 'MD': 12, 'ORDER': 17, 'HOTO': 22}
 # Offsets within a metric block
@@ -112,13 +120,86 @@ def parse(xlsx_path, sheet=None):
     return rows, warnings
 
 
+def variants_present(rows):
+    """Which dashboard variants this month actually has targets for.
+
+    Carried in the history file per month so the Last Month Performance tab
+    knows which split buttons to render -- Aug'26 has 3, Sep'26 has 5 -- instead
+    of guessing or offering buttons that resolve to nothing.
+    """
+    out = []
+    for vkey, block in VARIANT_BLOCK:
+        if any(any((r.get(block) or {}).get(m, 0) for m in METRICS) for r in rows):
+            out.append(vkey)
+    return out
+
+
+def month_label(ym):
+    y, m = ym.split('-')
+    return datetime.date(int(y), int(m), 1).strftime("%b'") + y[2:]
+
+
+def write_history(rows, ym, path=HISTORY_FILE, quiet=False):
+    """Add/replace one month in the month-keyed history file.
+
+    referral_mop.json only ever holds the CURRENT month and is overwritten every
+    time a new workbook lands, so last month's targets used to survive only in
+    git. The Last Month Performance tab needs them at runtime, hence this file.
+    It is written alongside -- never instead of -- the flat current-month file,
+    so the live MOP tabs are unaffected.
+    """
+    p = Path(path)
+    hist = {'months': {}}
+    if p.exists():
+        try:
+            hist = json.loads(p.read_text(encoding='utf-8')) or {'months': {}}
+        except ValueError:
+            raise SystemExit(f'{path} exists but is not valid JSON -- refusing to overwrite it.')
+    hist.setdefault('months', {})
+
+    existed = ym in hist['months']
+    if existed and not quiet:
+        old = hist['months'][ym].get('cities', [])
+        oldI = next((c for c in old if c.get('city') == 'India'), {})
+        newI = next((c for c in rows if c.get('city') == 'India'), {})
+        ob = (oldI.get('combined') or {}).get('BQL')
+        nb = (newI.get('combined') or {}).get('BQL')
+        print(f'\nNOTE: {ym} was already in {path} and is being replaced '
+              f'(India combined BQL {ob} -> {nb}).')
+
+    hist['months'][ym] = {'label': month_label(ym),
+                          'variants': variants_present(rows),
+                          'cities': rows}
+    # Chronological, so the dashboard's month picker needs no sorting.
+    hist['months'] = dict(sorted(hist['months'].items()))
+    p.write_text(json.dumps(hist, indent=1) + '\n', encoding='utf-8')
+    if not quiet:
+        months = list(hist['months'])
+        print(f'\n{"Replaced" if existed else "Added"} {ym} in {path} '
+              f'({len(months)} months: {", ".join(months)})')
+    return hist
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('xlsx')
     ap.add_argument('-o', '--out', default='data/referral_mop.json')
     ap.add_argument('--sheet', default=None)
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--month', default=None, metavar='YYYY-MM',
+                    help='Month these targets apply to (default: the current '
+                         'calendar month, since a MOP is loaded at the start of '
+                         'the month it governs). Also the history file key.')
+    ap.add_argument('--no-history', action='store_true',
+                    help='Write only the flat current-month file, skipping '
+                         + HISTORY_FILE + '.')
     a = ap.parse_args()
+
+    ym = a.month or datetime.date.today().strftime('%Y-%m')
+    try:
+        datetime.datetime.strptime(ym, '%Y-%m')
+    except ValueError:
+        raise SystemExit(f'--month must look like YYYY-MM, got "{ym}".')
 
     rows, warnings = parse(a.xlsx, a.sheet)
     if not rows:
@@ -140,11 +221,16 @@ def main():
     for k in ('sales', 'nonSales', 'btl', 'noBtl', 'combined'):
         print(f'  {k:<10} ' + ' '.join(f'{india[k][m]:>7}' for m in METRICS))
 
+    print(f'\nMonth: {ym} ({month_label(ym)}) . variants present: '
+          f'{", ".join(variants_present(rows))}')
+
     if a.dry_run:
         print('\n--dry-run: nothing written.')
         return
     Path(a.out).write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
     print(f'\nWrote {a.out} ({len(rows)} rows)')
+    if not a.no_history:
+        write_history(rows, ym)
 
 
 if __name__ == '__main__':
