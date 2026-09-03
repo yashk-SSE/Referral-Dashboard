@@ -141,6 +141,51 @@ The MOP-history prerequisite IS merged and pushed (`0b7a1e8`).**
 - **Cosmetic, not fixed:** for Aug the two cards render BTL before Sales+Non-Sales
   (they follow `MOP_VARIANT_ORDER`, where `btl` precedes `noBtl`). Sep's order is
   natural (Sales / Non-Sales / BTL).
+- **Round 2 of Yash's review, 2026-09-03 (all in the same preview):**
+  - **⚠️ The charts were rendering ~2x too large, and the cause is worth
+    remembering:** an inline SVG at `width:100%` on an 820-unit viewBox gets
+    *scaled up* by the browser on a wide panel, magnifying every label — an 11px
+    label rendered at ~22px. Fixed by widening the viewBox to 1120 and adding a
+    matching `max-width:1120px`, so it renders at exactly 1:1 (verified: scale
+    factor 1.00) and still scales down on a narrow window. **Any future SVG chart
+    here needs that max-width or it will look enlarged the same way.**
+  - **Ranked-bar value labels now sit INSIDE the bar** (white) once it is at least
+    46px wide, outside otherwise. The longest bar reaches the axis, so an outside
+    label landed on top of the city name (Nagpur). Verified zero label collisions
+    across every city in both metric modes.
+  - **LMP tables use a `.lmp-tbl` class that centres headers AND cells** (first
+    column stays left). The base stylesheet has `th{text-align:left}` with no rule
+    for `td`, so a header with an inline `text-align:right` never lined up with
+    its own numbers — that mismatch is what Yash saw.
+  - **Excel export on both `lmp` and `avm`** (`exportLMP()` / `exportAVM()` in the
+    injected code). **ExcelJS is lazy-loaded from cdnjs on the first click**, not
+    at page load — it is ~900KB and export is occasional, so the dashboard's load
+    time is unchanged (verified: only Chart.js is in `document.scripts` until the
+    button is used). cdnjs is not a new host; Chart.js already comes from there.
+    - LMP writes 4 sheets (Bridge / Cities / Channel groups / Sub-channels) and
+      **embeds both charts as PNGs**. `svgToPng()` inlines the computed styles
+      onto a clone first, because document CSS does not travel with a serialized
+      SVG, and paints an opaque white backing so the image is readable on a sheet.
+      Fonts fall back to a generic mono stack inside the isolated image — the
+      Google faces will not resolve there, and that is accepted.
+    - AVM reads the **rendered** table rather than recomputing, so the file always
+      matches what is on screen including the active tier/city filter and MOP
+      variant. Numbers are stripped of `,` `+` `%` `pp` and the unicode minus so
+      Excel gets real numbers it can sort and chart.
+    - **Native (editable) Excel charts are NOT produced** — SheetJS community
+      cannot make them and ExcelJS has no chart API, so the charts go in as
+      images. Raw OOXML chart XML would be the only route; not attempted.
+    - Verified end-to-end: a real 140KB buffer with a `PK` zip signature, 4
+      sheets, 2 embedded images, and the button returning to its idle label.
+  - **Self-expiring "New" badge on the nav item** — `LMP_RELEASE` +
+    `LMP_NEW_DAYS` (7), applied by `markLmpNew()` after `init()` so a channel
+    switch cannot lose it. 8px, 0.55 opacity. It removes itself; nobody has to
+    remember. Bump `LMP_RELEASE` to re-flag the tab after a future change.
+  - **⚠️ Open question left with Yash:** he wrote "make this last tab in the
+    Overview list", which could mean *move it to the end of Overview* or could
+    just be referring to it as the newest tab. It was left 4th, directly under
+    Actuals vs MOP, so the two MOP tabs stay adjacent — flagged to him rather
+    than guessed at.
 
 **Original plan for the tab, as scoped and agreed before building (2026-09-03) —
 kept because it records the decisions and their reasons:**
