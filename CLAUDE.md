@@ -17,6 +17,133 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-09-03 (5 Expansion cities + Vadodara merge — reviewed, merged and
+PUSHED as `515f95f`. Next up: a "Last Month Performance" tab, SCOPED AND AGREED
+but NOT STARTED — see the plan below before building anything):**
+
+- **`CITIES` is now 37 (was 32), Expansion is 14 (was 9).** Added `Raipur`,
+  `Jodhpur`, `Salem`, `Visakhapatnam`, `Erode` — all `Exp` tier. (`Vijayawada`
+  was already there; Yash's list named it but it needed nothing.) These were in
+  the BigQuery data but not in `CITIES`, so their volume counted into every India
+  and tier total with no city row — ~1.9% of FY27 BQL invisible, Aug'26 India BQL
+  5,322 vs 5,145 summed across city rows.
+  - **Per Yash: visible in City Summary and the funnels, absent from the MOP
+    tabs.** That needs no special-casing — none has a `referral_mop.json` entry,
+    so `hasMop()`/`hasMopV()` already exclude them. Both behaviours verified.
+  - **`Raipur` is the one that matters going forward** — 0–1 BQL/month through
+    July, then 57 in Aug and 7 on Sep 1 alone (~210/month pace), ramping almost
+    entirely through `Referral_Others`. `Jodhpur` is small but converts unusually
+    well (Aug: 11 BQL → 10 MS → 10 MD → 5 Order → 5 HOTO).
+- **`cityFix()` is now a named `CITY_MERGE` map** — `Bengaluru→Bangalore` (as
+  before) plus **`Vadodara→Ahmedabad`** (new, Yash 2026-09-03). Applied to
+  Referral AND Digital, effort AND leads, since `cityFix` is shared.
+  **⚠️ This map is deliberately NOT the same list as the Customer App pipeline's
+  `CITY_MERGE_MAP` in `scripts/pull_customer_app.py`** — that one also folds
+  `Salem→Bangalore` and `Ajmer→Jaipur`, whereas here Salem is its own Expansion
+  city. Don't sync them blindly.
+- **Yash's standing ask: tell him if Vadodara ever becomes a big chunk of
+  Ahmedabad, so the merge can be revisited. This is enforced in code, not
+  memory** — `checkMergeVolumes()` fires a banner when a merged-away city reaches
+  **10% of its destination's BQL over a trailing 3 months, or 150 BQL of its
+  own** (`MERGE_ALERT_SHARE` / `MERGE_ALERT_ABS`). A new `rawCity` field on
+  `ED_ALL` rows carries the pre-merge name so the source city can be measured
+  after the merge. Correctly silent today: Vadodara is 3 BQL across all Referral
+  history, and its 792 Digital rows are all zero-valued.
+  - **Known quirk, harmless, left as-is:** `MERGE_STATS[city].rows` counts
+    `cityFix()` calls across all four datasets (Referral effort + leads, Digital
+    effort + leads), so Vadodara reads 810 rows while Referral effort alone has
+    15. It is not displayed anywhere and the alert itself measures BQL off
+    `ED_ALL.rawCity` (Referral effort only), so the threshold logic is correctly
+    scoped — but don't read that `rows` number as Referral volume.
+- **⚠️ Still unaddressed, needs a decision from Yash** (the remaining unmapped
+  values, all confirmed against fresh data 2026-09-03): **`Inactive`** (1,421 BQL
+  lifetime, 430 in FY27 — not a city, looks like a deactivated-pincode
+  placeholder; its lower funnel went to zero after July while BQL kept flowing,
+  which is worth a separate look. Probably belongs filtered in
+  `Referral Dashboard.gs` at the BigQuery level, not client-side), **`Surat`**
+  (discontinued: 81 orders / 76 HOTOs lifetime but only 1 order in FY27 —
+  near-dead, low priority), and **`Ajmer`** (zero volume anywhere, ever).
+
+**PLANNED, AGREED, NOT BUILT — "Last Month Performance" tab (scoped 2026-09-03):**
+
+A new Referral tab reproducing the Aug'26 Actuals-vs-MOP analysis Claude built as
+a standalone artifact this session, but native to the dashboard and auto-rolling
+each month. **All four decisions below are Yash's explicit answers — don't
+re-litigate them.**
+
+- **⚠️ BLOCKER, must be solved first: there is no MOP history.**
+  `data/referral_mop.json` holds ONE unlabelled month and is overwritten every
+  time. Building the Aug'26 report required recovering August's targets from
+  commit `94fb5c3`/`331920a`. The dashboard cannot read git at runtime, so the
+  tab has nothing to compare against once October's workbook lands.
+  **Agreed fix: a NEW `data/referral_mop_history.json`**, keyed by month, written
+  by `build_mop_json.py` *alongside* the existing flat current-month file (which
+  stays exactly as-is, so the 4 live MOP tabs carry zero risk). Shape:
+  `{months:{"2026-09":{label,variants:[...],cities:[...]}}}` — the per-month
+  `variants` array is load-bearing: it tells the tab which split buttons to
+  render, so Aug shows 3 and Sep shows 5 with no guessing. Re-running the script
+  for a month already present replaces just that entry and reports the diff.
+  ~17KB/month, trivial.
+- **Backfill reality, checked commit-by-commit 2026-09-03:** only **Jul, Aug and
+  Sep '26** are usable. `Sep'26` (`ca3f513`) has all 5 variant blocks; `Aug'26`
+  (`94fb5c3`) has 3 (noBtl/btl/combined); `Jul'26` (`db6a526`) is a flat schema
+  with no BTL split but *does* carry `ORDER`, so it supports the combined view
+  only — and its "All" isn't composition-comparable to Sep's. **Jun'26 and
+  earlier (`ed2f908`, `df00fa6`, `4405191`, `b9fe8a2`) have NO `ORDER` field at
+  all**, so the Order-deficit bridge is impossible for them — don't try.
+- **Month picker, defaulting to last month** (Yash's choice over a fixed
+  last-month view). Lists exactly the months present in the history file, so
+  picking `Aug'26` in October works.
+- **Scope = the analytical core:** the Order-deficit bridge waterfall with split
+  + city selectors, the ranked city chart, the BTL-vs-Non-BTL comparison cards
+  (city-aware), and the Non-Sales sub-channel breakdown. **Deliberately dropped:**
+  the "checking the volume effect yourself" rate-verification section, which
+  existed to answer a one-off question.
+- **HOTO is in scope** (Yash, 2026-09-03): add a HOTO row/tile alongside Order in
+  the KPI area. The bridge itself stays Order-only — it decomposes Orders — but
+  the team reads performance in HOTO terms because the FY27 40K target is
+  HOTO-denominated.
+- **Reuse, don't reimplement:** `avmCalc()` (~line 2144) is already exactly this
+  bridge, and `MOP_VARIANTS`/`mvT`/`mvA`/`hasMopV` already handle the 5-way split.
+  The tab should call them so the methodology has one source of truth.
+- **Exclude from `REFERRAL_TABS`** so Timeframe mode skips it — same precedent as
+  `avm`, since a named past month is inherently a fixed period.
+- **Guard the missing-MOP case:** if a month has no MOP loaded, say so explicitly
+  rather than rendering zeros/-100%.
+- **Per-sub-channel MOP still won't exist.** From Sep, Sales and Non-Sales have
+  their own targets, so those compare against their own plans. But Online /
+  Ops-AMC / Referral_Others have no individual targets (the workbook gives one
+  "Non Sales" column), so "which sub-channel is dragging" still has to measure
+  against the blended Non-Sales rate. Flagged to Yash; a workbook change if he
+  ever wants it properly.
+- **Reference for what the tab should contain:** the published artifact
+  `https://claude.ai/code/artifact/73f085e1-33e4-4264-84d8-260881a8e81a`
+  ("August MOP Shortfall"), and the two generator scripts left in this session's
+  scratchpad (`aug_report.py` computes the bridge + sub-channel layer,
+  `gen_report.py` renders it). **The scratchpad is session-local and will be
+  gone** — the scripts are not in the repo, so treat the artifact as the spec.
+- **Analytical findings worth carrying in** (Aug'26, verified, bridge reconciles
+  to 6dp): India Order gap −614 splits ~50/50 between BQL volume (−337) and
+  BQL→MD conversion (−350), with MD→Order actually *beating* plan (+73). BTL
+  decayed ~2x faster than Non-BTL (BQL −26.2% vs −13.3%; BQL→MD −20.4pp vs
+  −10.8pp) but converted MD→Order far better (60.0% vs a 46.6% plan) — BTL's
+  problem is reaching a completed meeting, not closing one. Within Non-BTL,
+  **Online is essentially the entire conversion problem**: 32% of BQL, BQL→MD
+  35.6% against a 63.9% plan (−28.3pp), costing −291 orders, while **Sales beat
+  the plan rate by +88**.
+- **⚠️ Rounding lesson from the artifact, worth repeating in the tab:** the three
+  bridge effects are floats summing to the Order gap; rounding each independently
+  leaves the displayed effects a unit off the displayed gap (Nagpur showed
+  −135/+3/−6 against a −139 gap). Use largest-remainder allocation so displayed
+  figures always tie — a report whose numbers don't add up invites exactly the
+  kind of (correct) challenge Yash raised about the rate multiplication.
+- **⚠️ Rate-multiplication gotcha Yash hit, and the fix applied:** each split
+  converts at its own rate, and `(MD/BQL) × (Order/MD)` telescopes to that
+  split's own `Order/BQL`. Non-BTL is 63.91% × **54.60%** = 34.90% (not the
+  Combined 53.14%, which gives a misleading 33.96%). The artifact originally
+  showed only BQL→MD, which made this impossible to check — **the tab must show
+  MD→Order actual vs plan too**, not just BQL→MD.
+
 **As of 2026-09-02 (September MOP + a new 5-way MOP variant selector — reviewed,
 merged, and PUSHED as commit `ca3f513`; `index.preview.html` deleted, nothing
 pending):**
