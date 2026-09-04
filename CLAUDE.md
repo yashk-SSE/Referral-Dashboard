@@ -1224,6 +1224,54 @@ independent pipeline from everything else in this file.
      changed (don't just re-add the old constraints-override fix, it's proven
      not to be durable).
 
+### Phone masking — broke the pipeline for 6.5 days (2026-08-27 → 2026-09-03)
+
+Metabase rolled out PII masking on phone columns in **two stages**, and the gap
+between them silently zeroed out every Customer App number:
+
+1. **2026-08-27, 19:55–22:30 UTC** — `otps.mobile` (and `loginotps.mobile`)
+   started returning 64-char lowercase hex (SHA-256-shaped) for **every** row,
+   including all history back to 2025-03-26 (these are VIEWs, so it's applied at
+   read time). `customer.phone` was left plaintext, so `o.mobile = c.phone`
+   matched nothing, `first_login_at` came back NULL for all ~61k projects, and
+   all four Customer App tabs showed zero logins. **No error was raised** — the
+   query kept returning HTTP 200 and a valid JSON file kept getting committed.
+2. **2026-09-03, 08:11–13:47 UTC** — `customer.phone` was masked too, with the
+   **same salt**, which restored the join with no code change. Verified against
+   an independent `customer._id = otps."userId"` join: 0 SSEID disagreements,
+   0 rows resolved by userId but not by phone, no row fan-out.
+
+Notes for the next time this moves:
+- The hash is deterministic and consistent across masked objects, but **salted** —
+  plain `sha256(phone)` and the `91`/`+91`/`0`-prefixed variants all give 0
+  matches, so it can't be recomputed from any plaintext phone.
+- **Fallback join if a phone join ever breaks again:** `customer._id =
+  otps."userId"`. Resolves ~78% of login rows (87–92% in recent months) and is a
+  strict subset of the phone join — 649 fewer projects, so it's the fallback,
+  not the default.
+- Only 3 saved cards touch `otps`/`loginotps` — 1182 (CApp Login Report), 2688
+  (Order Booke CApp Logins), 4551 (CAPP LOGIN TIMESTAMPS) — plus this repo's
+  `scripts/customer_app_query.sql`. All four use `o.mobile = c.phone`.
+- **Diagnostic:** check the masking state of *both* sides before touching any
+  SQL — `phone ~ '^[0-9a-f]{64}$'` on `customer.phone` and `otps.mobile`. If only
+  one side is hashed, that's the bug; the fix belongs with whoever owns the
+  masking policy, not in this query.
+
+### The integrity guard in `pull_customer_app.py` (added 2026-09-04)
+
+Both failures this pipeline has hit — the 2026-08-18 2,000-row cap and the
+masking break above — were **silent**, and both were caught only by Yash
+eyeballing an obviously-wrong number days later. `check_before_write()` now runs
+immediately before the file write and **aborts without overwriting**
+`data/customer_app.json` if the pull returns zero rows, zero logins, or a >20%
+drop in either project count or login count versus the previous file. The step
+exits non-zero, so the workflow's commit step never runs and the dashboard keeps
+serving the last known-good pull instead of zeros.
+
+Set `ALLOW_DATA_DROP=1` to push a drop through when it's genuinely expected
+(e.g. a deliberate change to the `project_state` filter). **Don't just re-run and
+hope** when it fires — diagnose first, that's the whole point of it.
+
 ### Business logic (confirmed with Yash, 2026-08)
 - **Login definition:** `otps` table, `"isVerified" = 'True'` AND `source IN
   ('CONSUMER', 'CUSTOMER_JOURNEY_TRACKER')`. **Not** `consumer_analytics` /

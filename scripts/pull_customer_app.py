@@ -58,6 +58,12 @@ KEY_FILE = os.path.join(REPO_ROOT, ".metabase_key", "metabase_key.txt")
 QUERY_FILE = os.path.join(SCRIPT_DIR, "customer_app_query.sql")
 OUTPUT_FILE = os.path.join(REPO_ROOT, "data", "customer_app.json")
 
+# Sanity-check thresholds for the integrity guard below -- a refresh that comes
+# back with this much less data than the previous one is treated as a broken
+# pull, not as real movement. Both figures only ever grow by a few hundred a
+# day, so 20% is a wide margin that still catches a total collapse.
+MAX_DROP = 0.20
+
 
 def load_api_key():
     # CI (GitHub Actions) has no .metabase_key/ checkout -- it supplies the key via
@@ -118,6 +124,84 @@ def run_metabase_query(api_key, sql):
     return list(csv.DictReader(io.StringIO(csv_text)))
 
 
+def check_before_write(records, with_login):
+    """Refuse to overwrite customer_app.json with an obviously-broken pull.
+
+    Both failures this pipeline has actually hit were SILENT -- Metabase kept
+    returning HTTP 200 and this script kept writing a perfectly valid JSON file:
+
+      1. 2026-08-18 -- Metabase quietly stopped honoring the constraints
+         override and re-capped results at 2,000 rows (~97% of the base
+         missing). Caught only because a Login Velocity number looked absurd.
+      2. 2026-08-27 -- phone masking landed on otps.mobile but NOT on
+         customer.phone, so the otps -> customer join matched nothing and
+         first_login_at came back NULL for every project. That ran for 6.5 days
+         across all four Customer App tabs before anyone noticed. (Fixed on
+         2026-09-03 when customer.phone was masked with the same salt.)
+
+    Neither raised an error, so this guard checks the two numbers that would
+    have caught them, and exits non-zero rather than committing bad data. On
+    failure the existing data/customer_app.json is left untouched, so the
+    dashboard keeps serving the last known-good pull instead of zeros.
+
+    Set ALLOW_DATA_DROP=1 (env var) to push through a drop that's genuinely
+    expected -- e.g. a deliberate change to the project_state filter.
+    """
+    problems = []
+
+    if not records:
+        problems.append("the query returned 0 rows")
+
+    if records and with_login == 0:
+        problems.append(
+            f"0 of {len(records):,} projects have a login -- check whether "
+            "otps.mobile and customer.phone are still masked the same way "
+            "(see CLAUDE.md Section 15)"
+        )
+
+    prev = None
+    if os.path.exists(OUTPUT_FILE):
+        try:
+            with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+                prev = json.load(f)
+        except (OSError, ValueError) as e:
+            print(f"WARNING: couldn't read the previous {OUTPUT_FILE} to compare "
+                  f"against ({e}) -- skipping the drop check for this run.")
+
+    if prev:
+        prev_rows = len(prev)
+        prev_logins = sum(1 for r in prev if r.get("first_login_at"))
+        print(f"Previous pull for comparison: {prev_rows:,} projects, "
+              f"{prev_logins:,} with a login")
+
+        if prev_rows and len(records) < prev_rows * (1 - MAX_DROP):
+            drop = (1 - len(records) / prev_rows) * 100
+            problems.append(f"project count fell {drop:.1f}% -- {prev_rows:,} "
+                            f"-> {len(records):,}")
+
+        if prev_logins and with_login < prev_logins * (1 - MAX_DROP):
+            drop = (1 - with_login / prev_logins) * 100
+            problems.append(f"projects with a login fell {drop:.1f}% -- "
+                            f"{prev_logins:,} -> {with_login:,}")
+
+    if not problems:
+        return
+
+    summary = "\n".join(f"  - {p}" for p in problems)
+    if os.environ.get("ALLOW_DATA_DROP") == "1":
+        print(f"\nData check flagged:\n{summary}\n"
+              "ALLOW_DATA_DROP=1 is set -- writing anyway.")
+        return
+
+    raise SystemExit(
+        f"\nABORT: this pull looks broken, so {OUTPUT_FILE} was NOT overwritten:\n"
+        f"{summary}\n\n"
+        "Diagnose before re-running -- don't just re-run and hope. Check the\n"
+        "join in scripts/customer_app_query.sql against the current state of\n"
+        "the Metabase views, then set ALLOW_DATA_DROP=1 if the drop is real."
+    )
+
+
 def main():
     print("=" * 60)
     print("Customer App Data Puller (Metabase)")
@@ -175,6 +259,10 @@ def main():
     print(f"{len(distinct_cities)} distinct city values after merging:")
     for c in distinct_cities:
         print(f"  - {c}")
+
+    # Last line of defence before we clobber the previous good file -- see the
+    # function's docstring for the two silent failures this exists to catch.
+    check_before_write(records, with_login)
 
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
