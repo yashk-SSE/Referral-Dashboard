@@ -268,11 +268,35 @@ dashboard file yet except one pending `LD_ALL` change sitting in
     month, so on day 7 none can be past a 7-day window) but reads as "nothing
     here" and would cost trust. The card now leads with the live count and says
     why nothing is workable yet.
-  - **⚠️ Open question for Yash:** `bms` is month-scoped, matching
-    `index.html`'s `C.aging`. That means a BQL created *last* month with still
-    no MS never appears in any worklist. Most would be excluded as dead anyway
-    (`Inactive Lead` 5,492, `Lead - Not Interested` 18,990), but not all. Worth
-    asking whether the worklist should widen beyond the current month.
+  - **RESOLVED 2026-09-08 — "open" is a STATUS WHITELIST, and no pool is
+    date-scoped.** Yash's explicit definition: a lead is workable only at
+    `SCApp_Status` in **`Open` / `Connected` / `Meeting` / `Prequalification`**
+    (`OPEN_STATUS`), and a workable lead may come from an earlier month, so the
+    `bms` current-month scope was **removed**. This diverges from
+    `index.html`'s `C.aging`, deliberately.
+    - **The numbers prove the whitelist is the right gate, not a date window.**
+      Widening `bms` took it from 980 to **28,954 raw**, and the whitelist cuts
+      that to **2,556** — 82% of the widening was closed or abandoned. Full
+      picture: raw 51,368 → open 12,262 → workable (7–30d) **1,988**
+      (bms 746 · mmd 183 · mo 912 · ohoto 147).
+    - **⚠️ ONE DELIBERATE EXCEPTION, flagged to Yash, in `OPEN_STATUS_EXTRA`:**
+      those four statuses leave the handover pool **completely empty** — all
+      1,065 orders awaiting handover carry status **`Booked`**, which for that
+      pool *is* the open state. So `ohoto` additionally accepts `Booked`. Set
+      `OPEN_STATUS_EXTRA = {}` to apply the four statuses with no exception.
+    - **The null-status leads are correctly excluded, and this was checked, not
+      assumed:** 2,723 leads have no status at all, and they are **not fresh
+      records** — median age **406 days**, 2,648 of them 30+ days old, only 72
+      under a week. They are abandoned, not new.
+    - **Stage married to status, for the four open statuses** (Yash asked for
+      this): `Open` (2,223) = Call Later 1,069 · Call Not Connected 882 ·
+      Meeting Scheduled (BD) 139 · Assigned 133. `Connected` (805) = Meeting
+      Postponed 366 · Meeting Confirmed - Customer Home 247 · Design Created
+      124. `Meeting` (7,960) = **Meeting Done - Moderate 3,911 · Meeting Done -
+      Hot 1,355** · Followup On Call 1,352 · Customer Not Reachable 593 ·
+      On-Hold 393. `Prequalification` (249) = Qualification Remaining 137 ·
+      Lost In Qualification 74 (a "lost" stage inside an open status — source
+      quirk, tiny, left alone).
   - **Data observation, not a bug:** 125 of the India `bms` live pool have **no
     LRM email at all** (`(unassigned)`), the single largest "holder". Worth
     raising with Yash separately — unassigned leads cannot be chased.
@@ -284,6 +308,57 @@ dashboard file yet except one pending `LD_ALL` change sitting in
     **Online grew 32.2% → 39.9% of the mix while its own rate fell 43.2% →
     23.8%**, carrying −7.0pp of the −6.9pp total execution effect. Online is
     essentially the entire problem, again, exactly as in Aug'26.
+- **UI redesign, 2026-09-08 — Yash's feedback was "very pale and boring".**
+  This is a deliberate departure from Section 11's grey/black minimalism, which
+  governs `index.html`; Signals now has its own visual system. What changed:
+  - **Type:** Archivo (display/headings, tight tracking) + Public Sans (body) +
+    DM Mono (all numerals, matching the dashboard's numeric face). Inter was
+    dropped — it is the generic default and read as such.
+  - **Full token-based palette with dark mode** via `prefers-color-scheme`.
+    Every colour is declared on bare `:root` FIRST and only redefined in the
+    media query — a colour defined solely inside the query renders one theme's
+    text on the other theme's ground. Verified in both: light body `#eef1f6`
+    with white cards, dark `#0c1017` with `#151b25` cards.
+  - **A "the read" hero band** stating the conclusion in one generated sentence
+    ("Order is 36.7% behind the day-7 plan. BQL→MS is the biggest drag at −226
+    orders, while BQL Volume is holding up at +116"), plus the orders-vs-plan
+    figure and — **now finally present, it was missing** — the **FY27 40k HOTO
+    tracker** required by Section 8 rule 3.
+  - **The Order bridge is now a real SVG waterfall** (floating bars, dashed
+    connectors, "BIGGEST DRAG" annotation) instead of a flat row of boxes.
+  - KPI tiles gained an attainment bar vs the prorated target; signal cards
+    gained a severity rail, a rank badge and a magnitude bar relative to the
+    largest signal in the current list.
+  - **⚠️ The SVG scale lesson now cuts BOTH ways.** CLAUDE.md already recorded
+    that a viewBox much NARROWER than the render width gets scaled up and
+    magnifies labels (the LMP bug). The first waterfall attempt hit the inverse:
+    a 1060-wide viewBox in a ~690px panel scaled to **0.65**, shrinking a 10.5px
+    label to 6.8px. Fixed by pinning the viewBox near the real render width
+    (780) with a matching `max-width:780px` and a `min-width` that makes it
+    scroll rather than shrink — verified at **exactly 1.00** at 1280px.
+- **Hosting question, answered 2026-09-08: GitHub Pages allows only ONE site
+  per repository, and that is not a problem.** A Pages site serves every file
+  in the published branch, so `signals.html` at the repo root is automatically
+  live at `https://yashk-sse.github.io/Referral-Dashboard/signals.html` — the
+  same site, a second page, no second Pages needed and no config change.
+- **⚠️ NEXT, and Yash's own idea — loss-rate signals (Step 6).** Use the
+  dispositions to detect leads from a given city/sub-channel closing
+  `Closed - Lost`/`Closed - Cold` **early**, and whether that share is rising.
+  Groundwork already done:
+  - **"Early" has no timestamp to work from** — there is no close date in the
+    data. The workable proxy is **stage-based**: a lost lead that never reached
+    MS died before a meeting was even scheduled. That is better than a time
+    proxy anyway.
+  - **⚠️ Raw loss rate by creation month is NOT comparable across months** and
+    would be read wrong. Measured 2026-09-08: Online loses 68.6% of May-created
+    leads but only 21.2% of September's — because September's leads have not had
+    time to close. **Loss rate must be compared at equal cohort age** (e.g.
+    "of leads created 30–60 days ago, what share is already lost with no MS"),
+    which is the same maturity discipline as the read-maturity gate.
+  - The signal is real: at equal maturity **Online is far the worst** (68.6% of
+    May cohort lost vs Sales 45.0%), and **~83% of Online's losses happen before
+    any MS** (57.4pp of its 68.6% is early loss). Same story as every other
+    analysis this session.
 - **Next up, in order (from the spec's build sequence):** ~~Step 1 Act mode
   thin~~ → ~~Step 2 credibility layer~~ → ~~Step 3 Explore mode~~ → ~~Step 4
   worklists~~ (revive the dead `C.aging`, use the new `leadId`/`lrmEmail`/
