@@ -238,9 +238,55 @@ dashboard file yet except one pending `LD_ALL` change sitting in
   one. Also: the Browser pane's page tools **cannot act on a `file://` URL** — a
   local HTML file has to be served over the local server before it can be read or
   screenshotted.
+- **Step 4 (worklists) is BUILT and browser-verified**, same file. This is the
+  step that makes a signal end in assignable work rather than a percentage.
+  - **`referral_leads.json` (30.7 MB) is lazy-loaded**, never at page open —
+    a "Load worklists" button in the top bar, or per-card. That lazy load is
+    the whole reason this page still opens in seconds.
+  - **Each lead lands in exactly ONE pool**, the furthest stage it is stuck at,
+    via a cascade: `ohoto` (order, no HOTO) → `mo` (MD, no order) → `mmd` (MS,
+    no MD) → `bms` (created this month, no MS). So no lead is ever counted in
+    two worklists. Live pool sizes at day 7 Sep'26: **bms 980, mmd 4,180,
+    mo 17,167, ohoto 1,067**.
+  - **⚠️ The disposition filter turns out to matter enormously — it is not a
+    nicety.** Of 23,394 raw stuck leads, **12,913 (55%) are already closed**
+    (`Closed - Lost` / `Closed - Cold` / `Closed - Won`) leaving 10,481 live.
+    Nagpur MD→Order alone: **1,479 raw → 778 excluded → 701 live**. Every
+    backlog figure would have been more than 2x overstated without it, which is
+    exactly the failure mode that gets a tool disproved in a room.
+  - **Workable window is 7–30 days**, valued in orders by carrying the pool
+    forward through the remaining *plan* rates (`poolWorth()`). Nagpur MD→Order:
+    82 workable, worth ~66 orders. Each card also shows the age distribution,
+    the top `SCApp_Stage` reasons, and who holds it — **owner field follows the
+    ownership split**: `lrm` for bms/mmd, `scOwner` for mo/ohoto.
+  - **CSV download** per worklist: lead_id, city, sub_channel, stuck_at,
+    days_stuck, scapp_stage, scapp_status, lrm_email_id, sc_email_id, sorted
+    oldest first. Plain blob download — works here because this is a served
+    page, not an Artifact.
+  - **⚠️ Display fix worth keeping:** "0 leads worth working now" is often
+    *correct* early in the month (the `bms` pool only covers leads created this
+    month, so on day 7 none can be past a 7-day window) but reads as "nothing
+    here" and would cost trust. The card now leads with the live count and says
+    why nothing is workable yet.
+  - **⚠️ Open question for Yash:** `bms` is month-scoped, matching
+    `index.html`'s `C.aging`. That means a BQL created *last* month with still
+    no MS never appears in any worklist. Most would be excluded as dead anyway
+    (`Inactive Lead` 5,492, `Lead - Not Interested` 18,990), but not all. Worth
+    asking whether the worklist should widen beyond the current month.
+  - **Data observation, not a bug:** 125 of the India `bms` live pool have **no
+    LRM email at all** (`(unassigned)`), the single largest "holder". Worth
+    raising with Yash separately — unassigned leads cannot be chased.
+  - **The day-7 Sep'26 read is a textbook case and worth carrying forward:**
+    BQL is **+25.6% vs MOP** and +32.6% vs LMTD, yet Order is −41.1%. The bridge
+    reads `450 → +115 volume → −235 BQL→MS → −13 MS→MD → −52 MD→Order → 265`.
+    BQL→MS is **41.4% against a 70.9% plan**. The composition check says
+    execution, not mix (mix only 13.8%) — and the sub-channel table shows why:
+    **Online grew 32.2% → 39.9% of the mix while its own rate fell 43.2% →
+    23.8%**, carrying −7.0pp of the −6.9pp total execution effect. Online is
+    essentially the entire problem, again, exactly as in Aug'26.
 - **Next up, in order (from the spec's build sequence):** ~~Step 1 Act mode
-  thin~~ → ~~Step 2 credibility layer~~ → ~~Step 3 Explore mode~~ → **Step 4
-  worklists** (revive the dead `C.aging`, use the new `leadId`/`lrmEmail`/
+  thin~~ → ~~Step 2 credibility layer~~ → ~~Step 3 Explore mode~~ → ~~Step 4
+  worklists~~ (revive the dead `C.aging`, use the new `leadId`/`lrmEmail`/
   `scEmail`, aged-lead counts split 7–30 workable vs 30+ status-unconfirmed,
   Order→HOTO handover backlog, CSV download — this is the step that makes a
   signal end in *work*, and the first one that needs `referral_leads.json`
