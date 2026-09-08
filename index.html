@@ -1850,12 +1850,20 @@ async function init(){
     // anything in the dashboard regardless. Per Yash, 2026-08-05.
 
     // ── Lead data: JSON rows → LD[] ───────────────────────────────────────
-    // Fields: city, sub_channel, created, first_ms_date, first_md_date,
+    // Fields: lead_id, city, sub_channel, sc_email_id, lrm_email_id,
+    //         created, first_ms_date, first_md_date,
     //         total_ms_date, total_md_date, ordD, hotoD,
     //         pincode_status, monthly_bill_value, BQL_Old, BQL_New (for segmentation)
+    // leadId/lrmEmail/scEmail are carried purely so a stuck-lead count can be
+    // turned into a named, downloadable worklist (Signals). They are present in
+    // data/referral_leads.json already -- this mapping just never forwarded them.
+    // Note scEmail, not sc: `sc` is the SUB-CHANNEL on this row, not an owner.
     LD_ALL=lR.map(r=>({
       city:     cityFix((r.city||'').trim()),
       sc:       (r.sub_channel||'').trim(),
+      leadId:   r.lead_id||null,
+      lrmEmail: r.lrm_email_id||null,
+      scEmail:  r.sc_email_id||null,
       created:  pd(r.created),
       msD:      pd(r.first_ms_date),   // First MS date
       mdD:      pd(r.first_md_date),   // First MD date
