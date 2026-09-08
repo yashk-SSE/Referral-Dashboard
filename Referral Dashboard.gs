@@ -558,6 +558,12 @@ MASTER_DATA AS (
     B.Meeting_Done_Date,
     B.Order_closure_Date,
     B.Approved_by_customer_Date,
+    -- Disposition, added 2026-09-08 for the Signals "where do leads get stuck /
+    -- what % are we losing" layer. Column names confirmed by Yash against
+    -- leadcsv.Samagam. Carried through raw, unbucketed -- the dashboard decides
+    -- what counts as stuck vs lost, not the query.
+    B.SCApp_Stage,
+    B.SCApp_Status,
 
     -- BQL_New: Active OR NULL pincode + Exception IS NULL
     CASE
@@ -579,13 +585,17 @@ MASTER_DATA AS (
 )
 
 SELECT
-  Opportunity_Id,
-  Lead_ID,
+  -- Opportunity_Id and Pincode were dropped 2026-09-08 to make room for the two
+  -- disposition columns without blowing the Apps Script memory ceiling. Neither
+  -- was read anywhere in index.html (checked: 0 references), and Opportunity_Id
+  -- is not lost -- it survives as the COALESCE fallback below, which is exactly
+  -- how Yash's own reference query derives its ID. Together they were 74 chars
+  -- per row across 67,715 rows, about 5 MB of the JSON.
+  COALESCE(Lead_ID, Opportunity_Id)                             AS lead_id,
   CITY                                                          AS city,
   Source_Sub_Class_final                                        AS sub_channel,
   SC_Email_Id                                                   AS sc_email_id,
   LRM_Email_Id                                                  AS lrm_email_id,
-  Pincode                                                       AS pincode,
   Monthly_Bill_Value                                            AS monthly_bill_value,
   Exception                                                     AS exception,
   PincodeStatus                                                 AS pincode_status,
@@ -597,38 +607,48 @@ SELECT
   FORMAT_DATE('%d/%m/%Y', DATE(Meeting_Scheduled_Date))         AS total_ms_date,
   FORMAT_DATE('%d/%m/%Y', DATE(Meeting_Done_Date))              AS total_md_date,
   FORMAT_DATE('%d/%m/%Y', DATE(Order_closure_Date))             AS ordD,
-  FORMAT_DATE('%d/%m/%Y', DATE(Approved_by_customer_Date))      AS hotoD
+  FORMAT_DATE('%d/%m/%Y', DATE(Approved_by_customer_Date))      AS hotoD,
+  -- Appended LAST on purpose: the jsonData map below reads by POSITION, so
+  -- adding these at the end leaves row[0]..row[18] untouched.
+  SCApp_Stage                                                   AS scapp_stage,
+  SCApp_Status                                                  AS scapp_status
 FROM MASTER_DATA
     `;
 
     var rows = runBigQuery(query);
     if (!rows) { Logger.log('No lead data returned for Referral'); return; }
 
+    // Column order below MUST match the SELECT above -- rows are positional.
     var jsonData = rows.map(function(row) {
       return {
-        opportunity_id:     row[0]||null,
-        lead_id:            row[1]||null,
-        city:               (row[2]||'').trim(),
-        sub_channel:        (row[3]||'').trim(),
-        sc_email_id:        row[4]||null,
-        lrm_email_id:       row[5]||null,
-        pincode:            row[6]||null,
-        monthly_bill_value: row[7]||null,
-        exception:          row[8]||null,
-        pincode_status:     row[9]||null,
-        BQL_New:            row[10]||'No',
-        BQL_Old:            row[11]||'No',
-        created:            row[12]||null,
-        first_ms_date:      row[13]||null,
-        first_md_date:      row[14]||null,
-        total_ms_date:      row[15]||null,
-        total_md_date:      row[16]||null,
-        ordD:               row[17]||null,
-        hotoD:              row[18]||null
+        lead_id:            row[0]||null,
+        city:               (row[1]||'').trim(),
+        sub_channel:        (row[2]||'').trim(),
+        sc_email_id:        row[3]||null,
+        lrm_email_id:       row[4]||null,
+        monthly_bill_value: row[5]||null,
+        exception:          row[6]||null,
+        pincode_status:     row[7]||null,
+        BQL_New:            row[8]||'No',
+        BQL_Old:            row[9]||'No',
+        created:            row[10]||null,
+        first_ms_date:      row[11]||null,
+        first_md_date:      row[12]||null,
+        total_ms_date:      row[13]||null,
+        total_md_date:      row[14]||null,
+        ordD:               row[15]||null,
+        hotoD:              row[16]||null,
+        scapp_stage:        row[17]||null,
+        scapp_status:       row[18]||null
       };
     });
+    // Release the raw BigQuery array before building the JSON string -- it is
+    // no longer needed and is one of the largest objects in the execution.
+    rows = null;
 
-    pushToGitHub(JSON.stringify(jsonData), 'data/referral_leads.json', '📊 Referral leads: ' + formatDate(new Date()));
+    var content = JSON.stringify(jsonData);
+    jsonData = null;
+    pushToGitHub(content, 'data/referral_leads.json', '📊 Referral leads: ' + formatDate(new Date()));
     Logger.log('✅ data/referral_leads.json — ' + jsonData.length + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
 
   } else {
@@ -725,10 +745,20 @@ function runBigQuery(query) {
     var results = BigQuery.Jobs.getQueryResults(BQ_PROJECT, jobId, {
       pageToken: pageToken, maxResults: 5000
     });
-    if (results.rows) allRows = allRows.concat(results.rows.map(function(r){
-      return r.f.map(function(c){ return c.v; });
-    }));
+    // Was: allRows = allRows.concat(results.rows.map(...)). That allocated a
+    // brand-new array of the full accumulated size on EVERY page, so both the
+    // old and new copies were live at once -- at 14 pages the reallocation
+    // alone was a large part of the memory ceiling. Push in place instead, and
+    // build each row without the intermediate .map array.
+    if (results.rows) {
+      for (var i = 0; i < results.rows.length; i++) {
+        var fr = results.rows[i].f, row = new Array(fr.length);
+        for (var j = 0; j < fr.length; j++) row[j] = fr[j].v;
+        allRows.push(row);
+      }
+    }
     pageToken = results.pageToken;
+    results = null;
   } while (pageToken);
   return allRows.length > 0 ? allRows : null;
 }
@@ -751,11 +781,30 @@ function pushToGitHub(content, filePath, commitMessage) {
   function ghPost(url,body){ var r=UrlFetchApp.fetch(url,{method:'POST',headers:headers,payload:JSON.stringify(body),muteHttpExceptions:true}); if(r.getResponseCode()>=400)throw new Error('POST '+r.getResponseCode()+': '+r.getContentText().substring(0,200)); return JSON.parse(r.getContentText()); }
   var ref=ghGet(base+'/git/refs/heads/main'),commitSha=ref.object.sha;
   var commit=ghGet(base+'/git/commits/'+commitSha),treeSha=commit.tree.sha;
-  var blob=ghPost(base+'/git/blobs',{content:Utilities.base64Encode(content,Utilities.Charset.UTF_8),encoding:'base64'});
+  // ── Memory: this is what made runReferralLeads die with "Out of Memory" ──
+  // The old line was:
+  //   ghPost(base+'/git/blobs',{content:Utilities.base64Encode(content,UTF_8),encoding:'base64'})
+  // which held FOUR large strings alive at once for a ~31 MB file: the original
+  // content, its base64 (~41 MB, base64 is +33%), the body object holding that
+  // base64, and ghPost's own JSON.stringify(body) copy of it (~41 MB again).
+  // Adding two columns to the lead query pushed that past the ceiling.
+  //
+  // GitHub's blob API accepts encoding "utf-8" with the raw text, so base64 is
+  // unnecessary. Build the payload string directly and release the original as
+  // soon as it has been escaped, leaving one large string live instead of four.
+  var blobLen = content.length;
+  var payload = '{"encoding":"utf-8","content":' + JSON.stringify(content) + '}';
+  content = null;
+  var br = UrlFetchApp.fetch(base+'/git/blobs',
+    {method:'POST',headers:headers,payload:payload,muteHttpExceptions:true});
+  payload = null;
+  if (br.getResponseCode() >= 400)
+    throw new Error('POST blob '+br.getResponseCode()+': '+br.getContentText().substring(0,200));
+  var blob = JSON.parse(br.getContentText());
   var tree=ghPost(base+'/git/trees',{base_tree:treeSha,tree:[{path:filePath,mode:'100644',type:'blob',sha:blob.sha}]});
   var newCommit=ghPost(base+'/git/commits',{message:commitMessage,tree:tree.sha,parents:[commitSha]});
   UrlFetchApp.fetch(base+'/git/refs/heads/main',{method:'PATCH',headers:headers,payload:JSON.stringify({sha:newCommit.sha}),muteHttpExceptions:true});
-  Logger.log('  GitHub push OK: ' + filePath + ' (' + (content.length/1024).toFixed(0) + ' KB)');
+  Logger.log('  GitHub push OK: ' + filePath + ' (' + (blobLen/1024).toFixed(0) + ' KB)');
 }
 
 
