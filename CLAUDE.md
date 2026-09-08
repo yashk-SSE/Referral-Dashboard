@@ -17,6 +17,245 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-09-08 — a new "Signals" product is SCOPED, SPECCED AND CALIBRATED.
+Step 0 (the engine, no UI) is DONE and validated. Nothing is built in any
+dashboard file yet except one pending `LD_ALL` change sitting in
+`index.preview.html` awaiting Yash's review.**
+
+- **What Signals is:** a 2–3x/week read on what is moving against the current
+  month's MOP, ranked by **orders at risk**, routed to exactly one owner, and
+  worded for sharing. Not another visibility tab — the deliberate design target
+  is that every signal ends in *work* (a clearable list), never a percentage.
+  **Full spec, with every decision and its reason:**
+  `https://claude.ai/code/artifact/24a21154-a1c9-473b-8de8-019a9b313c36`
+  ("Referral Signals"). Read the spec before building any of it.
+- **Yash's locked decisions (do NOT re-litigate):** Orders is the operational
+  currency, HOTO is scoreboard + handover backlog · **linear proration for V1**
+  (pace curve deferred) · reference test is behind-MOP **AND** behind-LMTD, with
+  a MOP-only override past a large gap · national floor >15 orders, city floor
+  >10% deviation AND ≥`max(3, 5% of city monthly order target)` · Act mode capped
+  at 15, Explore mode uncapped · BTL handled by an include/exclude **toggle**
+  (not reserved slots) · dispositions are **Phase 2** · Non-Sales MOP stays
+  **blended** (no per-sub-channel split) · owner routing is by **sub-channel and
+  stage**, not LRM/SC generally (volume → that sub-channel's team; Online volume →
+  Branding; BTL volume → BTL; BQL→MS and MS→MD → LRM; MD→Order → Sales).
+- **⚠️ It ships as a SEPARATE PAGE (`signals.html`), not a tab.** Decided on
+  measurement: **`data/` is now 91.1 MB** and `init()` (~index.html:1737) fetches
+  all seven files with **sequential `await`s**, not `Promise.all` — the comment
+  above that block still says "total ~10 MB", so the payload has grown **9x**
+  unnoticed. That is the 40–50s load, in full; it is NOT the tab count or the
+  code size. Signals needs only `referral_effort.json` (5.5 MB) + the MOP files
+  (0.05 MB) = **6% of the payload**. A 5th channel-switcher entry would inherit
+  all 91 MB, so it is the tab option with extra steps.
+  - **Separate, independent, worth doing regardless:** `Promise.all`, plus
+    lazy-loading `digital_leads` (31.3 MB) and `customer_app` (16.5 MB) by
+    channel and `referral_leads` (30.7 MB) by tab — that is 48 MB / 53% off the
+    initial load before touching anything else.
+- **Scope gate needs NO new city list.** Yash's "significant cities" map exactly
+  onto Focus+Big+Mid+Small in the existing `TIERS`, and cities outside MOP are
+  excluded outright. So the gate is two things that already exist:
+  **`hasMopV(city)` AND `tier !== 'Exp'`.** `referral_mop.json` has 28 rows —
+  India, all 23 non-Exp cities, and only 4 Exp ones (**Jalgaon, Solapur, Agra,
+  Coimbatore**), so the MOP gate alone drops 10 of 14 Exp cities.
+  `hasMopV` not `hasMop`, because it tracks BTL's narrower 15-city coverage.
+  **Accepted consequence: Raipur is invisible** (no MOP, Exp tier) at ~210
+  BQL/month and ramping — carried as a footnote, not a signal.
+- **Step 0 results (2026-09-08, `scratchpad/step0_calibrate.py`, Python, reads
+  only the 5.5 MB effort file + MOP history):**
+  - **Validation PASSED exactly.** Reproduced the LMP tab's Aug'26 India 2-stage
+    Order bridge: target 2,193 → actual 1,578, effects **−337.2 / −349.9 / +72.1**,
+    tying to the gap at 1e-6. Sub-channel layer reproduced too: **Online −292
+    (worst), Sales +88 (best)**, and the four effects sum to −260.7 = noBtl actual
+    1,334 − expected 1,594.7.
+  - **⚠️ The sub-channel metric is NOT the BQL→MD effect** — that gives −228/−16
+    and does not reconcile. It is **`actualOrders − (ownBQL × planR1 × planR2)`**,
+    i.e. "how well did this sub-channel convert the volume it actually had",
+    holding its own BQL constant. Volume is deliberately excluded because volume
+    and conversion have *different owners*. This is what yields −292/+88.
+  - **⚠️ The 3-stage split materially changes the story, and this is the main
+    analytical finding.** Aug'26 India's old "BQL→MD −350" splits into
+    **BQL→MS −454 and MS→MD +104** — meeting *scheduling* is the whole problem and
+    meeting *completion* beat plan. Jul'26 is the same shape (BQL→MS −532 of a
+    −731 gap). Across both closed months the Referral order gap was overwhelmingly
+    **top-of-funnel (volume + scheduling), not closing** — MD→Order was the top
+    driver in only 2 of 30 signals. The 2-stage `avmCalc` basis hides this.
+  - **⚠️ Found and fixed a real gap in the spec: variant de-duplication.** MOP
+    variants overlap by construction (`all` ⊃ `noBtl` ⊃ `sales`), so evaluating
+    every variant reported the same city 2–3x and made the signal count depend on
+    how many target blocks the workbook happened to carry that month — **Jul (1
+    block) fired 18, Aug (3 blocks) fired 42** for a comparable gap. Fix: one
+    **primary** variant carries the read (the BTL toggle's own choice), and a
+    component variant earns its own signal only when it explains ≥40% of that
+    city's primary gap — the same `PARENT_EXPLAIN` rule as the grain axis. After
+    the fix: **Jul 18, Aug 19**, both landing naturally near the cap of 15.
+  - The power floor earns its place: Nagpur BTL (−67 gap on **23 BQL**) and
+    Varanasi Jul (−22 on **28 BQL**) clear the order floors with no denominator,
+    and correctly render "n too small to call" instead of a claim.
+  - Sep'26 in the backtest is meaningless (109 → 47 signals at −97%) **because
+    section 4 does not prorate** — a backtest limitation, not a product finding.
+- **DONE, committed as `4150f6e` (NOT pushed) — `LD_ALL` now carries `leadId`,
+  `lrmEmail`, `scEmail`** (~index.html:1856). `data/referral_leads.json` had
+  `lead_id`, `lrm_email_id` and `sc_email_id` all along; the mapping never
+  forwarded them. This is what turns an aged-lead *count* into a named,
+  downloadable worklist. Field is `scEmail`, **not `sc`** — `sc` is already the
+  sub-channel on that row. **⚠️ `c86fbb1` from an earlier session is also still
+  unpushed** — 2 commits waiting, both need Yash's explicit go.
+- **DONE in the tracked `.gs`, NOT YET LIVE — dispositions now selected.**
+  Yash confirmed the column names 2026-09-08: **`SCApp_Stage` and
+  `SCApp_Status`** in `leadcsv.Samagam`. Three additions in `runLeadData`'s
+  Referral branch, because its `MASTER_DATA` CTE uses an **explicit column list,
+  not `B.*`**: (1) `B.SCApp_Stage, B.SCApp_Status` in the CTE, (2) the two
+  columns **appended LAST** in the final `SELECT`, (3) `scapp_stage: row[19]`,
+  `scapp_status: row[20]` in the `jsonData` map. Appended last on purpose — that
+  map reads by **position**, so row[0]..row[18] stay untouched. Carried through
+  raw and unbucketed; the dashboard decides what counts as stuck vs lost.
+  **⚠️ Yash must paste this into the live Apps Script editor and redeploy** —
+  editing the tracked copy does nothing on its own. Still needed from him: the
+  distinct `SCApp_Stage` × `SCApp_Status` values with counts, so the stuck/lost
+  buckets come from the real vocabulary rather than a guess.
+- **Step 1 (Act mode, thin) is BUILT and browser-verified, in
+  `signals.preview.html` — gitignored by `*.preview.html`, NOT reviewed by Yash
+  yet.** Single file, no libraries, house style (grey/black, green/red only).
+  Loads only `referral_effort.json` + the two MOP files via a local-first
+  `fetchJSON` with cache-busting and a visible fallback banner (that trap has
+  cost three review cycles). All of `CFG` sits in one object at the top.
+  - Anchors on the **latest date present in the data**, not `today` — a local
+    clone goes stale in hours, so this avoids inventing empty days. Verified
+    against a stale clone: renders Sep 2, day 2/30, and the maturity banner fires.
+  - **Verified in the browser:** no console errors; bridge ties exactly in both
+    BTL modes (`129 −31 −38 −4 +2 = 58` and `111 −22 −34 −3 −5 = 47`); BTL toggle
+    re-points the target block *and* the actuals; direction toggle works and the
+    empty state is handled ("Working well" is correctly 0 on day 2).
+  - **⚠️ Two real bugs found by that verification, both fixed:** (1) the
+    "MOP-only override" chip showed whenever the 25% threshold happened to be
+    crossed, which **mislabelled every signal** early in the month — it now shows
+    only when LMTD did *not* agree, i.e. when the override actually did the work;
+    (2) under-powered scopes were being *flagged* but still ranked, so a day-2
+    read was topped by cities holding 1–17 BQL. Per the spec, a floor decides
+    what may make a **claim** — they are now held back from Act mode entirely
+    (counted openly as "N held back as too small to call", never silently
+    dropped) and belong to Explore in Step 3. That single fix took the day-2 read
+    from 8 noisy signals to 2 real ones (denominators 264 and 108).
+  - **Serving it locally:** `.claude/launch.json` (gitignored) defines a
+    `referral-local` static server on **port 8744** using Python's full path.
+    `preview-local.bat` calls a bare `python`, which is not on Claude's shell
+    PATH — and it opens `index.preview.html`, so for this page navigate to
+    `/signals.preview.html` explicitly.
+- **Step 2 (credibility layer) is BUILT and browser-verified**, same file. Two
+  new analytics plus two artefact guards:
+  - **Mix-shift decomposition (`mixDecompose`)** — symmetric/Shapley shift-share,
+    `within = SUM (r1-r0)*(w0+w1)/2`, `mix = SUM (w1-w0)*(r0+r1)/2`, which sum to
+    `R1-R0` **exactly with no residual term**. Verified live: India BQL→MS moved
+    −16.0pp vs LMTD = execution −16.4pp + mix +0.4pp, and the per-sub-channel
+    columns each sum to their total. **Measured against LMTD, not plan, on
+    purpose** — below the Sales/Non-Sales/BTL group level the MOP carries no
+    sub-channel mix at all, so "what changed since last month" is the only
+    decomposition available honestly at this grain.
+    - When mix dominates (`MIX_DOMINANT` 0.60) **and points the wrong way**, the
+      verdict flips to "composition, not execution" and **`ownerOf()` re-routes
+      to the volume owner of the sub-channel that shifted** — not the LRM team.
+      Mix that is *helping* while execution hurts stays an execution story.
+  - **Normalcy baseline (`normalcy`)** — recomputes the same day-of-month gap
+    against each prior month's *own* plan, plus where that month finished.
+    **This immediately paid for itself:** India's day-2 gap of −54.9% looks
+    catastrophic alone, but the line reads *"Jul'26 −75.2%, finished −30.8% ·
+    Aug'26 −44.9%, finished −28.0% · now −54.9%"* → verdict **"typical for this
+    point"**. Both prior months recovered to about −29% from far worse day-2
+    positions. Without this the read cries wolf every month-start.
+    - `target()` now takes an optional month key, and a **prior** month resolves
+      from history only — `referral_mop.json` is *this* month's plan and would
+      silently score an old month against today's targets.
+    - Component variants (Sales / Non-Sales) have **no** baseline yet and
+      correctly render none: those target blocks only start in Sep'26, so there
+      is no closed month to compare against until Oct.
+  - **⚠️ Two artefact guards added, both about not getting disproved in a room:**
+    (1) an own-rate over 100% is real on the effort basis (MS/MD count actions in
+    the month whatever month the lead came from — India Ops/AMC showed
+    **109.1%**) and is now marked `*` with an inline explanation rather than
+    printed naked; (2) the sub-channel **named as the mover must clear
+    `MIN_DENOM_RATE`** — Referral_Others posted the largest mix term (+2.2pp)
+    purely because its share moved from 1.6% to 6.1% on tiny volume, and naming
+    it as the cause would have been indefensible. If no sub-channel clears the
+    floor the verdict falls back to "execution".
+  - Also fixed while verifying: the India strip had `minmax(168px,1fr)`, which
+    stranded the 5th (HOTO) tile alone on a second row beside dead space —
+    now 132px so all five sit on one row and still collapse on narrow windows.
+- **Step 3 (Explore mode) is BUILT and browser-verified**, same file. An
+  **Act / Explore** toggle in the top bar; both modes read the *same* signal
+  objects, which is the whole point — separate engines would disagree and the
+  first owner to spot that would end adoption.
+  - **Explore is uncapped and does NOT de-duplicate, deliberately** — in an
+    investigation you *want* a city at every variant to see where a gap sits.
+    Under-powered scopes are kept and visible but render **"too small to call"**
+    in place of an impact number, a deviation and a rank.
+  - **New grain: city × sub-channel** (India included). No month carries
+    per-sub-channel MOP, so a sub-channel is held to its **own group's** plan
+    rates via `SC_GROUP` + `scPlanRates()` (which falls back group → noBtl/btl →
+    all). Two separate signals per sub-channel, because they have **different
+    owners**: *conversion*, computed by synthesising a target at the
+    sub-channel's own BQL so `bridge()`'s volume effect is exactly zero — which
+    is precisely the Step 0-validated `actualOrders − ownBQL × pr1 × pr2 × pr3`;
+    and *volume*, measured **against LMTD only** and labelled "no plan, LMTD
+    only", since a sub-channel has no volume target.
+  - **Order→HOTO is in, as context.** `bridge()` now takes a stage list
+    (`STAGES3` / `STAGES4`); `mixDecompose` indexes `STAGES4`, a same-order
+    superset, so a stage index from either bridge resolves. **A 4-stage run only
+    yields a signal when Order→HOTO is the dominant driver** — for any other
+    driver it would restate the Order signal in a second currency, which is
+    duplication, not insight. HOTO signals carry `currency:'HOTO'`,
+    `isContext:true`, sort after every order signal, and are labelled
+    "context, not an ask".
+  - **Facets are Yash's categories, as filters over the one set:** Category
+    (All / BQL / Funnel / Closing / Handover), Grain, Owner, Scope. They
+    compose. Rows expand in place, reusing `renderSignal()`.
+  - **Verified in the browser:** 30 signals at day 2 (4 national, 13 city,
+    13 sub-channel); facets compose exactly (30 → 13 on `sc` grain → 4 adding
+    `funnel`); Act/Explore buttons both switch; row expansion renders the full
+    card; the wide table scrolls inside its own `overflow-x:auto` box with a
+    sticky header and **zero body overflow**.
+  - **⚠️ Verification gotcha that cost a debugging cycle — worth remembering:**
+    running `var target = ...` through the browser tool's `javascript_exec`
+    declares it in **page global scope**, which clobbered this page's own
+    `target()` MOP accessor and made `render()` throw `"target is not a
+    function"` — silently leaving the previous DOM, so facets *looked* broken
+    while `facetMatch()` was provably correct. Wrap probe code in an IIFE, or
+    avoid names the page already uses. Also note the console-message tool
+    aggregates across a tab's history, so an error from an earlier `?v=` load
+    keeps reappearing after a reload — check the URL in the stack before
+    believing it.
+- **Also relevant and already built but UNREACHABLE: `C.aging`
+  (index.html:1214) + `bAging()` (index.html:4712)** already compute exactly the
+  "x leads sitting at stage for y days" figures Signals needs (`bms` = created
+  this month, no MS · `mmd` = MS, no MD · `mo` = MD, no Order), city-wise, in age
+  buckets, with owner labels. Still no nav entry (Section 13). Signals is its home.
+  Preserve the existing asymmetry — `bms` is current-month-scoped, `mmd`/`mo` are
+  not, deliberately.
+- **⚠️ Local runtime gotcha for future sessions: there is NO `python`, `python3`,
+  `py` or `node` on the shell PATH.** Python 3.13 does exist, at
+  `C:\Users\user\AppData\Local\Programs\Python\Python313\python.exe` — call it by
+  full path. Node is not installed at all. Note `preview-local.bat` invokes a bare
+  `python -m http.server`, so it works from Yash's own shell but not from this
+  one. Also: the Browser pane's page tools **cannot act on a `file://` URL** — a
+  local HTML file has to be served over the local server before it can be read or
+  screenshotted.
+- **Next up, in order (from the spec's build sequence):** ~~Step 1 Act mode
+  thin~~ → ~~Step 2 credibility layer~~ → ~~Step 3 Explore mode~~ → **Step 4
+  worklists** (revive the dead `C.aging`, use the new `leadId`/`lrmEmail`/
+  `scEmail`, aged-lead counts split 7–30 workable vs 30+ status-unconfirmed,
+  Order→HOTO handover backlog, CSV download — this is the step that makes a
+  signal end in *work*, and the first one that needs `referral_leads.json`
+  lazy-loaded) → Step 5 lifecycle, suppression and sharing. The loader fix runs
+  in parallel and blocks nothing. **Shadow-run 2–3 weeks with Yash only before
+  any owner sees a read.**
+- **⚠️ Open, needed from Yash for Phase 2 dispositions:** the exact column
+  name(s) in `presales-442917.leadcsv.Samagam` holding the disposition / SC App
+  Stage (CLAUDE.md §7 calls it "SC App Stage"). **Nothing needs to be joined** —
+  `SAMAGAM_MAPPING` is already `SELECT * FROM Samagam`, so every column is in
+  scope and the Referral lead query's final `SELECT` just picks 19 of them. Adding
+  a disposition is one line in that SELECT plus one index in the `jsonData` map.
+  The table cannot be introspected from here (the `bigquery` MCP connector is
+  configured but unauthenticated in this session).
+
 **As of 2026-09-03 (5 Expansion cities + Vadodara merge — reviewed, merged and
 PUSHED as `515f95f`. Next up: a "Last Month Performance" tab, SCOPED AND AGREED
 but NOT STARTED — see the plan below before building anything):**
