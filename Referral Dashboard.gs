@@ -647,9 +647,14 @@ FROM MASTER_DATA
     rows = null;
 
     var content = JSON.stringify(jsonData);
+    // Capture the count BEFORE releasing the array -- the log line below used to
+    // read jsonData.length, which threw once jsonData was nulled to free memory.
+    // The push had already succeeded by then, so the run looked failed when it
+    // had actually worked.
+    var nRows = jsonData.length;
     jsonData = null;
     pushToGitHub(content, 'data/referral_leads.json', '📊 Referral leads: ' + formatDate(new Date()));
-    Logger.log('✅ data/referral_leads.json — ' + jsonData.length + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
+    Logger.log('✅ data/referral_leads.json — ' + nRows + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
 
   } else {
     // ── DIGITAL: unchanged query ──

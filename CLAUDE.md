@@ -247,14 +247,53 @@ dashboard file yet except one pending `LD_ALL` change sitting in
   lazy-loaded) → Step 5 lifecycle, suppression and sharing. The loader fix runs
   in parallel and blocks nothing. **Shadow-run 2–3 weeks with Yash only before
   any owner sees a read.**
-- **⚠️ Open, needed from Yash for Phase 2 dispositions:** the exact column
-  name(s) in `presales-442917.leadcsv.Samagam` holding the disposition / SC App
-  Stage (CLAUDE.md §7 calls it "SC App Stage"). **Nothing needs to be joined** —
-  `SAMAGAM_MAPPING` is already `SELECT * FROM Samagam`, so every column is in
-  scope and the Referral lead query's final `SELECT` just picks 19 of them. Adding
-  a disposition is one line in that SELECT plus one index in the `jsonData` map.
-  The table cannot be introspected from here (the `bigquery` MCP connector is
-  configured but unauthenticated in this session).
+- **RESOLVED 2026-09-08 — dispositions are LIVE in `data/referral_leads.json`.**
+  Columns are **`SCApp_Stage`** and **`SCApp_Status`** (Yash confirmed the names;
+  the Apps Script now selects them). 68,999 lead rows, **96.1% carry a stage**.
+  - **⚠️ The OOM this caused, and its two-part fix — read before touching the
+    push path again.** Adding two columns tipped `runReferralLeads` over the
+    Apps Script memory ceiling. The cause was **not** the query: `pushToGitHub`
+    base64-encoded the whole ~31 MB file (+33%) and then let `ghPost`
+    `JSON.stringify` a body *containing* that string, so **four** large strings
+    were live at once (original, base64, body, payload) — roughly 150 MB. Fixed
+    by using GitHub's `encoding:"utf-8"` blob form (no base64 at all), building
+    the payload string directly, and releasing the original once escaped. Also
+    fixed: `runBigQuery` accumulated pages with `allRows.concat()`, allocating a
+    fresh full-size array on each of ~14 pages; and `Opportunity_Id` + `Pincode`
+    were dropped from the lead query (both read **zero** times in `index.html`,
+    and `Opportunity_Id` survives as the `COALESCE` fallback for `lead_id`).
+    - **Follow-on bug, also fixed:** the log line after the push read
+      `jsonData.length` *after* `jsonData` had been nulled to free memory, so it
+      threw `Cannot read properties of null` — **the push had already
+      succeeded**, making a working run look failed. The count is now captured
+      before the release. If a future run shows a `TypeError` right after a
+      `GitHub push OK` line, the data is fine; look at the logging, not the push.
+  - **The disposition vocabulary, from the live data (2026-09-08).**
+    `SCApp_Status` is the clean 9-value axis and is what should drive bucketing;
+    `SCApp_Stage` (42 values) is the granular "why".
+    - **Status:** `Closed - Lost` 22,997 · `Closed - Won` 17,587 ·
+      `Closed - Cold` 13,349 · `Meeting` 7,960 · null 2,723 · `Open` 2,223 ·
+      `Booked` 1,106 · `Connected` 805 · `Prequalification` 249.
+      **Closed = 53,933 (78%); genuinely live = 12,343.** `Closed - Won` matches
+      the `Order Confirmed` stage count exactly (17,587), a useful consistency check.
+    - **Biggest stages:** `Lead - Not Interested` 18,990 · `Order Confirmed`
+      17,587 · `Lead - Not Qualified` 6,546 · `Inactive Lead` 5,492 ·
+      `Meeting Done - Moderate` 3,911 · `Meeting - Not Interested` 1,909 ·
+      `Meeting - Not Qualified` 1,614 · `Meeting Done - Hot` 1,355 ·
+      `Call Not Connected` 882 · `Lost to Competitor` 721 · `Meeting Postponed` 366.
+    - **⚠️ This removes the biggest stated limitation of Step 4.** CLAUDE.md
+      previously recorded that an aged-lead backlog would be *overstated* because
+      a genuinely open lead could not be told apart from a dead one. It can now:
+      exclude `Closed - Lost` / `Closed - Cold` / `Closed - Won` from the
+      workable backlog and keep `Open` / `Connected` / `Meeting` /
+      `Prequalification` / `Booked`. **`Meeting Done - Hot` (1,355) and
+      `Meeting Done - Moderate` (3,911) are exactly the live MD→Order worklist** —
+      meetings done, no order, still warm. The 7–30 / 30+ age split is still
+      worth keeping, but it is no longer the only defence.
+- **Git identity was unset in this repo and broke two commits plus left a
+  half-finished rebase** (recovered from reflog, nothing lost). `user.name` /
+  `user.email` are now set **repo-locally** to `Yash Khandelwal` /
+  `yash.k@solarsquare.in`, matching every existing commit.
 
 **As of 2026-09-03 (5 Expansion cities + Vadodara merge — reviewed, merged and
 PUSHED as `515f95f`. Next up: a "Last Month Performance" tab, SCOPED AND AGREED
