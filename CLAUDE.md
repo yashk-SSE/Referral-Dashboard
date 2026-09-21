@@ -17,6 +17,53 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-09-21 — September's MOP was REVISED and the dashboard has been
+rebuilt against it. Written locally to `data/referral_mop.json` +
+`data/referral_mop_history.json`, browser-verified, NOT committed and NOT
+pushed — so the live GitHub Pages site is still serving the original Sep plan
+until Yash gives the go.**
+
+- **Source: `MOP Referral Sep'26-Final.xlsx`** (new file, 2026-09-21), which
+  supersedes `MOP Sep Referral.xlsx` (the 2026-09-02 original). Both are in the
+  repo root and gitignored. Rebuilt with the normal command — no code change was
+  needed, the workbook layout assertions all passed:
+  `python scripts/build_mop_json.py "MOP Referral Sep'26-Final.xlsx"`
+- **⚠️ This is a large downward revision, not a tweak — 479 of 700 target cells
+  (68%) changed.** India combined: **BQL 5,244 → 4,083 (−22.1%) · MS 3,716 →
+  2,837 · MD 3,343 → 2,637 · Order 1,929 → 1,523 (−21.0%) · HOTO 1,721 → 1,358
+  (−21.1%)**. Anything quoting a Sep MOP figure from before 2026-09-21 — a
+  screenshot, an export, a shared read — is now against a stale plan.
+- **The cut is almost entirely Non-Sales, and BTL was left alone.** India Order
+  by block: Sales 1,238 → 1,074 (−13%), **Non-Sales 432 → 191 (−56%)**, BTL
+  258 → 258 (**unchanged**; only its MS moved, 602 → 597). At city level Pune
+  (−151 orders) and Nagpur (−70) carry most of it; 4 cities are untouched
+  (Agra, Ghaziabad, Jalgaon, Solapur) and 3 rose by exactly 1 (Coimbatore,
+  Jabalpur, Noida).
+- **The revised workbook is internally consistent, which the first one was
+  not.** `Total (Sales+Non-Sales)` now equals `Sales + Non Sales` in **all 140
+  cells** — the original Sep file disagreed in 27. The India-row-vs-sum-of-cities
+  drift remains (BQL +3, Order +1, HOTO −1) and is still preserved verbatim per
+  Yash's 2026-09-02 call; `SUM_TOTALS=False` was not touched.
+- **One behaviour change worth knowing, not a bug: the Non-Sales variant now
+  lists 27 cities, not 28.** Coimbatore's Non-Sales block went all-zero (it was
+  a lone `BQL=1`), so `hasMopV` drops it from that variant — exactly how
+  `applyMopBlock()` is meant to handle an empty block. No city has an all-zero
+  *combined* block, so nothing disappears from the dashboard entirely.
+- **Verified in the browser** (local server on 8744, `index.html` unmodified):
+  all 5 MOP variant tables load the revised figures; the rendered India row
+  matches the workbook exactly for **all five** variants; row counts are
+  Sales 28 / Non-Sales 27 / BTL 16 / Sales+Non-Sales 28 / All 28;
+  `FELL_BACK` is empty (so it read local `data/`, not the live site — the trap
+  from Section 12); no console errors. MOP vs MTD reads India full-month
+  4,083 / 2,837 / 2,637 / 1,523 / 1,358 against a Day 20/30 prorated
+  2,722 / 1,891 / 1,758 / 1,015 / 905.
+- **`referral_mop_history.json`'s `2026-09` entry was replaced in step, and
+  Jul'26 + Aug'26 were verified byte-identical to before** — so the Last Month
+  Performance tab's closed months are unaffected. Sep still carries all 5
+  variants. **⚠️ Note the consequence for that tab: when Sep'26 becomes
+  selectable in October it will be scored against these revised targets, not
+  the ones that were live for most of the month.**
+
 **As of 2026-09-08 — a new "Signals" product is SCOPED, SPECCED AND CALIBRATED.
 Step 0 (the engine, no UI) is DONE and validated. Nothing is built in any
 dashboard file yet except one pending `LD_ALL` change sitting in

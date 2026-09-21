@@ -36,11 +36,16 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
 - `scripts/build_mop_json.py` — regenerates `data/referral_mop.json` from the monthly
   `MOP <Mon> Referral.xlsx` workbook. Since Sep'26 that workbook splits targets 3 ways
   by sub-channel group (Sales / Non-Sales / BTL) plus two roll-ups, which is too many
-  numbers to retype by hand. Run `python scripts/build_mop_json.py "MOP Sep Referral.xlsx"`
+  numbers to retype by hand. Run
+  `python scripts/build_mop_json.py "MOP Referral Sep'26-Final.xlsx"`
   (add `--dry-run` to inspect first). It validates the workbook's column layout before
   trusting it, and reports rather than silently reconciling the source's own rounding
   drift between `Total (Sales+Non-Sales)` and `Sales + Non Sales`. Pass
   `--month YYYY-MM` if the targets are not for the current calendar month.
+  A month can be revised mid-month — Sep'26 was, on 2026-09-21 — so re-running it
+  for a month already present is expected: it overwrites the flat current-month
+  file and replaces just that month's entry in the history file, leaving the other
+  months alone, and prints the India BQL before/after so the change is visible.
 - `scripts/backfill_mop_history.py` — one-off/re-runnable seed of the history file
   from past versions of `referral_mop.json` in git. Only Jul/Aug/Sep '26 are
   recoverable: June and earlier predate the explicit Order target, and the whole
