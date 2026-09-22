@@ -5,6 +5,10 @@ MS → MD → Order → HOTO), MOP-vs-actual, city/sub-channel breakdowns, cohor
 velocity analysis. Also covers the Digital channel and a Ref-vs-Digital comparison
 view in the same file.
 
+Cities are grouped into **6 tiers** — Focus, Big, Mid, Small, New, Expansion (in that
+sort order) — defined by the `TIERS` constant in `index.html`, which is the source of
+truth for the list. The **New** tier was added 2026-09-22; see `CLAUDE.md` Section 6.
+
 For full business logic, terminology, calculation rules, and open items, see
 [`CLAUDE.md`](CLAUDE.md) — that file is the detailed source of truth for this project
 and is kept in sync with the code. This README is just an orientation.

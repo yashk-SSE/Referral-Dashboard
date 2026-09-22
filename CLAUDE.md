@@ -17,6 +17,78 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-09-22 — CITY TIER REORGANISATION is LIVE in `index.html`/`origin/main`
+(reviewed by Yash, merged and PUSHED). `index.preview.html` deleted; nothing pending
+on this.** The matching `TIERS` update in `signals.preview.html` stays local — that
+file is gitignored (`*.preview.html`) and Signals is still unreviewed, so it ships
+with Signals, not with this.
+
+- **Yash's instruction, implemented verbatim.** `TIERS` goes from 5 tiers / 37
+  cities to **6 tiers / 40 cities**:
+  - **New tier created** (`'New'`), holding the 4 cities moved out of Expansion:
+    **Agra, Coimbatore, Jalgaon, Solapur**.
+  - **Expansion is now 13:** Meerut, Bareilly, Vijayawada, Kota, Raipur, Jodhpur,
+    Salem, Visakhapatnam, Erode + the newly added **Trichy, Madurai, Prayagraj**
+    and **Guntur** (see the Guntur flag below).
+  - **`Ahilyanagar` removed entirely** from both `TIERS` and `CITIES`.
+  - Verified in the browser that the rendered Exp and New sets match Yash's two
+    lists **element for element**.
+- **RESOLVED 2026-09-22 — GUNTUR IS NOT LAUNCHED YET. Keep it.** Yash's explicit
+  call. It was in his "Current Expansion Cities" list but has **zero rows** in
+  `referral_effort.json`, `referral_leads.json` AND `digital_effort.json` (checked
+  all three, plus near-variant spellings). It is carried as an Expansion city ahead
+  of launch and **renders an all-zero row until data starts flowing — that empty
+  row is correct, not a pipeline bug.** Don't "fix" it, and don't remove it for
+  having no volume. Madurai is in the same position today (0 BQL, 1 row); Trichy
+  (2 BQL) and Prayagraj (25 BQL, 1 order) already carry real volume.
+- **⚠️ Removing Ahilyanagar re-creates the invisible-remainder pattern, at
+  negligible scale.** Its rows still reach India totals (`precompute()` builds
+  India from all rows but city rows only from `CITIES`) while having no city row —
+  the exact issue that was treated as a bug on 2026-09-02 and fixed by *adding*
+  cities. The scale here is trivial: **15 BQL lifetime, 2 in FY27, 0 orders, 0
+  HOTO**. Left as a display-level removal rather than a hard `ED_ALL` filter,
+  because a hard filter would change India totals and was not asked for. **Say so
+  if Yash wants the harder exclusion** (the `Customer_App` precedent in Section 4
+  is how that would be done).
+- **Where "New" sorts: between Small and Expansion** (`Focus → Big → Mid → Small →
+  New → Exp`). Not stated by Yash; chosen because all 4 New cities carry MOP
+  targets and real volume (Agra 459 FY27 BQL) while Expansion mostly does not.
+  Trivial to flip if he wants it elsewhere.
+- **The tier-order map is duplicated 13× in `index.html`** — all were updated to
+  `{Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5}`, and every unknown-tier fallback
+  moved `5 → 6` so it still sorts *below* Expansion rather than colliding with it.
+- **⚠️ Two pre-existing sort bugs fixed in passing, because the new tier made them
+  live.** Two sites used `||` instead of `??` for the fallback: City Summary's
+  `(tierOrd[a.tier]||5)` and Digital City's `(tierOrd[TIERS[a]]||9)`. Since
+  `Focus` is `0` and `0` is falsy, **every Focus city was sorting as if it were
+  unknown-tier** — i.e. last — on those two tables. With `Exp` now `5` the first
+  one would also have collided with its own fallback. Both are now `??`.
+- **Action Recommended tab gained a "New Cities" section**, between Mid and
+  Expansion, with its own cards + `<60%` HOTO-achievement rule and a `showNew`
+  filter flag. Without it the 4 moved cities would have silently vanished from
+  that tab (it renders per-tier sections and has no Small section at all).
+- **⚠️ Real behaviour change on the Signals page, flagged deliberately.** Its
+  scope gate is `hasMopV(city) AND tier !== 'Exp'`, so moving 4 MOP-carrying
+  cities out of `Exp` **puts them in scope**: scopes go **24 → 28**, and Explore
+  mode now builds **69 signals of which 4 are New-tier** (Jalgaon, Agra). This
+  follows from the tier move rather than being chosen — **confirm it is wanted**,
+  since the spec's stated intent was "significant cities = Focus+Big+Mid+Small".
+- **Verified in the browser before merging** (local server 8744, `?v=` cache-buster;
+  the merged `index.html` is byte-identical to the preview that was verified):
+  `FELL_BACK` empty on **both** pages, so this read local `data/` and not the live
+  site (the Section 12 trap); **all 19 reachable Referral tabs build, plus all
+  Digital / Ref-vs-Digital / Customer App tabs — zero console errors on either
+  page**; City Summary renders the tier run `Focus > Big > Mid > Small > New >
+  Exp`; tier filter set to New returns exactly the 4 cities; `CITIES` and `TIERS`
+  are fully in sync both ways. MOP gating behaves exactly as the 2026-09-03
+  precedent predicts: **MOP vs MTD and Actuals vs MOP both still show 28 rows**
+  with the 4 New cities present and the 4 new Expansion cities absent from the
+  rows (they appear only as city-filter *options*, which is correct).
+- **Nothing else needed changing:** `Referral Dashboard.gs` and every script in
+  `scripts/` carry no city or tier list (checked). `pull_customer_app.py`'s
+  `CITY_MERGE_MAP` is a separate list by design (Section 0, 2026-09-03) and was
+  deliberately not touched.
+
 **As of 2026-09-21 — September's MOP was REVISED and the dashboard has been
 rebuilt against it. Written locally to `data/referral_mop.json` +
 `data/referral_mop_history.json`, browser-verified, NOT committed and NOT
@@ -145,8 +217,14 @@ dashboard file yet except one pending `LD_ALL` change sitting in
   `lead_id`, `lrm_email_id` and `sc_email_id` all along; the mapping never
   forwarded them. This is what turns an aged-lead *count* into a named,
   downloadable worklist. Field is `scEmail`, **not `sc`** — `sc` is already the
-  sub-channel on that row. **⚠️ `c86fbb1` from an earlier session is also still
-  unpushed** — 2 commits waiting, both need Yash's explicit go.
+  sub-channel on that row. **CORRECTED 2026-09-22: this is LIVE on `origin/main`,
+  not pending.** This file previously said `4150f6e` and `c86fbb1` were 2 unpushed
+  commits waiting on Yash. Both hashes still exist locally but are absent from
+  `origin/main`'s history — they were rebased to new hashes during the reflog
+  recovery noted at the end of this block. Their *content* is in `origin/main`'s
+  `index.html` (verified: `scEmail` appears 3x there). Nothing was waiting. **Check
+  `git log origin/main..HEAD` before believing a stale "unpushed" note in this
+  file** — a rebase makes the recorded hash useless.
 - **DONE in the tracked `.gs`, NOT YET LIVE — dispositions now selected.**
   Yash confirmed the column names 2026-09-08: **`SCApp_Stage` and
   `SCApp_Status`** in `leadcsv.Samagam`. Three additions in `runLeadData`'s
@@ -1360,29 +1438,45 @@ any M0 MTD logic.
 
 ## 6. Cities & tiers
 
-**RESOLVED (2026-08-03) — code is the source of truth.** The `TIERS` constant in
-`index.html` is the real, current, 32-city list. It doesn't match either candidate list
-that was previously in this file — it's effectively the union of both, plus Faridabad:
+**Code is the source of truth.** The `TIERS` constant in `index.html` is the real,
+current list — **40 cities across 6 tiers** as of the 2026-09-22 reorganisation
+(was 37 across 5; the earlier "32-city" note in this section was itself stale for
+three weeks, having missed the 2026-09-03 additions — re-check the constant, don't
+trust a remembered count):
 
 - **Focus (3):** Nagpur, Lucknow, Pune
 - **Big (7):** Indore, Jabalpur, Chennai, Bhopal, Delhi, Nashik, Kanpur
 - **Mid (9):** Gwalior, Aurangabad, Hyderabad, Bangalore, Amravati, Jaipur, Ahmedabad, Kolhapur, Varanasi
 - **Small (4):** Gurgaon, Noida, Ghaziabad, Faridabad
-- **Expansion (9):** Agra, Coimbatore, Jalgaon, Solapur, Meerut, Bareilly, Vijayawada, Kota, Ahilyanagar
+- **New (4):** Agra, Coimbatore, Jalgaon, Solapur ← **new tier, created 2026-09-22**
+- **Expansion (13):** Meerut, Bareilly, Vijayawada, Kota, Raipur, Jodhpur, Salem,
+  Visakhapatnam, Erode, Guntur, Trichy, Madurai, Prayagraj
 
-**Known, expected gap — not a bug:** `referral_mop.json` (MOP targets) does not have
-every city above. As of last check it's missing MOP targets for Meerut, Bareilly,
-Vijayawada, Kota, and Ahilyanagar. Per Yash: this is expected — MOP is not created for
-every Expansion city every month. `index.html`'s `hasMop(city)` already gates these out
-of MOP-target tables correctly (only shows a city once `referral_mop.json` has a nonzero
-entry for it) — no code change needed for this, just don't treat a missing MOP row as a
-data bug.
+**⚠️ `Guntur` is carried ahead of launch and has NO data in any dataset** (Yash
+confirmed 2026-09-22 it is not launched yet). It renders an all-zero city row, and
+**that is correct — not a pipeline bug, and not a reason to remove it.** `Madurai`
+is effectively in the same position today (0 BQL). Expect both to start carrying
+volume without any code change; `CITIES`/`TIERS` already have them.
+
+**`Ahilyanagar` was removed entirely 2026-09-22** (Yash). See Section 0 for the
+consequence — its rows still reach India totals, they just have no city row.
+
+**Known, expected gap — not a bug:** `referral_mop.json` does not carry every city
+above; it has 28 rows (India + 27 cities). Per Yash this is expected — MOP is not
+created for every Expansion city every month. `hasMop(city)`/`hasMopV(city)` already
+gate these out of MOP-target tables (a city appears only once `referral_mop.json` has
+a nonzero entry for it), so a missing MOP row is not a data bug. **All 4 New-tier
+cities have MOP; none of the 13 Expansion cities does.**
 
 **Known naming fix:** "Bengaluru" is remapped to "Bangalore" in `index.html` to match
 MOP sheet keys — confirmed present and working (`cityFix()` / inline check on load).
 
-**Sort convention:** Tier order first — Focus → Big → Mid → Small → Expansion — then
-worst metric drop within tier.
+**Sort convention:** Tier order first — Focus → Big → Mid → Small → **New** →
+Expansion — then worst metric drop within tier. **⚠️ The tier-order map
+`{Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5}` is duplicated in 13 places in
+`index.html`** (plus `lmpCities()`'s spaced variant) rather than declared once —
+if a tier is ever added again, grep `Focus:0` and change every hit, and remember the
+unknown-tier fallback (`??6`) has to stay above the largest tier index.
 
 ---
 

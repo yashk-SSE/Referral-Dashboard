@@ -640,7 +640,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
 <script>
 // Data loaded from GitHub repo JSON files (no API keys needed)
 const FY_T=40000;
-const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'Exp',Coimbatore:'Exp',Jalgaon:'Exp',Solapur:'Exp',Meerut:'Exp',Bareilly:'Exp',Vijayawada:'Exp',Kota:'Exp',Ahilyanagar:'Exp',Raipur:'Exp',Jodhpur:'Exp',Salem:'Exp',Visakhapatnam:'Exp',Erode:'Exp'};
+const TIERS={Nagpur:'Focus',Lucknow:'Focus',Pune:'Focus',Indore:'Big',Jabalpur:'Big',Chennai:'Big',Bhopal:'Big',Delhi:'Big',Nashik:'Big',Kanpur:'Big',Gwalior:'Mid',Aurangabad:'Mid',Hyderabad:'Mid',Bangalore:'Mid',Amravati:'Mid',Jaipur:'Mid',Ahmedabad:'Mid',Kolhapur:'Mid',Varanasi:'Mid',Gurgaon:'Small',Noida:'Small',Ghaziabad:'Small',Faridabad:'Small',Agra:'New',Coimbatore:'New',Jalgaon:'New',Solapur:'New',Meerut:'Exp',Bareilly:'Exp',Vijayawada:'Exp',Kota:'Exp',Raipur:'Exp',Jodhpur:'Exp',Salem:'Exp',Visakhapatnam:'Exp',Erode:'Exp',Guntur:'Exp',Trichy:'Exp',Madurai:'Exp',Prayagraj:'Exp'};
 // City is shown in MOP-target tables only once referral_mop.json actually has an entry for it
 // (checked live via hasMop() below — no manual list to maintain as new cities get added to MOP)
 // ── BTL switch: MOP now has two parallel target tables — Combined (all sub-channels,
@@ -753,17 +753,25 @@ function sumCityMTD(dataByCity,cityArr){
 }
 // Master city list — hardcoded explicitly (not derived from MOP keys) so the tab list
 // stays correct even if a city is temporarily missing from referral_mop.json.
-const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore','Meerut','Bareilly','Vijayawada','Kota','Ahilyanagar',
+const CITIES=['Ahmedabad','Nagpur','Amravati','Aurangabad','Nashik','Pune','Kolhapur','Jalgaon','Solapur','Bhopal','Gwalior','Indore','Jabalpur','Jaipur','Delhi','Faridabad','Gurgaon','Ghaziabad','Noida','Agra','Kanpur','Lucknow','Varanasi','Hyderabad','Bangalore','Chennai','Coimbatore','Meerut','Bareilly','Vijayawada','Kota',
   // Added 2026-09-02 (Yash): these were present in the BigQuery data but missing
   // from this list, so their rows counted into India totals with no city row to
   // show them -- ~1.9% of FY27 BQL was invisible. All Expansion tier. None has a
   // referral_mop.json entry, so hasMop()/hasMopV() keep them out of the MOP
   // tables automatically while City Summary and the funnels now reconcile.
-  'Raipur','Jodhpur','Salem','Visakhapatnam','Erode'];
+  'Raipur','Jodhpur','Salem','Visakhapatnam','Erode',
+  // Added 2026-09-22 (Yash): tier reorganisation. Guntur/Trichy/Madurai/Prayagraj
+  // join Expansion; Ahilyanagar was removed from the list entirely. None of the four
+  // has a referral_mop.json entry yet, so hasMop()/hasMopV() keep them out of the MOP
+  // tables automatically -- same handling as the five cities added 2026-09-02.
+  'Guntur','Trichy','Madurai','Prayagraj'];
 const FOCUS=['Nagpur','Lucknow','Pune'];
 const BIG=['Indore','Jabalpur','Chennai','Bhopal','Delhi','Nashik','Kanpur'];
 const MID=['Gwalior','Aurangabad','Hyderabad','Bangalore','Amravati','Jaipur','Ahmedabad','Kolhapur','Varanasi'];
 const EXP=CITIES.filter(c=>TIERS[c]==='Exp');
+// 'New' tier, created 2026-09-22 (Yash): cities graduated out of Expansion. They all
+// carry a MOP target, so they sort above Expansion and keep their own Action-tab section.
+const NEWC=CITIES.filter(c=>TIERS[c]==='New');
 
 // ED_ALL/LD_ALL = every row, never filtered. ED/LD = the active view every tab actually
 // reads — all rows when BTL is included, BTL-excluded when not. setBtlSwitch() below
@@ -778,9 +786,9 @@ const CAPP_MILESTONES=['Before Order Booked','Order Booked to HOTO','HOTO to Ins
 const CAPP_MILESTONE_SHORT={'Before Order Booked':'Pre-Order','Order Booked to HOTO':'Order→HOTO','HOTO to Installation':'HOTO→Install','Installation to Commissioning':'Install→Comm','After Commissioning':'Post-Comm'};
 // Shared tier-sort for Customer App city lists (Focus>Big>Mid>Small>Exp, then alpha; unknown-tier cities like Raipur/Surat sort last).
 function capTierSort(arr){
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   return[...arr].sort((a,b)=>{
-    const tA=TIERS[a]!=null?tierOrd[TIERS[a]]:5,tB=TIERS[b]!=null?tierOrd[TIERS[b]]:5;
+    const tA=TIERS[a]!=null?tierOrd[TIERS[a]]:6,tB=TIERS[b]!=null?tierOrd[TIERS[b]]:6;
     return tA!==tB?tA-tB:a.localeCompare(b);
   });
 }
@@ -845,7 +853,7 @@ const sb=(a,t)=>{if(!t)return'';const r=a/t;const tip=`title="Actual: ${f(a)} vs
 const velC=(c,p)=>{if(c==null)return`<span style="color:var(--t3)">-</span>`;if(p==null)return`<span class="mono">${c.toFixed(1)}d</span>`;return c<p?`<span class="mono green" title="Faster vs last month: was ${p.toFixed(1)}d, now ${c.toFixed(1)}d">${c.toFixed(1)}d</span><span class="green" style="font-size:9px"> ?${(p-c).toFixed(1)}d</span>`:c>p?`<span class="mono red" title="Slower vs last month: was ${p.toFixed(1)}d, now ${c.toFixed(1)}d">${c.toFixed(1)}d</span><span class="red" style="font-size:9px"> ?${(c-p).toFixed(1)}d</span>`:`<span class="mono">${c.toFixed(1)}d</span>`;};
 const dSafe=n=>n!=null?`<span class="mono">${n.toFixed(1)}d</span>`:`<span style="color:var(--t3)">-</span>`;
 const cityOpts=()=>`<option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}`;
-const tierOpts=()=>`<option value="">All Tiers</option><option value="Focus">Focus</option><option value="Big">Big</option><option value="Mid">Mid</option><option value="Small">Small</option><option value="Exp">Expansion</option>`;
+const tierOpts=()=>`<option value="">All Tiers</option><option value="Focus">Focus</option><option value="Big">Big</option><option value="Mid">Mid</option><option value="Small">Small</option><option value="New">New</option><option value="Exp">Expansion</option>`;
 const filterByCityTier=(tier)=>tier?CITIES.filter(c=>TIERS[c]===tier):CITIES;
 const scOpts=()=>`<option value="">All Sub-Channels</option>${SCS.map(s=>`<option>${s}</option>`).join('')}`;
 // Deficit/surplus cell for MOP table
@@ -1709,8 +1717,8 @@ function insertMSWidget(containerId,widgetId,options,cfg,onchange){
   placeholder.appendChild(w);
 }
 // Tier options (order matches existing tierOpts() dropdown) + array-membership helpers.
-const TIER_OPTIONS=['Focus','Big','Mid','Small','Exp'];
-const TIER_LABELS={Focus:'Focus',Big:'Big',Mid:'Mid',Small:'Small',Exp:'Expansion'};
+const TIER_OPTIONS=['Focus','Big','Mid','Small','New','Exp'];
+const TIER_LABELS={Focus:'Focus',Big:'Big',Mid:'Mid',Small:'Small',New:'New',Exp:'Expansion'};
 const TIER_CFG={allLabel:'All Tiers',noun:'Tier',nounPlural:'Tiers',labelFn:o=>TIER_LABELS[o]||o};
 const SC_CFG={allLabel:'All Sub-Channels',noun:'Sub-Channel',nounPlural:'Sub-Channels'};
 const CAPP_CITY_CFG={allLabel:'All Cities',noun:'City',nounPlural:'Cities'};
@@ -2404,7 +2412,7 @@ function bAVM(){
       <th style="background:#fdf2f8">Order Projected</th>
     </tr>
   </thead>
-  <tbody>${avmRowHtml(null,true,doneD,totalDays)}${CITIES.filter(hasMopV).sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);}).map(c=>avmRowHtml(c,false,doneD,totalDays)).join('')}</tbody>
+  <tbody>${avmRowHtml(null,true,doneD,totalDays)}${CITIES.filter(hasMopV).sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};return(to[TIERS[a]]??6)-(to[TIERS[b]]??6);}).map(c=>avmRowHtml(c,false,doneD,totalDays)).join('')}</tbody>
 </table></div>
 <div style="font-size:11px;color:var(--t3);margin-top:8px">Note: cities with MTD activity but no MOP target this month aren't shown here but are included in the India row (small, expected gap per CLAUDE.md Sec.6).</div>`;
   initAvmMC();
@@ -2421,7 +2429,7 @@ function filterAvmTable(){
   const cfArr=getMCVal('avm-city');
   const mopCities=CITIES.filter(hasMopV);
   const cities=cfArr.length?mopCities.filter(c=>cfArr.includes(c)):(tf.length?mopCities.filter(c=>tierOk(tf,TIERS[c])):mopCities);
-  const sorted=cities.sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,Exp:4};return(to[TIERS[a]]??5)-(to[TIERS[b]]??5);});
+  const sorted=cities.sort((a,b)=>{const to={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};return(to[TIERS[a]]??6)-(to[TIERS[b]]??6);});
   const tbody=document.querySelector('#avm-tbl tbody');
   if(tbody)tbody.innerHTML=avmRowHtml(null,true,doneD,totalDays)+sorted.map(c=>avmRowHtml(c,false,doneD,totalDays)).join('');
 }
@@ -2563,7 +2571,7 @@ ${(()=>{
 // CITY SUMMARY
 // ??????????????????????????????????????
 function bCity(){
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   // Helper: show actual vs MOP MTD with color, and show % with LMTD indicator
   // Change 1&2: vsMop now shows Actual / MOP / LMTD with tooltip; funnelPct shows 1 decimal
   const vsMop=(actual,mopMtd,lmtd)=>{
@@ -2606,7 +2614,7 @@ function bCity(){
     return{c,v,pv,mH:mvMTD(c,'HOTO'),mO:mvMTD(c,'ORDER'),mB:mvMTD(c,'BQL'),mMS:mvMTD(c,'MS'),mMD:mvMTD(c,'MD'),mF:mvT(c).HOTO||0,tier:TIERS[c]||''};
   }).sort((a,b)=>{
     // Primary: tier order (Focus=0, Big=1, Mid=2, Small=3, Exp=4)
-    const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
+    const tA=tierOrd[a.tier]??6, tB=tierOrd[b.tier]??6;
     if(tA!==tB)return tA-tB;
     // Secondary within tier: worst Order drop % vs LMTD first
     const dropA=a.pv.Order>0?(a.v.Order-a.pv.Order)/a.pv.Order:0;
@@ -2774,7 +2782,7 @@ function filterCityTable(){
   const tf=getMSVal('city-tier',TIER_OPTIONS);
   const tfLbl=tf.map(t=>TIER_LABELS[t]||t).join(', ');
   const cityFArr=getMCVal('city-city');
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   // Determine cities: explicit multi-select > tier filter > all
   const allCities=cityFArr.length>0?cityFArr:(tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
   // Sum across every selected sub-channel (was a single-key lookup, only supported one at a time)
@@ -2783,7 +2791,7 @@ function filterCityTable(){
   const rows=allCities.map(c=>{
     const v=mvA(c,sf),pv=mvAL(c,sf);
     return{c,v,pv,mH:mvMTD(c,'HOTO'),mO:mvMTD(c,'ORDER'),mB:mvMTD(c,'BQL'),mF:mvT(c).HOTO||0,tier:TIERS[c]||''};
-  }).sort((a,b)=>(tierOrd[a.tier]||5)-(tierOrd[b.tier]||5)||b.v.HOTO-a.v.HOTO);
+  }).sort((a,b)=>(tierOrd[a.tier]??6)-(tierOrd[b.tier]??6)||b.v.HOTO-a.v.HOTO);
   // Aggregate India row from filtered cities
   const aggV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
   const aggPV={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
@@ -3062,8 +3070,8 @@ ${SCS.map(s=>{
   const cityDrills=SCS.map(s=>{
     const cd=CITIES.map(c=>({c,v:C.cscMTD[c][s],pv:C.cscLMTD[c][s],tier:TIERS[c]||''})).filter(x=>x.v.BQL>0||x.v.HOTO>0)
       .sort((a,b)=>{
-        const tierOrdL={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-        const tA=tierOrdL[a.tier]??5,tB=tierOrdL[b.tier]??5;
+        const tierOrdL={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
+        const tA=tierOrdL[a.tier]??6,tB=tierOrdL[b.tier]??6;
         if(tA!==tB)return tA-tB;
         // Within tier: worst Order drop % first
         const dropA=a.pv.Order>0?(a.v.Order-a.pv.Order)/a.pv.Order:0;
@@ -3903,7 +3911,7 @@ function renderBQLSegmentTrend(cityArr,scArr,segKey){
 function renderBQLCityTable(cityArr,tf,scArr){
   const el=document.getElementById('bq-city-tbl');if(!el)return;
   const yd=C.yd,ms=MS0(yd);
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   const cities=cityArr&&cityArr.length?cityArr:(tf&&tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES);
   const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=cities.map(c=>{
@@ -3913,7 +3921,7 @@ function renderBQLCityTable(cityArr,tf,scArr){
     const incrShare=total?(nonCoreBQL/total*100):0;
     return{c,tier:TIERS[c]||'',seg,total,nonCoreBQL,incrShare};
   }).filter(r=>r.total>0)
-    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.incrShare-a.incrShare);
+    .sort((a,b)=>(tierOrd[a.tier]??6)-(tierOrd[b.tier]??6)||b.incrShare-a.incrShare);
   const rowsHtml=rows.map(r=>`<tr>
     <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
     <td class="mono" style="font-weight:700">${f(r.seg.Core.BQL)}</td>
@@ -4026,7 +4034,7 @@ function renderBQLScorecardTF(cityArr,scArr){
 function renderBQLCityTableTF(tf,scArr){
   const el=document.getElementById('tfbq-city-tbl');if(!el)return;
   tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   const cities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   const others=BQL_SEGMENTS.filter(s=>s.key!=='Core');
   const rows=cities.map(c=>{
@@ -4036,7 +4044,7 @@ function renderBQLCityTableTF(tf,scArr){
     const incrShare=total?(nonCoreBQL/total*100):0;
     return{c,tier:TIERS[c]||'',seg,total,nonCoreBQL,incrShare};
   }).filter(r=>r.total>0)
-    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.incrShare-a.incrShare);
+    .sort((a,b)=>(tierOrd[a.tier]??6)-(tierOrd[b.tier]??6)||b.incrShare-a.incrShare);
   const rowsHtml=rows.map(r=>`<tr>
     <td><strong>${r.c}</strong><span class="ctag">${r.tier}</span></td>
     <td class="mono" style="font-weight:700">${f(r.seg.Core.BQL)}</td>
@@ -5496,8 +5504,17 @@ function bAct(){
     if(achPct<60){acts.push(aC('mid','Mid City',`${city} LRM Manager`,`${city}: ${achPct}% HOTO achievement`,`${f(v.HOTO)}/${f(mF)} HOTOs. BQL->MS: ${pN(v.MS,v.BQL).toFixed(1)}%, MD->Order: ${pN(v.Order,v.MD).toFixed(1)}%. LRM to identify stalled leads and prioritise scheduling.`));}
   });
 
+  // 'New' tier (Yash 2026-09-22): graduated out of Expansion. All four carry a MOP
+  // target, so unlike Expansion this section never has to handle a missing plan.
+  NEWC.forEach(city=>{
+    const v=C.cMTD[city],mF=MOP[city]?.HOTO||0;
+    if(!mF)return;
+    const achPct=Math.round(v.HOTO/mF*100);
+    if(achPct<60){acts.push(aC('new','New City',`${city} LRM Manager`,`${city}: ${achPct}% HOTO achievement`,`${f(v.HOTO)}/${f(mF)} HOTOs. BQL->MS: ${pN(v.MS,v.BQL).toFixed(1)}%, MD->Order: ${pN(v.Order,v.MD).toFixed(1)}%. Newly graduated market - hold the MOP plan and keep scheduling tight.`));}
+  });
+
   // Expansion cities — only generates actions once a city has an actual MOP target;
-  // the 5 newly-added cities without MOP yet simply stay silent here until MOP is set.
+  // cities without MOP yet simply stay silent here until MOP is set.
   EXP.forEach(city=>{
     const v=C.cMTD[city],mF=MOP[city]?.HOTO||0;
     if(!mF)return;
@@ -5510,7 +5527,7 @@ function bAct(){
   if(!acts.length)acts.push(aC('sh','Monitor','All','All metrics within range','No critical actions required.'));
 
   const actCard=(a)=>{
-    const priCls={imm:'imm',foc:'foc',big:'big',mid:'mid',exp:'mid',sh:'sh'}[a.p]||'sh';
+    const priCls={imm:'imm',foc:'foc',big:'big',mid:'mid',new:'mid',exp:'mid',sh:'sh'}[a.p]||'sh';
     return`<div class="act"><div class="act-hd"><span class="act-pri ${priCls}">${a.pl}</span><span class="act-title">${a.title}</span><span class="act-own">${a.own}</span></div><div class="act-body">${a.body}</div></div>`;
   };
 
@@ -5518,6 +5535,12 @@ function bAct(){
     const v=C.cMTD[city],pv=C.cLMTD[city],mH=C.mopMTD(city,'HOTO'),mF=MOP[city]?.HOTO||0;
     return`<div class="card" style="flex:1;min-width:150px"><div class="ctitle" style="display:flex;justify-content:space-between"><span>${city} <span class="ctag">Focus</span></span>${sb(v.HOTO,mH)}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${[{l:'BQL',v:v.BQL,pv:pv.BQL,t:C.mopMTD(city,'BQL')},{l:'MS',v:v.MS,pv:null,t:null},{l:'MD',v:v.MD,pv:null,t:null},{l:'HOTO',v:v.HOTO,pv:pv.HOTO,t:mF}].map(s=>`<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">${s.l}</div><div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:${s.pv!=null?(s.v>=s.pv?'var(--gn)':'var(--rd)'):'var(--tx)'}">${f(s.v)}</div>${s.t?`<div style="font-size:9px;color:var(--t3)">MOP: ${f(s.t)}</div>`:''}${s.pv!=null?mb(s.v,s.pv):''}</div>`).join('')}</div></div>`;
+  }).join('');
+
+  const newCards=NEWC.map(city=>{
+    const v=C.cMTD[city],pv=C.cLMTD[city],mH=hasMop(city)?C.mopMTD(city,'HOTO'):0,mF=MOP[city]?.HOTO||0;
+    return`<div class="card" style="flex:1;min-width:150px"><div class="ctitle" style="display:flex;justify-content:space-between"><span>${city} <span class="ctag">New</span></span>${mF?sb(v.HOTO,mH):'<span style="font-size:9px;color:var(--t3)">No MOP yet</span>'}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${[{l:'BQL',v:v.BQL,pv:pv.BQL,t:hasMop(city)?C.mopMTD(city,'BQL'):null},{l:'MS',v:v.MS,pv:null,t:null},{l:'MD',v:v.MD,pv:null,t:null},{l:'HOTO',v:v.HOTO,pv:pv.HOTO,t:mF||null}].map(s=>`<div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">${s.l}</div><div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:${s.pv!=null?(s.v>=s.pv?'var(--gn)':'var(--rd)'):'var(--tx)'}">${f(s.v)}</div>${s.t?`<div style="font-size:9px;color:var(--t3)">MOP: ${f(s.t)}</div>`:''}${s.pv!=null?mb(s.v,s.pv):''}</div>`).join('')}</div></div>`;
   }).join('');
 
   const expCards=EXP.map(city=>{
@@ -5530,7 +5553,7 @@ function bAct(){
   // could only isolate Expansion — every other tier selection did nothing. Generalized so
   // each of the 4 sections independently shows/hides based on the multi-select.
   const tf=getMSVal('act-tier',TIER_OPTIONS);
-  const showFocus=!tf.length||tf.includes('Focus'),showBig=!tf.length||tf.includes('Big'),showMid=!tf.length||tf.includes('Mid'),showExp=!tf.length||tf.includes('Exp');
+  const showFocus=!tf.length||tf.includes('Focus'),showBig=!tf.length||tf.includes('Big'),showMid=!tf.length||tf.includes('Mid'),showNew=!tf.length||tf.includes('New'),showExp=!tf.length||tf.includes('Exp');
   document.getElementById('p-act').innerHTML=`<div class="ptitle">Recommended Actions</div><div class="psub">${dl} days remaining in May . Prioritised by tier and impact</div>
   <div class="fbar"><span id="act-tier-mc-wrap"></span></div>
   ${acts.filter(a=>a.pl==='Immediate').length?`<div class="stitle" style="color:var(--rd)">[WARN] Immediate - Execute This Week</div>${acts.filter(a=>a.pl==='Immediate').map(actCard).join('')}`:''}
@@ -5539,6 +5562,9 @@ function bAct(){
   ${acts.filter(a=>a.pl==='Focus City').length?acts.filter(a=>a.pl==='Focus City').map(actCard).join(''):'<div style="font-size:12px;color:var(--t2);padding:6px 0">All focus cities on or near track.</div>'}`:''}
   ${showBig&&acts.filter(a=>a.pl==='Big City').length?`<div class="stitle">Big Cities - Action Required</div>${acts.filter(a=>a.pl==='Big City').map(actCard).join('')}`:''}
   ${showMid&&acts.filter(a=>a.pl==='Mid City').length?`<div class="stitle">Mid Cities - Watch List</div>${acts.filter(a=>a.pl==='Mid City').map(actCard).join('')}`:''}
+  ${showNew?`<div class="stitle">New Cities - ${NEWC.join(', ')}</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">${newCards}</div>
+  ${acts.filter(a=>a.pl==='New City').length?acts.filter(a=>a.pl==='New City').map(actCard).join(''):'<div style="font-size:12px;color:var(--t2);padding:6px 0">All new-tier cities on or near track.</div>'}`:''}
   ${showExp?`<div class="stitle">Expansion Cities - ${EXP.join(', ')}</div>
   <div style="font-size:10px;color:var(--t3);margin-bottom:6px">Cities without a set MOP target yet show actuals only — no achievement badge until MOP is added.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">${expCards}</div>
@@ -6480,8 +6506,8 @@ function bDigitalIndia(){
 // ================================================================
 function bDigitalCity(){
   const yd=DC.yd,mtdDay=yd.getDate();
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
-  const rows=CITIES.slice().sort((a,b)=>(tierOrd[TIERS[a]]||9)-(tierOrd[TIERS[b]]||9)).map(c=>{
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
+  const rows=CITIES.slice().sort((a,b)=>(tierOrd[TIERS[a]]??9)-(tierOrd[TIERS[b]]??9)).map(c=>{
     const v=DC.cMTD[c],pv=DC.cLMTD[c];
     if(!v.BQL&&!pv.BQL&&!v.HOTO&&!pv.HOTO)return'';
     const fP=(a,b,pa,pb)=>{if(!b)return'-';const cur=(a/b*100).toFixed(1),prv=pb?(pa/pb*100).toFixed(1):null;const cls=prv&&parseFloat(cur)>=parseFloat(prv)?'green':'red';const pp=prv!=null?((parseFloat(cur)-parseFloat(prv)).toFixed(1)):null;const ppBadge=pp!=null?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';return`<span class="${cls}">${cur}%${ppBadge}</span>`;};
@@ -7510,9 +7536,9 @@ function lmpHasT(city){
 // rest of the dashboard.
 function lmpCities(){
   const mo = lmpMonth(); if(!mo) return [];
-  const ord = {Focus:0, Big:1, Mid:2, Small:3, Exp:4};
+  const ord = {Focus:0, Big:1, Mid:2, Small:3, New:4, Exp:5};
   return mo.cities.map(c => c.city).filter(c => c !== 'India' && lmpHasT(c))
-    .sort((a,b) => ((ord[TIERS[a]] ?? 5) - (ord[TIERS[b]] ?? 5)) || a.localeCompare(b));
+    .sort((a,b) => ((ord[TIERS[a]] ?? 6) - (ord[TIERS[b]] ?? 6)) || a.localeCompare(b));
 }
 // City x sub-channel actuals for one calendar month, off ED_ALL so this is
 // independent of the global BTL toggle. Cached; precompute() clears the cache so
@@ -8801,14 +8827,14 @@ ${cityDrills}
 }
 
 function bCityTF() {
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   const {cmpAvailable} = tfAgg(null,null);
 
   const rows = CITIES.map(c=>{
     const {cur,prv} = tfAgg(c,null);
     return {c, cur, prv, tier:TIERS[c]||''};
   }).sort((a,b)=>{
-    const tA=tierOrd[a.tier]??5, tB=tierOrd[b.tier]??5;
+    const tA=tierOrd[a.tier]??6, tB=tierOrd[b.tier]??6;
     if(tA!==tB)return tA-tB;
     return b.cur.HOTO-a.cur.HOTO;
   });
@@ -8998,13 +9024,13 @@ function reFilterFunnelTF(){
 function renderFunnelCityTblTF(sf,tf){
   const el=document.getElementById('tffn-city-tbl');if(!el)return;
   sf=scArr(sf);tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   const cities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   const rows=cities.map(c=>{
     const {cur:v,prv:pv,cmpAvailable:ca}=tfAggMulti(c,sf);
     return{c,v,pv,ca,tier:TIERS[c]||''};
   }).filter(r=>r.v.BQL>0)
-    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.v.HOTO-a.v.HOTO);
+    .sort((a,b)=>(tierOrd[a.tier]??6)-(tierOrd[b.tier]??6)||b.v.HOTO-a.v.HOTO);
   const mL=(v,pv,ca)=>ca?`<span class="mono ${v>pv?'green':v<pv?'red':''}">${f(v)}</span><span style="font-size:9px;color:var(--t3)" title="Prior period: ${f(pv)}"> / ${f(pv)}</span>`:`<span class="mono">${f(v)}</span>`;
   const fP=(a,b,pa,pb,ca)=>{if(!b)return'-';const cur2=(a/b*100).toFixed(1),prev=ca&&pb?(pa/pb*100).toFixed(1):null;const cls=prev&&parseFloat(cur2)>=parseFloat(prev)?'green':prev?'red':'';const pp=prev!=null?((parseFloat(cur2)-parseFloat(prev)).toFixed(1)):null;const ppBadge=pp!=null?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';return`<span class="${cls}" title="Current: ${cur2}%${prev?' | Prior: '+prev+'%':''}">${cur2}%${ppBadge}</span>`;};
   el.innerHTML=`<table>
@@ -9087,13 +9113,13 @@ function reFilterM0TF(){
 function renderM0CityTblTF(sf,tf){
   const el=document.getElementById('tfm0-city-tbl');if(!el)return;
   sf=scArr(sf);tf=Array.isArray(tf)?tf:(tf?[tf]:[]);
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,Exp:4};
+  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
   const cities=tf.length?CITIES.filter(c=>tierOk(tf,TIERS[c])):CITIES;
   const rows=cities.map(c=>{
     const {cur:v,prv:pv,cmpAvailable:ca}=tfAggM0Multi(c,sf);
     return{c,v,pv,ca,tier:TIERS[c]||''};
   }).filter(r=>r.v.BQL>0)
-    .sort((a,b)=>(tierOrd[a.tier]??5)-(tierOrd[b.tier]??5)||b.v.HOTO-a.v.HOTO);
+    .sort((a,b)=>(tierOrd[a.tier]??6)-(tierOrd[b.tier]??6)||b.v.HOTO-a.v.HOTO);
   const mL=(v,pv,ca)=>ca?`<span class="mono ${v>pv?'green':v<pv?'red':''}">${f(v)}</span><span style="font-size:9px;color:var(--t3)" title="Prior period: ${f(pv)}"> / ${f(pv)}</span>`:`<span class="mono">${f(v)}</span>`;
   const fP=(a,b,pa,pb,ca)=>{if(!b)return'-';const cur2=(a/b*100).toFixed(1),prev=ca&&pb?(pa/pb*100).toFixed(1):null;const cls=prev&&parseFloat(cur2)>=parseFloat(prev)?'green':prev?'red':'';const pp=prev!=null?((parseFloat(cur2)-parseFloat(prev)).toFixed(1)):null;const ppBadge=pp!=null?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';return`<span class="${cls}" title="Current: ${cur2}%${prev?' | Prior: '+prev+'%':''}">${cur2}%${ppBadge}</span>`;};
   el.innerHTML=`<table>
