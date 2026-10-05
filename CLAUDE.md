@@ -19,8 +19,8 @@ Detailed history lives in the numbered sections below and in `git log`; this is 
 
 **As of 2026-10-05 — OCTOBER MOP LOADED from `Referrals MOP - Oct'26.xlsx`.
 Written locally to `data/referral_mop.json` + `data/referral_mop_history.json`
-(`2026-10` added; Jul/Aug/Sep verified byte-identical), browser-verified, NOT
-committed / NOT pushed pending Yash's go.**
+(`2026-10` added; Jul/Aug/Sep verified byte-identical), browser-verified,
+committed and PUSHED as `b93e911` on Yash's go.**
 
 - Built with the normal command, no code change, layout assertions passed:
   `python scripts/build_mop_json.py "Referrals MOP - Oct'26.xlsx"`. Same 28 rows
