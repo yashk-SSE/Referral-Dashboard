@@ -12,10 +12,75 @@
 
 ## 0. CURRENT STATUS — read this first, before anything else
 
-**This section is a living snapshot, not history.** Keep it updated as work progresses —
-when you finish a task or hand off, update this section before anything else in this file.
-Detailed history lives in the numbered sections below and in `git log`; this is just
-"what's true right now."
+**This section is a short, living snapshot of what is true right now — keep it
+that way.** When you finish a task, update this snapshot, and add a dated entry
+at the top of **Section 0a (Status log)** below. Don't let this section turn
+back into a log: as of 2026-10-05 it had grown to ~1,200 lines and was carrying
+claims that had stopped being true weeks before (see the 2026-10-05 log entry).
+
+### Snapshot, as of 2026-10-05
+
+- **Nothing is pending review or unpushed for the live dashboard.**
+  `origin/main` == local `main`; `index.preview.html` does not exist. The only
+  work-in-progress file is **`signals.preview.html`** (gitignored by
+  `*.preview.html`), which Yash has not reviewed yet.
+- **What is live (`index.html`, ~820 KB / ~9,840 lines):**
+  - **Referral:** the 17 tabs in `REFERRAL_TABS` (Timeframe mode applies to these)
+    **plus 2 MOP-month tabs deliberately outside that list**: `avm` (Actuals vs
+    MOP) and `lmp` (Last Month Performance). `aging` (Stage Aging) is still built
+    but unreachable (Section 13).
+  - **Digital** (`dexec`, `dindia`, `dcity`, `dfunnel`, `dm0`) and **Ref vs Digital**
+    (`compare`). Digital is still slated for eventual removal, no timeline.
+  - **Customer App** (Metabase-sourced, Section 15): `capp` Overview, `capptrend`
+    MoM Trend, `cappvel` Login Velocity, `cappdod` Day on Day. All four live.
+- **MOP: Oct'26 is loaded and live** (`b93e911`, from
+  `Referrals MOP - Oct'26.xlsx`). `referral_mop_history.json` holds Jul, Aug, Sep
+  and Oct '26, so Last Month Performance defaults to Sep'26, scored against the
+  **revised** Sep plan of 2026-09-21. Next month: put the new workbook in the
+  repo root and run `python scripts/build_mop_json.py "<file>.xlsx"`.
+- **Cities: 40 across 6 tiers** (Focus 3 · Big 7 · Mid 9 · Small 4 · New 4 ·
+  Exp 13). 27 cities + India carry MOP. Guntur and Madurai render all-zero rows
+  on purpose (not launched / no volume yet).
+- **Pipelines, all running:** Apps Script v5 (BigQuery -> `data/*.json`, pushes many
+  times a day, now including `scapp_stage`/`scapp_status` dispositions), and
+  GitHub Actions `pull_customer_app.yml` (Metabase CSV endpoint, 4x/day, with the
+  `check_before_write()` integrity guard). A local clone goes stale within hours:
+  **`git pull --rebase origin main` before drawing any conclusion about data.**
+- **`data/` is ~100 MB** (referral_leads 35, digital_leads 32, customer_app 19,
+  digital_effort 7.9, referral_effort 6.0 MB) and `init()` still loads it with
+  sequential `await`s; the comment there still says "~10 MB". This is why the
+  page loads slowly. The fix (parallel + lazy loading) is scoped but not done
+  (Section 13).
+- **Open, needs Yash:** the Oct'26 workbook's suspect rows (Bhopal Sales MS 98 <
+  MD 125; Varanasi BTL Order 0 / HOTO 5; Solapur Sales MS 8 < MD 9) · Signals
+  review, and whether New-tier cities belong in its scope · `Inactive`/`Surat`/
+  `Ajmer` unmapped values · whether Ahilyanagar needs a hard exclusion · Stage
+  Aging nav entry. Full list in Section 13.
+- **Local runtime:** no `python`/`node` on Claude's shell PATH. Python is at
+  `C:\Users\user\AppData\Local\Programs\Python\Python313\python.exe`.
+  Verify in the browser via the `referral-local` launch config (port 8744) with a
+  `?v=` cache-buster, and check `FELL_BACK` is empty (the trap in Section 12).
+
+---
+
+## 0a. Status log (newest first)
+
+Dated entries, kept for the reasoning and decisions they record. **Older entries
+can be stale.** Where a later entry or the snapshot above disagrees, the later
+one wins. On 2026-10-05 several entries were corrected in place where they said
+something was pending that had since shipped; those corrections are marked
+"[Corrected 2026-10-05]".
+
+**2026-10-05 — documentation audit.** CLAUDE.md and README.md checked against the
+code and repo. Section 0 split into the snapshot above plus this log. Corrected:
+Customer App HOTO/Order Booked `lead`-table sourcing (said unpushed; live as
+`1038eff`); the Day on Day tab and the `Customer_App` sub-channel removal (said
+sitting in `index.preview.html`; live as `c52ed6b`); the Apps Script
+`Customer_App` change (said awaiting redeploy; `referral_effort.json` now carries
+zero `Customer_App` rows, so it is deployed); the Customer App workflow (said not
+verified end-to-end; it has been running for weeks); Section 1's city count and
+file table; Section 9's sub-channel count; Section 10's tab list; Section 13's
+superseded items; and Section 15's "not yet merged" phase notes.
 
 **As of 2026-10-05 — OCTOBER MOP LOADED from `Referrals MOP - Oct'26.xlsx`.
 Written locally to `data/referral_mop.json` + `data/referral_mop_history.json`
@@ -158,9 +223,10 @@ until Yash gives the go.**
   the ones that were live for most of the month.**
 
 **As of 2026-09-08 — a new "Signals" product is SCOPED, SPECCED AND CALIBRATED.
-Step 0 (the engine, no UI) is DONE and validated. Nothing is built in any
-dashboard file yet except one pending `LD_ALL` change sitting in
-`index.preview.html` awaiting Yash's review.**
+Step 0 (the engine, no UI) is DONE and validated.** [Corrected 2026-10-05: this
+header predates the rest of the entry. Steps 1-4 were since built in
+`signals.preview.html`, and the `LD_ALL` change is live on `origin/main` (see
+below).]
 
 - **What Signals is:** a 2–3x/week read on what is moving against the current
   month's MOP, ranked by **orders at risk**, routed to exactly one owner, and
@@ -1085,9 +1151,8 @@ polish, LIVE and pushed):**
   switcher deliberately left as tabs — only 4 options, switched often) — commit
   `410899b`. Yash reviewed and explicitly approved every round before it was
   merged/pushed. Full detail in Section 15.
-- **Customer App HOTO/Order Booked field sourcing — reversed AGAIN 2026-08-05,
-  NOT YET committed/pushed (applied locally; ready to push whenever asked — Yash
-  has confirmed keeping both fields on the `lead` table, see below).** History,
+- **Customer App HOTO/Order Booked field sourcing — reversed AGAIN 2026-08-05.**
+  [Corrected 2026-10-05: committed and live as `1038eff`.] History,
   in order (don't re-litigate earlier steps without new evidence):
   1. Originally: HOTO = `project.cx_approval_timestamp`, Order Booked =
      `project.order_closure_datetime`, Installation = `project.installation_date`.
@@ -1124,10 +1189,7 @@ polish, LIVE and pushed):**
       Order Booked as to the later-funnel milestones**, not a wrong field/table.
     - **Resolved 2026-08-05: Yash's explicit call — keep `project_state`
       filtering applied to Order Booked too, accept the 44 vs 442 gap for now.**
-      Don't revisit without new information from him. This SQL/data change (both
-      HOTO and Order Booked on `lead`) is ready to commit/push whenever asked —
-      not yet pushed only because it hasn't been explicitly requested this
-      session, not because anything is still unresolved.
+      Don't revisit without new information from him. (Since pushed, `1038eff`.)
 - **Scheduled Customer App auto-pull is LIVE (2026-08-05):** `.github/workflows/
   pull_customer_app.yml` runs `scripts/pull_customer_app.py` at 9am/3pm/6pm/9pm IST
   daily, commits `data/customer_app.json` if changed. Confirmed working via a real
@@ -1152,20 +1214,16 @@ polish, LIVE and pushed):**
   regardless of the BTL toggle or any other filter. Confirmed via console:
   `ED_ALL` 31,566 → 28,669 rows (exactly the prior `Customer_App` row count),
   zero remain in either array. Browser-tested across 7 tabs (incl. Digital,
-  unaffected) — no lingering mentions, no console errors. **Two things still
-  needed before this is fully live:**
-  1. Yash must copy the updated `.gs` code into the actual Google Apps Script
-     editor and redeploy — editing the tracked copy in this repo does nothing
-     to the live script by itself.
-  2. The `index.html` side needs the usual preview-review-merge cycle (it's
-     currently only in `index.preview.html`, bundled with the Day on Day tab
-     below — not yet committed to `index.html`/pushed).
+  unaffected) — no lingering mentions, no console errors. [Corrected 2026-10-05:
+  both follow-ups are done. The `index.html` side shipped with the Day on Day tab
+  (`c52ed6b`), and the Apps Script was redeployed: `referral_effort.json` now
+  carries zero `Customer_App` rows.]
   Historical `data/referral_effort.json`/`referral_leads.json` rows may still
   carry the old `Customer_App` tag until Yash redeploys the Apps Script — this
   is now harmless either way, since `ED_ALL`/`LD_ALL`'s own filter excludes
   them unconditionally regardless of what's still in the JSON.
-- **⚠️ `index.preview.html` exists again and is now AHEAD of `index.html`** — a new
-  4th Customer App tab, NOT yet reviewed/approved, do not merge/commit/push:
+- **4th Customer App tab, Day on Day.** [Corrected 2026-10-05: reviewed and live
+  as `c52ed6b`; `index.preview.html` no longer exists.]
   - **`cappdod` → `bCAppDoD()` — "Day on Day."** One row per day of a **selected
     month** (`setCAppDoDMonth()`, trailing-12-months dropdown via `capGetMonths()`,
     defaults to the current month), with a **4-option stage picker** (Order
@@ -1189,10 +1247,8 @@ polish, LIVE and pushed):**
   - Browser-tested: all 4 stages, month switching (confirmed a fully-elapsed past
     month like Jul'26 shows real data on every day, not zeros), city filter, and
     that month/stage selections persist independently of each other — no console
-    errors. **Not yet shown to Yash for a second look.**
-- **Everything else is committed and pushed** — confirm with `git fetch && git log
-  --oneline origin/main..HEAD` (should be empty — the Day on Day tab above is the
-  only thing currently sitting unmerged, in the gitignored preview file). The Apps
+    errors.
+- **Automated commits are routine.** The Apps
   Script pushes automated `data/*.json` refresh commits throughout the day (commit
   messages like "📊 Referral leads: ..."), and the Customer App auto-pull workflow
   does too ("Auto-refresh Customer App data from Metabase") — both routine, don't
@@ -1202,25 +1258,22 @@ polish, LIVE and pushed):**
   - `.metabase_key/metabase_key.txt` — the Metabase API key. Read it only by having a
     script load it at runtime (see `scripts/pull_customer_app.py`) — never `Read` this
     file directly yourself, never print/echo its contents, never put it in a chat reply.
-  - `Referral MOP Aug'26_Final.xlsx` (and Office's `~$...xlsx` lock file next to it) —
-    this month's MOP source file, already consumed into `data/referral_mop.json`.
-    Nothing further to do with it unless Yash provides a new one next month.
-- **No hard-blocking open questions right now.** Section 13 has the standing list of
-  soft/pending items (Stage Aging nav entry, Funnel MOP %, Customer_App reclassification
-  not started, etc.) — none are blocking, they're just undecided/unscheduled.
-- **Quick orientation for a fresh session:** read this file in full (as instructed above),
-  then check `git log --oneline -15` for the recent narrative, then check whether
-  `index.preview.html` exists before touching `index.html`. Section 15 has everything
-  about the new Customer App/Metabase branch; Sections 1–14 cover the original
-  Referral/Digital dashboard.
+  - The monthly MOP workbooks (`*.xlsx`, gitignored): Aug'26, Sep'26 (original and
+    revised `-Final`), and Oct'26 so far. Each is consumed by
+    `scripts/build_mop_json.py`; nothing further to do with an old one.
+- **Quick orientation for a fresh session:** read the Section 0 snapshot, then
+  `git log --oneline -40 --no-merges` and skip the automated "Referral/Digital ..."
+  and "Auto-refresh" commits to get the recent narrative, then check whether any
+  `*.preview.html` exists before touching `index.html`. Section 15 covers the
+  Customer App/Metabase branch; Sections 1-14 cover the Referral/Digital dashboard.
 
 ---
 
 ## 1. What this project is
 
 A single-file HTML/JavaScript dashboard tracking the **Referral sales channel** funnel
-performance for SolarSquare, a B2C solar company, across **32 Indian cities** (resolved,
-see Section 6 for the exact list — no longer an open discrepancy).
+performance for SolarSquare, a B2C solar company, across **40 Indian cities in 6 tiers** (as of
+2026-09-22; see Section 6. `TIERS` in `index.html` is the source of truth).
 
 - Deployed via **GitHub Pages** at `https://yashk-sse.github.io/Referral-Dashboard/`
   (not Netlify — corrected 2026-08-03; Netlify's free-tier monthly production-deploy
@@ -1264,17 +1317,20 @@ see Section 6 for the exact list — no longer an open discrepancy).
   the Metabase idea above: a real BI/serving layer removes the need for static
   JSON-in-git entirely. Flagging for whenever this becomes a real problem, not now.
 
-### Known local files — confirmed by inspection (2026-08-03)
+### Known local files — re-checked 2026-10-05
 
 | Name | Type | Confirmed role |
 |---|---|---|
 | `.github/workflows/test.yml` | workflow | Trivial — `echo` on manual dispatch only. Not a real test/CI gate. |
+| `.github/workflows/pull_customer_app.yml` | workflow | Customer App auto-pull from Metabase, 4x/day IST (Section 15). |
 | `.github/workflows/update_data.yml` | — | **Deleted** (was the killed Python pipeline's trigger). |
-| `data/` | folder | 5 JSON files written by the Apps Script: `referral_effort.json`, `referral_leads.json`, `digital_effort.json`, `digital_leads.json`, `referral_mop.json`. First four are BigQuery-generated; `referral_mop.json` (MOP targets) is maintained separately/manually — not produced by any script in this repo. |
-| `scripts/` | folder | **Emptied** — `fetch_data.py` deleted (killed pipeline). |
-| `index.html` | 664 KB | The dashboard. 7,254 lines, single file, everything inline. Handles Referral **and** Digital channels plus a Ref-vs-Digital compare view (not Referral-only, despite Section 1's old framing). |
+| `data/` | folder, ~100 MB | 7 JSON files. **Apps Script (BigQuery):** `referral_effort.json`, `referral_leads.json`, `digital_effort.json`, `digital_leads.json`. **`build_mop_json.py`:** `referral_mop.json` (current month) + `referral_mop_history.json` (every month since Jul'26). **`pull_customer_app.py`:** `customer_app.json`. |
+| `scripts/` | folder | `build_mop_json.py` (monthly MOP workbook to JSON), `backfill_mop_history.py` (one-off seed of the history file from git), `pull_customer_app.py` + `customer_app_query.sql` (Customer App pipeline). `hoto_lead_list.sql` is an untracked ad-hoc query. The old `fetch_data.py` was deleted with the killed pipeline. |
+| `index.html` | ~820 KB | The dashboard. ~9,840 lines, single file, everything inline. Referral, Digital, Ref-vs-Digital compare, and Customer App channels. |
+| `signals.preview.html` | ~90 KB, gitignored | The Signals page, work in progress (Section 0a, 2026-09-08). Becomes `signals.html` once Yash approves it. |
+| `preview-local.bat` | script | Local server on 8743, opening `index.preview.html` (or `index.html`). Calls a bare `python`, which works from Yash's shell but not from Claude's. |
 | `README.md` | — | Was outdated 1-line stub; now kept in sync with this file (see Section 12). |
-| `Referral Dashboard.gs` | 32 KB | Apps Script v5. Queries BigQuery for **both** Referral and Digital (effort + lead-level), pushes each JSON straight to `main` via GitHub's API. This is the live, authoritative pipeline. **Was never committed to git before 2026-08-03** (existed only in the Apps Script editor / this local copy) — now tracked in the repo so the pipeline source has version history. |
+| `Referral Dashboard.gs` | ~36 KB | Apps Script v5. Queries BigQuery for **both** Referral and Digital (effort + lead-level), pushes each JSON straight to `main` via GitHub's API. This is the live, authoritative pipeline. **Was never committed to git before 2026-08-03** (existed only in the Apps Script editor / this local copy) — now tracked in the repo so the pipeline source has version history. |
 | `referral-dashboard` | 1 byte, no extension | Confirmed: a single newline, no content, no function. Not a config or script. Yash's call (2026-08-03): leave it as-is, no action needed. |
 
 **Note on Section 7 below:** the "Raw_Data_Effort" / "Raw_Lead_Data_updated" Google Sheets
@@ -1572,7 +1628,7 @@ JSON schema still applies without checking.)
 - **City Summary** — per-city MOP vs MTD actual, and vs LMTD (last month till date);
   tier-sorted per Section 6's convention; surplus/deficit flagged **red (>20% deficit)
   / green (surplus) only, no amber** (existing convention, confirm still wanted).
-- **Sub-Channel Summary** — composition and performance by the 6 sub-channels, with
+- **Sub-Channel Summary** — composition and performance by the 5 sub-channels (Section 4), with
   city × sub-channel cross-tab.
 - **Funnel Movement** — all 4 variants from Section 5 (Effort, Effort MTD, M0, M0 MTD),
   each covering BQL→MS, MS→MD, MD→Order, trended over last 6 months, city + sub-channel
@@ -1608,10 +1664,13 @@ JSON schema still applies without checking.)
 Code is the final source of truth (Yash's standing instruction). Everything below has
 been verified directly in `index.html` / `Referral Dashboard.gs`, not just recalled:
 
-- Dashboard has 17 reachable Referral tabs (`REFERRAL_TABS` in `index.html`): `exec, mop,
-  india, city, sc, funnel, m0funnel, bqlq, vel, wow, ins, act, dod, dodfunnel, cohort,
-  citymom, citydeep` — plus a channel switcher (`Referral / Digital / Ref vs Digital`)
-  that isn't itself a tab. `aging` (Stage Aging) exists in the code's internal `allTabs`
+- `REFERRAL_TABS` in `index.html` lists 17 tabs: `exec, mop, india, city, sc, funnel,
+  m0funnel, bqlq, vel, wow, ins, act, dod, dodfunnel, cohort, citymom, citydeep`.
+  **Two more Referral tabs are reachable from the sidebar but deliberately left out
+  of that list** so Timeframe mode skips them: `avm` (Actuals vs MOP, 2026-08-19) and
+  `lmp` (Last Month Performance, 2026-09-03). The channel switcher (`Referral /
+  Digital / Ref vs Digital / Customer App`) isn't itself a tab. (Re-checked
+  2026-10-05.) `aging` (Stage Aging) exists in the code's internal `allTabs`
   list but is **not** in `REFERRAL_TABS` — see Section 13, it's built but unreachable.
 - Helper functions `pN`, `f`, `getBQL()`, `getMS()`, `getMD()`, `METRIC_SEL` — **confirmed
   present and working exactly as described**: `METRIC_SEL = {bql, ms, md}` routes the
@@ -1720,16 +1779,25 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   now? Not touched yet.
 - Lead scoring implementation format (how it plugs into the main dashboard) —
   undecided, and the tool itself isn't in this repo (see Section 10).
-- **Reclassify `Customer_App` sub-channel** — current attribution is wrong and gets
-  replaced with a corrected `Customer_App` carved out of `Online`'s bifurcation
-  (not a removal — the name stays). Flagged 2026-08-03, future work, not started.
-  Full detail in Section 4. Touches the Apps Script's BigQuery source-data
-  classification, not just the dashboard.
+- ~~Reclassify `Customer_App` sub-channel~~ — **superseded 2026-08-05**: removed
+  entirely instead, and live (Section 4).
 - Possible future pipeline migration to Python/GitHub Actions + Metabase — see
   Section 1. Not scheduled, no timeline, don't build toward it yet.
-- `Referral MOP Aug'26_Final.xlsx` appeared in the local working folder mid-session
-  (2026-08-03), not yet explained by Yash. `.gitignore`'d for now, not pushed, not read.
-  Likely this month's MOP source file — ask before doing anything with it.
+- **Oct'26 MOP workbook: 3 suspect rows, loaded verbatim, flagged 2026-10-05.**
+  Bhopal Sales `MS=98` vs `MD=125` (likely a typo); Varanasi BTL `ORDER=0` vs
+  `HOTO=5` (same error as Sep; will leave an "Unattributed" remainder in Oct's LMP
+  bridge); Solapur Sales `MS=8` vs `MD=9`. Rebuild if Yash sends a corrected file.
+- **Signals page** (`signals.preview.html`): Steps 0-4 built, awaiting Yash's
+  review. Step 5 (lifecycle, suppression, sharing) and Step 6 (loss-rate signals)
+  not started. Open question: New-tier cities now fall inside its scope gate.
+- **Page load:** parallel loading, plus lazy-loading `digital_leads`,
+  `customer_app` and `referral_leads` (~53% of the payload). Scoped 2026-09-08,
+  not done.
+- **Unmapped city values:** `Inactive`, `Surat`, `Ajmer` need a decision from Yash
+  (Section 0a, 2026-09-03). **`Ahilyanagar`** is a display-only removal; a hard
+  exclusion from India totals only if Yash asks (Section 0a, 2026-09-22).
+- **Unassigned leads:** 125 India `bms` leads with no LRM email (Section 0a,
+  2026-09-08). Raise with Yash.
 
 ---
 
@@ -1751,12 +1819,14 @@ Do this **before** making any code changes:
 
 ---
 
-## 15. Customer App branch — new, in progress (started 2026-08-03)
+## 15. Customer App branch (started 2026-08-03, all 4 tabs live)
 
-A completely new, separate branch of this dashboard, tracking Customer App logins
-against 5 lifecycle milestones. Not a Referral-channel feature — its own switcher
-alongside Referral / Digital / Ref vs Digital (not yet added to the UI as of this
-writing — see status below). Sourced from **Metabase**, not BigQuery — an entirely
+A separate branch of this dashboard, tracking Customer App logins against 5
+lifecycle milestones. Not a Referral-channel feature: it has its own entry in the
+channel switcher alongside Referral / Digital / Ref vs Digital. [Corrected
+2026-10-05: the phase notes below say "built in `index.preview.html`, not yet
+merged". All of it has since shipped: Overview + MoM Trend `7d1b610`, Login
+Velocity `e651ef4`, Day on Day `c52ed6b`.] Sourced from **Metabase**, not BigQuery — an entirely
 independent pipeline from everything else in this file.
 
 ### Data source
@@ -1881,9 +1951,9 @@ hope** when it fires — diagnose first, that's the whole point of it.
     milestone, and most freshly-booked orders haven't yet matured into a
     `project` row with `project_state IN ('active','completed')`. This looks
     like a structural consequence of applying the same state filter to an
-    early-funnel milestone, not a wrong field — **but this has NOT been
-    confirmed with Yash, and the change is NOT committed/pushed pending that.**
-    Open question for him: is `project_state` filtering even meaningful for
+    early-funnel milestone, not a wrong field. [Corrected 2026-10-05: Yash
+    resolved this 2026-08-05 (keep the `project_state` filter, accept the gap)
+    and the change is live as `1038eff`.] The question that was open: is `project_state` filtering even meaningful for
     Order Booked, or should it be reported unfiltered (a bigger query change,
     not just a field swap)?
   - Login source stays `IN ('CONSUMER', 'CUSTOMER_JOURNEY_TRACKER')` — unchanged
@@ -1971,12 +2041,11 @@ hope** when it fires — diagnose first, that's the whole point of it.
   - Committed and pushed 2026-08-05 (commit `41bf777`), after Yash's explicit
     go-ahead — treated as a standing/persistent automation requiring that
     confirmation before going live, same discipline as `index.html` changes.
-  - **Not yet verified end-to-end in a real Actions run** — only checked for YAML
-    validity locally (`pyyaml.safe_load`) before pushing, since a real run needs the
-    secret in place. If Customer App data ever looks stale, check the workflow's run
+  - **Verified end-to-end:** real scheduled runs since 2026-08-05 (commits titled
+    "Auto-refresh Customer App data from Metabase"). If Customer App data ever looks stale, check the workflow's run
     history in the repo's Actions tab (or trigger a manual `workflow_dispatch` run)
     before assuming the pipeline is broken — don't just re-diagnose from scratch.
-- `data/customer_app.json` — ~58,300 rows as of 2026-08-03 (one per active/completed
+- `data/customer_app.json` — ~60,000 rows / ~19 MB as of 2026-10 (~58,300 on 2026-08-03) (one per active/completed
   project, not per login — row count moves slightly between pulls, live production
   data), ~15.9 MB. Contains real customer-level data (`sseid`, `lead_id`, login
   timestamp) — consistent with the existing `referral_leads.json` already doing the
