@@ -17,6 +17,27 @@ when you finish a task or hand off, update this section before anything else in 
 Detailed history lives in the numbered sections below and in `git log`; this is just
 "what's true right now."
 
+**As of 2026-10-05 — OCTOBER MOP LOADED from `Referrals MOP - Oct'26.xlsx`.
+Written locally to `data/referral_mop.json` + `data/referral_mop_history.json`
+(`2026-10` added; Jul/Aug/Sep verified byte-identical), browser-verified, NOT
+committed / NOT pushed pending Yash's go.**
+
+- Built with the normal command, no code change, layout assertions passed:
+  `python scripts/build_mop_json.py "Referrals MOP - Oct'26.xlsx"`. Same 28 rows
+  (India + 27 cities) as Sep; all 5 variants present.
+- India combined Oct vs revised Sep: **BQL 6,819 (4,083) · MS 4,054 (2,837) ·
+  MD 3,532 (2,637) · Order 1,906 (1,523) · HOTO 1,738 (1,358)**. Non-Sales BQL is
+  3.6x Sep (652 → 2,320). BTL now covers 16 cities (Jaipur added).
+- Workbook drift as usual, preserved verbatim: Total≠Sales+NonSales in 32 cells
+  (±1); India − sum of cities = BQL −5, MS +1, MD −2, Order −2, HOTO −1.
+- **⚠️ Flagged to Yash, not altered:** Varanasi BTL `ORDER=0, HOTO=5` again (same
+  error as Sep; makes Oct's LMP bridge carry an "Unattributed" remainder for
+  Varanasi); **Bhopal Sales `MS=98` but `MD=125`** (looks like a typo, pulls
+  Bhopal combined to MS 219 < MD 221); Solapur Sales MS 8 < MD 9.
+- Browser check (8744, `FELL_BACK` empty, no console errors): MOP vs MTD India row
+  matches the workbook for all 5 variants; rows 28 / BTL 17; LMP now offers
+  Sep'26 as the last closed month.
+
 **As of 2026-09-22 — CITY TIER REORGANISATION is LIVE in `index.html`/`origin/main`
 (reviewed by Yash, merged and PUSHED). `index.preview.html` deleted; nothing pending
 on this.** The matching `TIERS` update in `signals.preview.html` stays local — that

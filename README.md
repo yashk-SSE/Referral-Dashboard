@@ -41,7 +41,7 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
   `MOP <Mon> Referral.xlsx` workbook. Since Sep'26 that workbook splits targets 3 ways
   by sub-channel group (Sales / Non-Sales / BTL) plus two roll-ups, which is too many
   numbers to retype by hand. Run
-  `python scripts/build_mop_json.py "MOP Referral Sep'26-Final.xlsx"`
+  `python scripts/build_mop_json.py "Referrals MOP - Oct'26.xlsx"`
   (add `--dry-run` to inspect first). It validates the workbook's column layout before
   trusting it, and reports rather than silently reconciling the source's own rounding
   drift between `Total (Sales+Non-Sales)` and `Sales + Non Sales`. Pass
