@@ -33,7 +33,8 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
     (`compare`). Digital is still slated for eventual removal, no timeline.
   - **Customer App** (Metabase-sourced, Section 15): `capp` Overview, `capptrend`
     MoM Trend, `cappvel` Login Velocity, `cappdod` Day on Day. All four live.
-- **MOP: Nov'26 is loaded** (2026-11-17, from `MOP_Referral_Nov_26.xlsx`).
+- **MOP: Nov'26 is loaded and live** (`2730ff4`, 2026-11-17, from
+  `MOP_Referral_Nov_26.xlsx`).
   `referral_mop_history.json` holds Jul to Nov '26, so Last Month Performance
   defaults to Oct'26. Next month: put the new workbook in the
   repo root and run `python scripts/build_mop_json.py "<file>.xlsx"`.
@@ -45,8 +46,9 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   GitHub Actions `pull_customer_app.yml` (Metabase CSV endpoint, 4x/day, with the
   `check_before_write()` integrity guard). A local clone goes stale within hours:
   **`git pull --rebase origin main` before drawing any conclusion about data.**
-- **`data/` is ~100 MB** (referral_leads 35, digital_leads 32, customer_app 19,
-  digital_effort 7.9, referral_effort 6.0 MB) and `init()` still loads it with
+- **`data/` is ~107 MB and growing** (referral_leads 40, digital_leads 32,
+  customer_app 20, digital_effort 8.8, referral_effort 6.6 MB, as of 2026-11-17;
+  referral_leads alone grew 5 MB in six weeks) and `init()` still loads it with
   sequential `await`s; the comment there still says "~10 MB". This is why the
   page loads slowly. The fix (parallel + lazy loading) is scoped but not done
   (Section 13).
@@ -71,8 +73,15 @@ one wins. On 2026-10-05 several entries were corrected in place where they said
 something was pending that had since shipped; those corrections are marked
 "[Corrected 2026-10-05]".
 
-**2026-11-17 — NOVEMBER MOP LOADED from `MOP_Referral_Nov_26.xlsx`** (copied into
-the repo root from Downloads; gitignored like every workbook). Built with the
+**2026-11-17 — docs re-checked against the repo.** No code or pipeline change
+since the 2026-10-05 audit beyond the two MOP loads. All three pipelines confirmed
+committing fresh data today (Referral/Digital effort and leads, Customer App).
+Refreshed data sizes and the Customer App row count (now ~71,400 projects, up from
+~60,000 in October); no other claim had gone stale.
+
+**2026-11-17 — NOVEMBER MOP LOADED from `MOP_Referral_Nov_26.xlsx`, pushed as
+`2730ff4` on Yash's go** (copied into the repo root from Downloads; gitignored
+like every workbook). Built with the
 normal command, no code change, layout assertions passed. Same 28 rows (India +
 27 cities), all 5 variants, BTL still 16 cities. Jul to Oct history verified
 byte-identical.
@@ -1348,7 +1357,7 @@ performance for SolarSquare, a B2C solar company, across **40 Indian cities in 6
 | `.github/workflows/test.yml` | workflow | Trivial — `echo` on manual dispatch only. Not a real test/CI gate. |
 | `.github/workflows/pull_customer_app.yml` | workflow | Customer App auto-pull from Metabase, 4x/day IST (Section 15). |
 | `.github/workflows/update_data.yml` | — | **Deleted** (was the killed Python pipeline's trigger). |
-| `data/` | folder, ~100 MB | 7 JSON files. **Apps Script (BigQuery):** `referral_effort.json`, `referral_leads.json`, `digital_effort.json`, `digital_leads.json`. **`build_mop_json.py`:** `referral_mop.json` (current month) + `referral_mop_history.json` (every month since Jul'26). **`pull_customer_app.py`:** `customer_app.json`. |
+| `data/` | folder, ~107 MB | 7 JSON files. **Apps Script (BigQuery):** `referral_effort.json`, `referral_leads.json`, `digital_effort.json`, `digital_leads.json`. **`build_mop_json.py`:** `referral_mop.json` (current month) + `referral_mop_history.json` (every month since Jul'26). **`pull_customer_app.py`:** `customer_app.json`. |
 | `scripts/` | folder | `build_mop_json.py` (monthly MOP workbook to JSON), `backfill_mop_history.py` (one-off seed of the history file from git), `pull_customer_app.py` + `customer_app_query.sql` (Customer App pipeline). `hoto_lead_list.sql` is an untracked ad-hoc query. The old `fetch_data.py` was deleted with the killed pipeline. |
 | `index.html` | ~820 KB | The dashboard. ~9,840 lines, single file, everything inline. Referral, Digital, Ref-vs-Digital compare, and Customer App channels. |
 | `signals.preview.html` | ~90 KB, gitignored | The Signals page, work in progress (Section 0a, 2026-09-08). Becomes `signals.html` once Yash approves it. |
@@ -2073,9 +2082,9 @@ hope** when it fires — diagnose first, that's the whole point of it.
     "Auto-refresh Customer App data from Metabase"). If Customer App data ever looks stale, check the workflow's run
     history in the repo's Actions tab (or trigger a manual `workflow_dispatch` run)
     before assuming the pipeline is broken — don't just re-diagnose from scratch.
-- `data/customer_app.json` — ~60,000 rows / ~19 MB as of 2026-10 (~58,300 on 2026-08-03) (one per active/completed
-  project, not per login — row count moves slightly between pulls, live production
-  data), ~15.9 MB. Contains real customer-level data (`sseid`, `lead_id`, login
+- `data/customer_app.json` — ~71,400 rows / ~20 MB as of 2026-11-17 (~60,000 in
+  2026-10, ~58,300 on 2026-08-03). One row per active/completed project, not per
+  login; the count grows as projects are added. Contains real customer-level data (`sseid`, `lead_id`, login
   timestamp) — consistent with the existing `referral_leads.json` already doing the
   same in this public repo, not a new category of exposure.
 - **Phase 2 (2026-08-03, first round of Yash's review feedback addressed —

@@ -40,7 +40,7 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
   and lead-level, and pushes the resulting JSON straight to this repo's `main` branch via
   the GitHub API. This is the only data pipeline — run it on a time-based trigger, not
   manually (manual Apps Script runs are capped at 6 min; the trigger gets 30 min).
-- `data/` (~100 MB) — the JSON files the Apps Script produces, read directly by `index.html`:
+- `data/` (~107 MB, and growing) — the JSON files the Apps Script produces, read directly by `index.html`:
   `referral_effort.json`, `referral_leads.json`, `digital_effort.json`,
   `digital_leads.json`, plus `referral_mop.json` (MOP targets, maintained separately —
   see `scripts/build_mop_json.py` below; it won't have every city, and that's
