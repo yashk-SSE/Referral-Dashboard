@@ -18,7 +18,7 @@ at the top of **Section 0a (Status log)** below. Don't let this section turn
 back into a log: as of 2026-10-05 it had grown to ~1,200 lines and was carrying
 claims that had stopped being true weeks before (see the 2026-10-05 log entry).
 
-### Snapshot, as of 2026-10-05
+### Snapshot, as of 2026-11-17
 
 - **Nothing is pending review or unpushed for the live dashboard.**
   `origin/main` == local `main`; `index.preview.html` does not exist. The only
@@ -33,10 +33,9 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
     (`compare`). Digital is still slated for eventual removal, no timeline.
   - **Customer App** (Metabase-sourced, Section 15): `capp` Overview, `capptrend`
     MoM Trend, `cappvel` Login Velocity, `cappdod` Day on Day. All four live.
-- **MOP: Oct'26 is loaded and live** (`b93e911`, from
-  `Referrals MOP - Oct'26.xlsx`). `referral_mop_history.json` holds Jul, Aug, Sep
-  and Oct '26, so Last Month Performance defaults to Sep'26, scored against the
-  **revised** Sep plan of 2026-09-21. Next month: put the new workbook in the
+- **MOP: Nov'26 is loaded** (2026-11-17, from `MOP_Referral_Nov_26.xlsx`).
+  `referral_mop_history.json` holds Jul to Nov '26, so Last Month Performance
+  defaults to Oct'26. Next month: put the new workbook in the
   repo root and run `python scripts/build_mop_json.py "<file>.xlsx"`.
 - **Cities: 40 across 6 tiers** (Focus 3 · Big 7 · Mid 9 · Small 4 · New 4 ·
   Exp 13). 27 cities + India carry MOP. Guntur and Madurai render all-zero rows
@@ -51,8 +50,9 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   sequential `await`s; the comment there still says "~10 MB". This is why the
   page loads slowly. The fix (parallel + lazy loading) is scoped but not done
   (Section 13).
-- **Open, needs Yash:** the Oct'26 workbook's suspect rows (Bhopal Sales MS 98 <
-  MD 125; Varanasi BTL Order 0 / HOTO 5; Solapur Sales MS 8 < MD 9) · Signals
+- **Open, needs Yash:** the Nov'26 workbook's suspect rows (Chennai Sales MS 56 <
+  MD 68, Chennai BTL MS 74 < MD 76) and Oct's (Varanasi BTL Order 0 / HOTO 5 still
+  scores Oct'26 in LMP) · Signals
   review, and whether New-tier cities belong in its scope · `Inactive`/`Surat`/
   `Ajmer` unmapped values · whether Ahilyanagar needs a hard exclusion · Stage
   Aging nav entry. Full list in Section 13.
@@ -70,6 +70,30 @@ can be stale.** Where a later entry or the snapshot above disagrees, the later
 one wins. On 2026-10-05 several entries were corrected in place where they said
 something was pending that had since shipped; those corrections are marked
 "[Corrected 2026-10-05]".
+
+**2026-11-17 — NOVEMBER MOP LOADED from `MOP_Referral_Nov_26.xlsx`** (copied into
+the repo root from Downloads; gitignored like every workbook). Built with the
+normal command, no code change, layout assertions passed. Same 28 rows (India +
+27 cities), all 5 variants, BTL still 16 cities. Jul to Oct history verified
+byte-identical.
+- India combined Nov vs Oct: **BQL 9,242 (6,819) · MS 4,840 (4,054) · MD 4,072
+  (3,532) · Order 2,105 (1,906) · HOTO 1,918 (1,738)**. BTL BQL nearly doubles
+  (1,090 → 2,040); Sales Order slightly down (1,284 → 1,260). Biggest city Order
+  rises: Nagpur +79, Pune +67; biggest cut Lucknow −21.
+- **First workbook where `Total (Sales+Non-Sales)` = `Sales + Non Sales` in every
+  cell.** India − sum of cities: BQL +2, MS −3, MD −5, Order −1, HOTO +3
+  (preserved verbatim, as usual).
+- Oct's Bhopal and Varanasi errors are gone. **New suspect rows, flagged, not
+  altered:** Chennai Sales `MS=56, MD=68` and Chennai BTL `MS=74, MD=76` (pulls
+  Chennai combined to MS 173 < MD 178); Non-Sales HOTO exceeds Order by 1 in
+  Nashik, Jaipur and Bangalore (rounding-sized).
+- **The dashboard compared Nov 1–16 actuals against Oct's plan**, because the
+  workbook arrived on the 17th and the MOP tabs always read whatever
+  `referral_mop.json` holds. Any MOP figure screenshotted in that window used
+  October's targets.
+- Browser check (8744, `FELL_BACK` empty, no console errors, data through Nov 16):
+  India row matches the workbook for all 5 variants; rows 28 / BTL 17; LMP
+  defaults to Oct'26.
 
 **2026-10-05 — documentation audit.** CLAUDE.md and README.md checked against the
 code and repo. Section 0 split into the snapshot above plus this log. Corrected:
@@ -1783,10 +1807,14 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   entirely instead, and live (Section 4).
 - Possible future pipeline migration to Python/GitHub Actions + Metabase — see
   Section 1. Not scheduled, no timeline, don't build toward it yet.
-- **Oct'26 MOP workbook: 3 suspect rows, loaded verbatim, flagged 2026-10-05.**
-  Bhopal Sales `MS=98` vs `MD=125` (likely a typo); Varanasi BTL `ORDER=0` vs
-  `HOTO=5` (same error as Sep; will leave an "Unattributed" remainder in Oct's LMP
-  bridge); Solapur Sales `MS=8` vs `MD=9`. Rebuild if Yash sends a corrected file.
+- **Nov'26 MOP workbook: suspect rows, loaded verbatim, flagged 2026-11-17.**
+  Chennai Sales `MS=56` vs `MD=68` and Chennai BTL `MS=74` vs `MD=76`; Non-Sales
+  HOTO exceeds Order by 1 in Nashik, Jaipur and Bangalore. Rebuild if Yash sends a
+  corrected file.
+- **Oct'26 MOP (now a closed month in LMP)** still carries Bhopal Sales `MS=98` vs
+  `MD=125` and Varanasi BTL `ORDER=0` vs `HOTO=5` (the latter shows as an
+  "Unattributed" remainder in Oct's bridge). Only fixable by re-running the script
+  on a corrected Oct workbook with `--month 2026-10`.
 - **Signals page** (`signals.preview.html`): Steps 0-4 built, awaiting Yash's
   review. Step 5 (lifecycle, suppression, sharing) and Step 6 (loss-rate signals)
   not started. Open question: New-tier cities now fall inside its scope gate.
