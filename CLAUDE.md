@@ -58,6 +58,9 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   review, and whether New-tier cities belong in its scope · `Inactive`/`Surat`/
   `Ajmer` unmapped values · whether Ahilyanagar needs a hard exclusion · Stage
   Aging nav entry. Full list in Section 13.
+- **BigQuery -> Metabase `samagam_mv` migration: assessed 2026-11-18, NOT ready.**
+  See the 0a entry of that date. Two blockers (blank source attribution in the MV,
+  missing `Exception` column) and three decisions for Yash before any build.
 - **Local runtime:** no `python`/`node` on Claude's shell PATH. Python is at
   `C:\Users\user\AppData\Local\Programs\Python\Python313\python.exe`.
   Verify in the browser via the `referral-local` launch config (port 8744) with a
@@ -72,6 +75,50 @@ can be stale.** Where a later entry or the snapshot above disagrees, the later
 one wins. On 2026-10-05 several entries were corrected in place where they said
 something was pending that had since shipped; those corrections are marked
 "[Corrected 2026-10-05]".
+
+**2026-11-18 — Can the Referral dashboard run off Metabase `public.samagam_mv`
+instead of BigQuery `leadcsv.Samagam`? Assessed; verdict NOT YET.** Nothing built,
+nothing changed in the pipeline. Method: plain Referral extract from the MV
+(72,528 rows), the Apps Script's effort and lead logic rebuilt in Python, compared
+with the live `referral_effort.json` / `referral_leads.json`.
+- **What works:** the whole Referral pipeline reads ONE table, and every column it
+  needs exists in the MV except those listed below. Data is fresh (events up to the
+  previous night). For leads present in both, **Order, HOTO and MD dates are
+  identical lead for lead** (8,608 / 8,608 Jun-Oct'26 orders). BQL reproduces to
+  within ~0.1% in most months. `scapp_stage` / `scapp_status` are present.
+- **Blocker 1, source attribution:** some leads have blank `source_class`,
+  `source_sub_class` and `marketing_channel` in the MV, so they fall to `Others`
+  and drop out of Referral. Recent months lose 1-2% of Orders (Oct'26: 17 of
+  2,010), with lower-funnel effort 2-5% low and Ops/AMC + Referral_Others hit
+  hardest (Oct'26 Order 51->45, 30->24). **History is far worse: Order leads not
+  tagged Referral in the MV were 809/1,088 in Dec'25, 988/1,174 in Jan'26,
+  425/1,167 in Feb'26** - those months would be largely wrong in every trend tab.
+- **Blocker 2, `Exception` column missing** from all three MVs. It is half of both
+  BQL definitions. Impact looks small (BQL within 0.1% most months, but Aug'26
+  +2.0%, Nov'26 -1.3%), so it may be pre-filtered in the MV - needs confirming.
+- **Not blockers, but must be handled in any rebuild:**
+  - `created_on` is stored in **UTC**; BigQuery's is IST. Add +5:30 before taking
+    the date (Jun/Jul BQL then match exactly). Every other date column is already
+    IST - shifting them is wrong (Nov HOTO goes +12%).
+  - Dates are text (`YYYY-MM-DD HH:MM:SS.mmm`); blanks are both `''` and NULL.
+  - `LRM_Email_Id` / `SC_Email_Id` don't exist; MV has `first_`/`last_lrm_email(_id)`
+    and `first_`/`last_sc_email`. Which one matches BigQuery is unconfirmed.
+  - DEV/design date columns the BigQuery query references are mostly absent, but
+    they only gate row inclusion, never a count.
+  - Phone numbers are **plaintext** in the MV (unlike the masked Customer App
+    tables). Hash in-query if extracting.
+- **Operational findings (Metabase API):** the database is a **read replica** -
+  heavier queries were cancelled with "conflict with recovery", so any pipeline
+  needs retries. **Cloudflare in front of Metabase blocked several analytical SQL
+  queries** (HTTP 403 page) while simple ones passed; Claude did not probe the
+  firewall rules. A plain column `SELECT` with aggregation done in Python worked
+  fine - that is the shape a migrated pipeline should take (same as
+  `pull_customer_app.py`), and the Apps Script would be replaced by a GitHub
+  Actions job.
+- **Three views exist:** `samagam_mv`, `samagam_mv_v2` (same columns, +112 rows),
+  `samagam_mv_v3` (same columns, a day older). Which is canonical is for Yash.
+- **Not checked:** Digital channel (slated for removal anyway). Customer App is
+  already on Metabase.
 
 **2026-11-17 — docs re-checked against the repo.** No code or pipeline change
 since the 2026-10-05 audit beyond the two MOP loads. All three pipelines confirmed
@@ -1835,6 +1882,10 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   exclusion from India totals only if Yash asks (Section 0a, 2026-09-22).
 - **Unassigned leads:** 125 India `bms` leads with no LRM email (Section 0a,
   2026-09-08). Raise with Yash.
+- **BigQuery -> `samagam_mv` migration** (Section 0a, 2026-11-18): blocked on blank
+  source attribution in the MV (Dec'25-Feb'26 mostly lost) and the missing
+  `Exception` column - both need the MV's owner. Then decide: which view, which
+  LRM/SC email column, and the pipeline home (GitHub Actions).
 
 ---
 
