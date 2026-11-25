@@ -18,19 +18,17 @@ at the top of **Section 0a (Status log)** below. Don't let this section turn
 back into a log: as of 2026-10-05 it had grown to ~1,200 lines and was carrying
 claims that had stopped being true weeks before (see the 2026-10-05 log entry).
 
-### Snapshot, as of 2026-11-17
+### Snapshot, as of 2026-11-25
 
-- **Nothing is pending review or unpushed for the live dashboard.**
-  `origin/main` == local `main`; `index.preview.html` does not exist. The only
+- **Nothing is pending review or unpushed for the live dashboard** (as of
+  2026-11-25). `origin/main` == local `main`; `index.preview.html` does not exist. The only
   work-in-progress file is **`signals.preview.html`** (gitignored by
   `*.preview.html`), which Yash has not reviewed yet.
-- **What is live (`index.html`, ~820 KB / ~9,840 lines):**
+- **What is live (`index.html`, ~790 KB / ~9,330 lines):**
   - **Referral:** the 17 tabs in `REFERRAL_TABS` (Timeframe mode applies to these)
     **plus 2 MOP-month tabs deliberately outside that list**: `avm` (Actuals vs
     MOP) and `lmp` (Last Month Performance). `aging` (Stage Aging) is still built
     but unreachable (Section 13).
-  - **Digital** (`dexec`, `dindia`, `dcity`, `dfunnel`, `dm0`) and **Ref vs Digital**
-    (`compare`). Digital is still slated for eventual removal, no timeline.
   - **Customer App** (Metabase-sourced, Section 15): `capp` Overview, `capptrend`
     MoM Trend, `cappvel` Login Velocity, `cappdod` Day on Day. All four live.
 - **MOP: Nov'26 is loaded and live** (`2730ff4`, 2026-11-17, from
@@ -46,9 +44,8 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   GitHub Actions `pull_customer_app.yml` (Metabase CSV endpoint, 4x/day, with the
   `check_before_write()` integrity guard). A local clone goes stale within hours:
   **`git pull --rebase origin main` before drawing any conclusion about data.**
-- **`data/` is ~107 MB and growing** (referral_leads 40, digital_leads 32,
-  customer_app 20, digital_effort 8.8, referral_effort 6.6 MB, as of 2026-11-17;
-  referral_leads alone grew 5 MB in six weeks) and `init()` still loads it with
+- **`data/` is ~55 MB** (referral_leads 28, customer_app 20, referral_effort 6.6
+  MB, as of 2026-11-25, after the Digital removal and the leads window) and `init()` still loads it with
   sequential `await`s; the comment there still says "~10 MB". This is why the
   page loads slowly. The fix (parallel + lazy loading) is scoped but not done
   (Section 13).
@@ -58,19 +55,14 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   review, and whether New-tier cities belong in its scope · `Inactive`/`Surat`/
   `Ajmer` unmapped values · whether Ahilyanagar needs a hard exclusion · Stage
   Aging nav entry. Full list in Section 13.
-- **Digital channel REMOVED 2026-11-25 (per Yash: unused) - pending review/push.**
-  `index.preview.html` drops the Digital + Ref-vs-Digital tabs, buttons, panels,
-  loaders and `precomputeDigital` (~500 lines); `Referral Dashboard.gs` drops the
-  Digital functions and query branches (committed locally). On push:
-  copy the preview over `index.html` and `git rm` `data/digital_effort.json` +
-  `data/digital_leads.json` (~41 MB off every page load). Yash must also paste the
-  `.gs` into the live Apps Script and **delete any triggers on
-  `runDigitalEffort`/`runDigitalLeads`** - those functions no longer exist.
-- **⚠️ `referral_leads.json` has NOT updated since 2026-11-22** - GitHub rejects
-  the push as too large (422). Fix is ready, awaiting Yash: rolling 10-month lead
-  window in `Referral Dashboard.gs` (committed locally, must be pasted into the
-  live Apps Script) + a MoM Cohort start fix in `index.preview.html` (unreviewed).
-  See the 0a entry of 2026-11-25.
+- **Digital channel REMOVED and LIVE 2026-11-25** (Yash: unused). Dashboard is
+  Referral + Customer App only; `digital_effort.json`/`digital_leads.json` deleted
+  from the repo (~41 MB off every page load). Yash pasted the new `.gs` into the
+  live Apps Script. **If the Apps Script logs ever show "runDigitalEffort is not
+  defined", a stale trigger was left behind - delete it.**
+- **`referral_leads.json` is a rolling ~10-month window (LIVE 2026-11-25)** -
+  fixed the GitHub 422 that froze it Nov 22-25. First live run: 62,208 rows,
+  28.3 MB, created 2026-02-01 onward. MoM Cohort now starts at Feb'26.
 - **BigQuery -> Metabase `samagam_mv` migration: assessed 2026-11-18, NOT ready.**
   See the 0a entry of that date. Two blockers (blank source attribution in the MV,
   missing `Exception` column) and three decisions for Yash before any build.
@@ -1460,9 +1452,9 @@ performance for SolarSquare, a B2C solar company, across **40 Indian cities in 6
 | `.github/workflows/test.yml` | workflow | Trivial — `echo` on manual dispatch only. Not a real test/CI gate. |
 | `.github/workflows/pull_customer_app.yml` | workflow | Customer App auto-pull from Metabase, 4x/day IST (Section 15). |
 | `.github/workflows/update_data.yml` | — | **Deleted** (was the killed Python pipeline's trigger). |
-| `data/` | folder, ~107 MB | 7 JSON files. **Apps Script (BigQuery):** `referral_effort.json`, `referral_leads.json`, `digital_effort.json`, `digital_leads.json`. **`build_mop_json.py`:** `referral_mop.json` (current month) + `referral_mop_history.json` (every month since Jul'26). **`pull_customer_app.py`:** `customer_app.json`. |
+| `data/` | folder, ~55 MB | 5 JSON files. **Apps Script (BigQuery):** `referral_effort.json`, `referral_leads.json` (rolling ~10-month window). **`build_mop_json.py`:** `referral_mop.json` (current month) + `referral_mop_history.json` (every month since Jul'26). **`pull_customer_app.py`:** `customer_app.json`. |
 | `scripts/` | folder | `build_mop_json.py` (monthly MOP workbook to JSON), `backfill_mop_history.py` (one-off seed of the history file from git), `pull_customer_app.py` + `customer_app_query.sql` (Customer App pipeline). `hoto_lead_list.sql` is an untracked ad-hoc query. The old `fetch_data.py` was deleted with the killed pipeline. |
-| `index.html` | ~820 KB | The dashboard. ~9,840 lines, single file, everything inline. Referral, Digital, Ref-vs-Digital compare, and Customer App channels. |
+| `index.html` | ~790 KB | The dashboard. ~9,330 lines, single file, everything inline. Referral and Customer App channels (Digital removed 2026-11-25). |
 | `signals.preview.html` | ~90 KB, gitignored | The Signals page, work in progress (Section 0a, 2026-09-08). Becomes `signals.html` once Yash approves it. |
 | `preview-local.bat` | script | Local server on 8743, opening `index.preview.html` (or `index.html`). Calls a bare `python`, which works from Yash's shell but not from Claude's. |
 | `README.md` | — | Was outdated 1-line stub; now kept in sync with this file (see Section 12). |

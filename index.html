@@ -348,21 +348,10 @@ i.lmpw-resid{background:#b08328}
 .metric-dd-panel .metric-sw-group{justify-content:space-between}
 .ch-btn:hover:not(.active){color:var(--t1)}
 body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
-/* Digital sidebar section — matches Referral styling */
-.sh-d{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--t3);padding:10px 12px 4px;text-transform:uppercase}
-.ni-d{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:var(--t2);border-left:2px solid transparent;transition:background .1s}
-.ni-d:hover{background:var(--bg)}
-.ni-d.active{background:var(--bll);color:var(--bl);border-left-color:var(--bl);font-weight:600}
-/* Compare section — matches Referral styling */
-.sh-cmp{font-size:9px;font-weight:600;letter-spacing:1px;color:var(--t3);padding:10px 12px 4px;text-transform:uppercase}
-.ni-cmp{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:var(--t2);border-left:2px solid transparent;transition:background .1s}
-.ni-cmp:hover{background:var(--bg)}
-.ni-cmp.active{background:var(--bll);color:var(--bl);border-left-color:var(--bl);font-weight:600}
 /* Comparison tab styles */
 .ch-col{flex:1;min-width:0}
 .ch-col-hdr{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;margin-bottom:8px;text-align:center}
 .ch-ref{background:#dbeafe;color:#1a56db}
-.ch-dig{background:#dcfce7;color:#166534}
 .cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .cmp-card{border:0.5px solid var(--bd);border-radius:8px;padding:12px;background:var(--sur)}
 .cmp-metric{font-size:10px;font-weight:600;color:var(--t2);margin-bottom:2px}
@@ -438,8 +427,6 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div class="top-r">
     <div class="ch-sw">
       <button class="ch-btn active" id="ch-ref" onclick="setChannel('referral',this)">Referral</button>
-      <button class="ch-btn" id="ch-dig" onclick="setChannel('digital',this)">Digital</button>
-      <button class="ch-btn" id="ch-cmp" onclick="setChannel('compare',this)">Ref vs Digital</button>
       <button class="ch-btn" id="ch-capp" onclick="setChannel('capp',this)">Customer App</button>
     </div>
     <!-- Metric Definition Switchers (Referral only) -- collapsed into a dropdown -->
@@ -470,8 +457,8 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     </div>
     <div class="fy-pill" id="fy-mini">FY27: –</div>
     <div class="upd" id="upd-lbl">–</div>
-    <div class="upd" id="data-updated-lbl" title="Most recent of the Referral/Digital data files">Data: –</div>
-    <div class="upd" id="capp-updated-lbl" style="display:none" title="Customer App data auto-pulls from Metabase at 9am/3pm/6pm/9pm IST daily, independent of Referral/Digital data">CApp Data: –</div>
+    <div class="upd" id="data-updated-lbl" title="Most recent of the Referral data files">Data: –</div>
+    <div class="upd" id="capp-updated-lbl" style="display:none" title="Customer App data auto-pulls from Metabase at 9am/3pm/6pm/9pm IST daily, independent of the Referral data">CApp Data: –</div>
     <button class="rbtn" onclick="init()">↺ Refresh</button>
   </div>
 </div>
@@ -536,15 +523,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
     <div class="ni" onclick="sw('vel',this)">◷ Velocity</div>
   </div>
   <!-- DIGITAL CHANNEL -->
-  <div class="sh sh-d" data-ch="digital" style="display:none">Digital Channel</div>
-  <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dexec',this)">⬡ Executive</div>
-  <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dindia',this)">◈ India Summary</div>
-  <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dcity',this)">◎ City Summary</div>
-  <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dfunnel',this)">▽ Funnel (Effort)</div>
-  <div class="ni ni-d" data-ch="digital" style="display:none" onclick="sw('dm0',this)">▽ Funnel (M0)</div>
   <!-- COMPARISON -->
-  <div class="sh sh-cmp" data-ch="compare" style="display:none">Comparison</div>
-  <div class="ni ni-cmp" data-ch="compare" style="display:none" onclick="sw('compare',this)">⟺ Referral vs Digital</div>
   <!-- CUSTOMER APP -->
   <div class="sh sh-capp" data-ch="capp" style="display:none">Customer App</div>
   <div class="ni ni-capp" data-ch="capp" style="display:none" onclick="sw('capp',this)">⬡ Overview</div>
@@ -622,14 +601,7 @@ body.loading-data .ch-btn:not(.active){opacity:.5;cursor:wait;}
   <div id="p-cohort" class="panel"></div>
   <div id="p-citymom" class="panel"></div>
   <div id="p-citydeep" class="panel"></div>
-  <!-- Digital panels -->
-  <div id="p-dexec" class="panel"></div>
-  <div id="p-dindia" class="panel"></div>
-  <div id="p-dcity" class="panel"></div>
-  <div id="p-dfunnel" class="panel"></div>
-  <div id="p-dm0" class="panel"></div>
   <!-- Compare panel -->
-  <div id="p-compare" class="panel"></div>
   <!-- Customer App panel -->
   <div id="p-capp" class="panel"></div>
   <div id="p-capptrend" class="panel"></div>
@@ -778,7 +750,7 @@ const NEWC=CITIES.filter(c=>TIERS[c]==='New');
 // reassigns ED/LD/MOP/SCS together and re-triggers the same precompute()+redraw cycle
 // setMetricDef() already uses for the BQL/MS/MD definition toggles.
 let ED_ALL=[],LD_ALL=[],ED=[],LD=[],C={},rendered={},chartInst={},curTab='exec';
-let DED=[],DLD=[],DC={},ACTIVE_CH='referral',dataLoaded=false;
+let ACTIVE_CH='referral',dataLoaded=false;
 let CAPP=[],CAC={},CAPP_ALL_CITIES=[];
 // The 5 Customer App login milestone windows, in sequence.
 const CAPP_MILESTONES=['Before Order Booked','Order Booked to HOTO','HOTO to Installation','Installation to Commissioning','After Commissioning'];
@@ -1239,13 +1211,13 @@ function setChannel(ch,el){
   const msEl=document.getElementById('metric-switchers');
   if(msEl)msEl.classList.toggle('visible',ch==='referral');
   // The two "last updated" labels are mutually exclusive by channel -- showing
-  // both at once on the Customer App channel read as confusing (the Referral/Digital
+  // both at once on the Customer App channel read as confusing (the Referral
   // "Data:" timestamp has nothing to do with Customer App data). Per Yash, 2026-08-05.
   const dataUpdEl=document.getElementById('data-updated-lbl');
   if(dataUpdEl)dataUpdEl.style.display=ch==='capp'?'none':'';
   const cappUpdEl=document.getElementById('capp-updated-lbl');
   if(cappUpdEl)cappUpdEl.style.display=ch==='capp'?'':'none';
-  // "MTD <date>" is a Referral/Digital MOP-cycle concept -- irrelevant (and per Yash,
+  // "MTD <date>" is a Referral MOP-cycle concept -- irrelevant (and per Yash,
   // cluttering) on the Customer App channel, so hide it there too.
   const updEl=document.getElementById('upd-lbl');
   if(updEl)updEl.style.display=ch==='capp'?'none':'';
@@ -1259,7 +1231,7 @@ function setChannel(ch,el){
   document.querySelectorAll('.ni:not([data-ch]),.sh:not([data-ch]):not(.sh-d):not(.sh-cmp)').forEach(item=>{
     item.style.display=ch==='referral'?'':'none';
   });
-  const defaults={referral:'exec',digital:'dexec',compare:'compare',capp:'capp'};
+  const defaults={referral:'exec',capp:'capp'};
   const target=defaults[ch]||'exec';
   rendered[target]=false;
   sw(target,null);
@@ -1268,7 +1240,7 @@ function setChannel(ch,el){
 // ?? TAB SWITCH (instant after first load) ??
 function sw(tab,el){
   if(curTab===tab&&rendered[tab])return;
-  const allTabs=['exec','mop','avm','lmp','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','dexec','dindia','dcity','dfunnel','dm0','compare','capp','capptrend','cappvel','cappdod'];
+  const allTabs=['exec','mop','avm','lmp','india','city','sc','funnel','m0funnel','bqlq','vel','wow','ins','act','dod','dodfunnel','cohort','citymom','citydeep','aging','capp','capptrend','cappvel','cappdod'];
   document.querySelectorAll('.ni,.ni-d,.ni-cmp').forEach(e=>{
     const onc=e.getAttribute('onclick')||'';
     e.classList.toggle('active', onc.includes("'"+tab+"'"));
@@ -1283,7 +1255,7 @@ function sw(tab,el){
   if(newPanel)newPanel.classList.add('active');
   curTab=tab;
   if(!rendered[tab])buildTab(tab);
-  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',avm:'Actuals vs MOP',lmp:'Last Month Performance',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',dexec:'Digital — Executive',dindia:'Digital — India Summary',dcity:'Digital — City Summary',dfunnel:'Digital — Funnel (Effort)',dm0:'Digital — Funnel (M0)',compare:'Referral vs Digital',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
+  const tabNames={exec:'Executive Summary',mop:'MOP vs MTD',avm:'Actuals vs MOP',lmp:'Last Month Performance',india:'India Summary',city:'City Summary',sc:'Sub-Channel',funnel:'Funnel (Effort)',m0funnel:'Funnel (M0)',bqlq:'BQL Quality',vel:'Velocity',wow:'WoW Cohort',ins:'Insights',act:'Actions',dod:'Day-on-Day',dodfunnel:'DoD Funnel',cohort:'MoM Cohort',citymom:'City MoM Trends',citydeep:'City Deep Dive',capp:'Customer App — Overview',capptrend:'Customer App — MoM Trend',cappvel:'Customer App — Login Velocity',cappdod:'Customer App — Day on Day'};
   const sh=document.getElementById('sticky-hdr');
   if(sh){sh.querySelector('.sticky-tab-name').textContent=tabNames[tab]||tab;}
   document.getElementById('main').scrollTop=0;
@@ -1330,36 +1302,11 @@ function buildTab(t){
         rendered[t]=true; return;
     }
   }
-  const m={exec:bExec,mop:bMop,avm:bAVM,lmp:bLMP,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,dexec:bDigitalExec,dindia:bDigitalIndia,dcity:bDigitalCity,dfunnel:bDigitalFunnel,dm0:bDigitalM0,compare:bCompare,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
+  const m={exec:bExec,mop:bMop,avm:bAVM,lmp:bLMP,india:bIndia,city:bCity,sc:bSC,funnel:bFunnel,m0funnel:bM0Funnel,bqlq:bBQLQ,vel:bVel,wow:bWoW,ins:bIns,act:bAct,dod:bDoD,dodfunnel:bDoDFunnel,cohort:bCohort,citymom:bCityMoM,citydeep:bCityDeep,capp:bCApp,capptrend:bCAppTrend,cappvel:bCAppVel,cappdod:bCAppDoD};
   if(m[t])m[t]();
   rendered[t]=true;
 }
 
-// ?? DIGITAL PRECOMPUTE ??
-function precomputeDigital(){
-  const yd=C.yd;
-  const cur=MS0(yd);
-  const lmS=new Date(yd.getFullYear(),yd.getMonth()-1,1);
-  const lmE=new Date(yd.getFullYear(),yd.getMonth()-1,yd.getDate());
-  const months=C.months;
-  function agg(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
-  const edCur=DED.filter(r=>r.date>=cur&&r.date<=yd);
-  const edLm=DED.filter(r=>r.date>=lmS&&r.date<=lmE);
-  DC={
-    yd,months,
-    india:agg(edCur),
-    indiaL:agg(edLm),
-    indMo:months.map(mo=>agg(DED.filter(r=>r.year===mo.y&&r.month===mo.m))),
-    cMTD:{},cLMTD:{},indMoMTD:[]
-  };
-  CITIES.forEach(c=>{DC.cMTD[c]=agg(edCur.filter(r=>r.city===c));DC.cLMTD[c]=agg(edLm.filter(r=>r.city===c));});
-  // MTD per month (each month up to same day)
-  const mtdDay=yd.getDate();
-  DC.indMoMTD=months.map(mo=>{
-    const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);
-    return{...agg(DED.filter(r=>r.date>=ms&&r.date<=me)),lbl:mo.lbl,m:mo.m,y:mo.y};
-  });
-}
 
 
 // ================================================================
@@ -1743,22 +1690,16 @@ async function init(){
 
   try{
     // Load files one-by-one so progress is visible (total ~10 MB)
-    setLoad('Loading Referral effort data… (1/6)');
+    setLoad('Loading Referral effort data… (1/4)');
     const eR  = await fetchJSON('referral_effort.json');
 
-    setLoad('Loading Referral lead data… (2/6)');
+    setLoad('Loading Referral lead data… (2/4)');
     const lR  = await fetchJSON('referral_leads.json');
 
-    setLoad('Loading MOP targets… (3/6)');
+    setLoad('Loading MOP targets… (3/4)');
     const mopR= await fetchJSON('referral_mop.json').catch(()=>[]);
 
-    setLoad('Loading Digital effort data… (4/6)');
-    const deR = await fetchJSON('digital_effort.json').catch(()=>[]);
-
-    setLoad('Loading Digital lead data… (5/6)');
-    const dlR = await fetchJSON('digital_leads.json').catch(()=>[]);
-
-    setLoad('Loading Customer App data… (6/6)');
+    setLoad('Loading Customer App data… (4/4)');
     const capR = await fetchJSON('customer_app.json').catch(()=>[]);
     // Month-keyed MOP history for the Last Month Performance tab. Optional: if it
     // is absent the tab says so and everything else is unaffected.
@@ -1807,7 +1748,7 @@ async function init(){
     // ── Effort data: JSON rows → ED[] ─────────────────────────────────────
     // Fields: action_date, month, year, city, sub_channel,
     //         BQL_Old, BQL_New, First_MS, First_MD, Total_MS, Total_MD, Order, HOTO
-    // Source-name merges, applied to Referral AND Digital, effort AND leads.
+    // Source-name merges, applied to Referral effort AND leads.
     // Was a single inline Bengaluru check; made a named map 2026-09-02 when
     // Vadodara->Ahmedabad was added, so future merges have one obvious home.
     // NOTE: this is deliberately NOT the same list as the Customer App
@@ -1892,33 +1833,6 @@ async function init(){
 
     console.log(`Loaded: ED_ALL=${ED_ALL.length} rows (active ED=${ED.length}), LD_ALL=${LD_ALL.length} rows (active LD=${LD.length})`);
 
-    // ── Digital Effort data → DED[] ──────────────────────────────
-    DED=deR.map(r=>({
-      date:    pd(r.action_date),
-      year:    num(r.year),
-      month:   num(r.month),
-      city:    cityFix((r.city||'').trim()),
-      sc:      (r.sub_channel||'').trim(),
-      BQL:     num(r.BQL),
-      MS:      num(r.MS),
-      MD:      num(r.MD),
-      Order:   num(r.Order),
-      HOTO:    num(r.HOTO)
-    })).filter(r=>r.date&&r.city);
-
-    // ── Digital Lead data → DLD[] ────────────────────────────────
-    DLD=dlR.map(r=>({
-      city:    cityFix((r.city||'').trim()),
-      sc:      (r.sub_channel||'').trim(),
-      created: pd(r.created),
-      msD:     pd(r.msD),
-      mdD:     pd(r.mdD),
-      ordD:    pd(r.ordD),
-      hotoD:   pd(r.hotoD)
-    })).filter(r=>r.city);
-
-    console.log(`Digital: DED=${DED.length} rows, DLD=${DLD.length} rows`);
-
     // ── Customer App data → CAPP[] ──────────────────────────────────
     // One row per PROJECT (not per login event, and not just projects with a
     // login) -- loginAt is null for projects that have never logged in. Only
@@ -1954,7 +1868,6 @@ async function init(){
 
     // ── Everything below is identical to before ───────────────────────────
     precompute();
-    precomputeDigital();
     precomputeCApp();
     const yd=C.yd;
     document.getElementById('upd-lbl').textContent=`MTD ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
@@ -1962,11 +1875,11 @@ async function init(){
     document.getElementById('fy-mini').textContent=`FY27: ${f(C.ytdHoto)}/${f(FY_T)} (${fyP}%)`;
 
     // "Last updated" labels -- read straight off each file's Last-Modified header
-    // (captured in fetchJSON), not a fixed schedule. Referral/Digital files are
+    // (captured in fetchJSON), not a fixed schedule. Referral files are
     // pushed automatically by the Apps Script throughout the day; Customer App is
     // pulled manually from Metabase, so its own label is shown separately rather
     // than folded into the same number.
-    const dataUpd=latestFileUpdate(['referral_effort.json','referral_leads.json','referral_mop.json','digital_effort.json','digital_leads.json']);
+    const dataUpd=latestFileUpdate(['referral_effort.json','referral_leads.json','referral_mop.json']);
     document.getElementById('data-updated-lbl').textContent=`Data: ${fmtUpdated(dataUpd)}`;
     document.getElementById('capp-updated-lbl').textContent=`CApp Data: ${fmtUpdated(FILE_META['customer_app.json'])}`;
 
@@ -1987,7 +1900,7 @@ async function init(){
 
     // If user switched channel while data was loading, apply it now
     if(ACTIVE_CH!=='referral'){
-      setChannel(ACTIVE_CH, document.getElementById('ch-'+ACTIVE_CH.replace('compare','cmp')));
+      setChannel(ACTIVE_CH, document.getElementById('ch-'+ACTIVE_CH));
     } else {
       buildTab('exec');
     }
@@ -6249,9 +6162,16 @@ function renderCohort(){
   const sf=getMSVal('cohort-sc',SCS);
   const selCities=getMCVal('cohort');
   const yd=C.yd;
-  const cohortStart=new Date(2026,0,1); // Jan 2026
+  // Jan 2026, or the earliest month still in the leads file if that is later.
+  // referral_leads.json is a rolling ~10-month window since 2026-11-25 (see
+  // Referral Dashboard.gs), so a fixed start would render months whose leads
+  // are no longer in the file as empty cohorts that look like zero volume.
+  let firstLead=null;
+  LD.forEach(l=>{if(l.created&&(!firstLead||l.created<firstLead))firstLead=l.created;});
+  let cohortStart=new Date(2026,0,1);
+  if(firstLead){const fm=new Date(firstLead.getFullYear(),firstLead.getMonth(),1);if(fm>cohortStart)cohortStart=fm;}
 
-  // Build list of cohort months from Jan 2026 to current month
+  // Build list of cohort months from cohortStart to current month
   const cohortMonths=[];
   let d=new Date(cohortStart.getFullYear(),cohortStart.getMonth(),1);
   while(d<=yd){
@@ -6405,431 +6325,7 @@ function renderCohort(){
 function tog(el){el.nextElementSibling.classList.toggle('open');}
 
 // ================================================================
-// DIGITAL — EXECUTIVE
-// ================================================================
-function bDigitalExec(){
-  const yd=DC.yd,ind=DC.india,indL=DC.indiaL;
-  const cols={BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
-  const cards=['BQL','MS','MD','Order','HOTO'].map(m=>{
-    const v=ind[m],pv=indL[m];
-    const chg=pv>0?Math.round((v-pv)/pv*100):0;
-    const chgColor=chg>=10?'var(--gn)':chg>=-10?'var(--am)':'var(--rd)';
-    const bar=Math.min(Math.abs(chg),100);
-    return`<div class="mc">
-      <div class="mc-lbl">${m}</div>
-      <div class="mc-val" style="color:${cols[m]}">${f(v)}</div>
-      <div class="mc-mop">vs LMTD: ${f(pv)} <span style="color:${chgColor};font-weight:600">${chg>=0?'+':''}${chg}%</span></div>
-      <div class="pbar"><div class="pbar-f" style="width:${bar}%;background:${chg>=0?'var(--gn)':'var(--rd)'}"></div></div>
-      <div class="mc-foot">${mb(v,pv)} <span style="font-size:10px;color:var(--t3)">vs ${f(pv)} last mo</span></div>
-    </div>`
-  }).join('');
-  const cityPerf=CITIES.map(c=>({c,h:DC.cMTD[c].HOTO,ph:DC.cLMTD[c].HOTO,o:DC.cMTD[c].Order,po:DC.cLMTD[c].Order,hChg:DC.cLMTD[c].HOTO>0?(DC.cMTD[c].HOTO-DC.cLMTD[c].HOTO)/DC.cLMTD[c].HOTO:DC.cMTD[c].HOTO>0?1:0,oChg:DC.cLMTD[c].Order>0?(DC.cMTD[c].Order-DC.cLMTD[c].Order)/DC.cLMTD[c].Order:DC.cMTD[c].Order>0?1:0})).filter(x=>x.h>0||x.ph>0);
-  const topC=cityPerf.sort((a,b)=>b.hChg-a.hChg).slice(0,5);
-  const lagC=[...cityPerf].sort((a,b)=>a.hChg-b.hChg).filter(x=>x.hChg<0).slice(0,5);
-  const topO=[...cityPerf].sort((a,b)=>b.oChg-a.oChg).slice(0,5);
-  const mdOrdPct=pN(ind.Order,ind.MD).toFixed(1),pMdOrdPct=pN(indL.Order,indL.MD).toFixed(1);
-  const mdHotoPct=pN(ind.HOTO,ind.MD).toFixed(1),pMdHotoPct=pN(indL.HOTO,indL.MD).toFixed(1);
-  document.getElementById('p-dexec').innerHTML=`
-<div class="ptitle">Digital — Executive Summary</div>
-<div class="psub">Digital Channel . MTD as of ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
-<div class="stitle">MTD vs Last Month MTD (LMTD)</div>
-<div class="mgrid">${cards}</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-  <div class="card"><div class="ctitle">Top Cities — HOTO Growth vs LMTD</div>
-  ${topC.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd)">
-    <div><strong>${x.c}</strong><span class="ctag">${TIERS[x.c]||''}</span></div>
-    <div style="display:flex;gap:5px;align-items:center">
-      <span class="mono ${x.hChg>=0?'green':'red'}" style="font-weight:600">${x.hChg>=0?'+':''}${Math.round(x.hChg*100)}%</span>
-      <span class="mono" style="font-size:10px;color:var(--t3)">${f(x.h)} vs ${f(x.ph)}</span>
-    </div>
-  </div>`).join('')||'<div style="color:var(--t2);padding:8px">No data</div>'}
-  </div>
-  <div class="card"><div class="ctitle">Bottom Cities — HOTO Decline vs LMTD</div>
-  ${lagC.length?lagC.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd)">
-    <div><strong>${x.c}</strong><span class="ctag">${TIERS[x.c]||''}</span></div>
-    <div style="display:flex;gap:5px;align-items:center">
-      <span class="mono red" style="font-weight:600">${Math.round(x.hChg*100)}%</span>
-      <span class="mono" style="font-size:10px;color:var(--t3)">${f(x.h)} vs ${f(x.ph)}</span>
-    </div>
-  </div>`).join(''):'<div style="color:var(--t2);padding:8px">All cities growing vs LMTD 🎉</div>'}
-  </div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-  <div class="card"><div class="ctitle">MD → Order % <span style="font-size:9px;font-weight:400">(main focus)</span></div>
-    <div style="font-size:26px;font-weight:600;font-family:'DM Mono',monospace;color:${parseFloat(mdOrdPct)>=parseFloat(pMdOrdPct)?'var(--gn)':'var(--rd)'};margin-bottom:4px">${mdOrdPct}%</div>
-    <div style="font-size:11px;color:var(--t2)">LMTD: <strong>${pMdOrdPct}%</strong> ${parseFloat(mdOrdPct)>=parseFloat(pMdOrdPct)?'<span class="up">^ Improving</span>':'<span class="dn">v Declining</span>'}</div>
-    <div style="font-size:11px;color:var(--t2);margin-top:4px">${f(ind.MD)} MDs → ${f(ind.Order)} Orders</div>
-  </div>
-  <div class="card"><div class="ctitle">MD → HOTO %</div>
-    <div style="font-size:26px;font-weight:600;font-family:'DM Mono',monospace;color:${parseFloat(mdHotoPct)>=parseFloat(pMdHotoPct)?'var(--gn)':'var(--rd)'};margin-bottom:4px">${mdHotoPct}%</div>
-    <div style="font-size:11px;color:var(--t2)">LMTD: <strong>${pMdHotoPct}%</strong> ${parseFloat(mdHotoPct)>=parseFloat(pMdHotoPct)?'<span class="up">^ Improving</span>':'<span class="dn">v Declining</span>'}</div>
-    <div style="font-size:11px;color:var(--t2);margin-top:4px">${f(ind.MD)} MDs → ${f(ind.HOTO)} HOTOs</div>
-  </div>
-</div>`
-}
-
-// ================================================================
-// DIGITAL — INDIA SUMMARY
-// ================================================================
-function bDigitalIndia(){
-  const yd=DC.yd,months=DC.months,mtdDay=yd.getDate();
-  function aggD(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
-  function fRow(r,pr,lbl,isCur){
-    const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),pBMs=(pr.MS/Math.max(pr.BQL,1)*100).toFixed(1);
-    const mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),pMMd=(pr.MD/Math.max(pr.MS,1)*100).toFixed(1);
-    const mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1),pMO=(pr.Order/Math.max(pr.MD,1)*100).toFixed(1);
-    const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1),pMH=(pr.HOTO/Math.max(pr.MD,1)*100).toFixed(1);
-    return`<tr ${isCur?'style="background:#f0fff4"':''}><td style="font-weight:600">${lbl}${isCur?' <span class="badge bb">MTD</span>':''}</td>
-    <td>${isCur?cv(r.BQL,pr.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td>
-    <td>${isCur?cv(r.MS,pr.MS):`<span class="mono">${f(r.MS)}</span>`}</td>
-    <td><span class="${isCur?(parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'):''}">${bMs}%</span></td>
-    <td>${isCur?cv(r.MD,pr.MD):`<span class="mono">${f(r.MD)}</span>`}</td>
-    <td><span class="${isCur?(parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'):''}">${mMd}%</span></td>
-    <td>${isCur?cv(r.Order,pr.Order):`<span class="mono">${f(r.Order)}</span>`}</td>
-    <td><span class="${isCur?(parseFloat(mO)>=parseFloat(pMO)?'green':'red'):''}">${mO}%</span></td>
-    <td><span class="${isCur?(parseFloat(mH)>=parseFloat(pMH)?'green':'red'):''}">${mH}%</span></td></tr>`;
-  }
-  const moRows=months.map((mo,i)=>{const r=aggD(DED.filter(x=>x.year===mo.y&&x.month===mo.m));const pr=i>0?aggD(DED.filter(x=>x.year===months[i-1].y&&x.month===months[i-1].m)):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};return fRow(r,pr,mo.lbl,i===months.length-1);}).join('');
-  const moMtdRows=months.map((mo,i)=>{const ms=new Date(mo.y,mo.m-1,1),me=new Date(mo.y,mo.m-1,mtdDay);const r=aggD(DED.filter(x=>x.date>=ms&&x.date<=me));const pr=i>0?(()=>{const ps=new Date(months[i-1].y,months[i-1].m-1,1),pe=new Date(months[i-1].y,months[i-1].m-1,mtdDay);return aggD(DED.filter(x=>x.date>=ps&&x.date<=pe));})():{BQL:0,MS:0,MD:0,Order:0,HOTO:0};return fRow(r,pr,mo.lbl+(i<months.length-1?` <span style="font-size:9px;color:var(--t3)">till ${mtdDay}</span>`:''),i===months.length-1);}).join('');
-  const th=`<thead><tr><th style="max-width:80px">Month</th><th>BQL</th><th>MS</th><th>BQL→MS%</th><th>MD</th><th>MS→MD%</th><th>Order</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>`;
-  document.getElementById('p-dindia').innerHTML=`
-<div class="ptitle">Digital — India Summary</div>
-<div class="psub">Digital Channel . All Cities</div>
-<div class="stitle">Monthly Trend — Full Month (6M)</div>
-<div class="tw"><table>${th}<tbody>${moRows}</tbody></table></div>
-<div class="stitle">MTD Comparison — Each month till Day ${mtdDay} <span style="font-size:9px;font-weight:400">(apple-to-apple)</span></div>
-<div class="tw"><table>${th}<tbody>${moMtdRows}</tbody></table></div>`;
-}
-
-// ================================================================
-// DIGITAL — CITY SUMMARY
-// ================================================================
-function bDigitalCity(){
-  const yd=DC.yd,mtdDay=yd.getDate();
-  const tierOrd={Focus:0,Big:1,Mid:2,Small:3,New:4,Exp:5};
-  const rows=CITIES.slice().sort((a,b)=>(tierOrd[TIERS[a]]??9)-(tierOrd[TIERS[b]]??9)).map(c=>{
-    const v=DC.cMTD[c],pv=DC.cLMTD[c];
-    if(!v.BQL&&!pv.BQL&&!v.HOTO&&!pv.HOTO)return'';
-    const fP=(a,b,pa,pb)=>{if(!b)return'-';const cur=(a/b*100).toFixed(1),prv=pb?(pa/pb*100).toFixed(1):null;const cls=prv&&parseFloat(cur)>=parseFloat(prv)?'green':'red';const pp=prv!=null?((parseFloat(cur)-parseFloat(prv)).toFixed(1)):null;const ppBadge=pp!=null?`<span class="${cls}" style="font-size:8px;margin-left:2px">(${parseFloat(pp)>=0?'+':''}${pp}pp)</span>`:'';return`<span class="${cls}">${cur}%${ppBadge}</span>`;};
-    const mL=(a,b)=>`<span class="mono ${a>b?'green':a<b?'red':''}">${f(a)}</span><span style="font-size:9px;color:var(--t3)"> /${f(b)}</span>`;
-    return`<tr>
-      <td><strong>${c}</strong><span class="ctag">${TIERS[c]||''}</span></td>
-      <td>${mL(v.BQL,pv.BQL)}</td><td>${mb(v.BQL,pv.BQL)}</td>
-      <td>${mL(v.MS,pv.MS)}</td><td>${mL(v.MD,pv.MD)}</td>
-      <td>${mL(v.Order,pv.Order)}</td><td>${mb(v.Order,pv.Order)}</td>
-      <td>${mL(v.HOTO,pv.HOTO)}</td><td>${mb(v.HOTO,pv.HOTO)}</td>
-      <td>${fP(v.MS,v.BQL,pv.MS,pv.BQL)}</td>
-      <td>${fP(v.MD,v.MS,pv.MD,pv.MS)}</td>
-      <td>${fP(v.Order,v.MD,pv.Order,pv.MD)}</td>
-    </tr>`
-  }).filter(Boolean).join('');
-  document.getElementById('p-dcity').innerHTML=`
-<div class="ptitle">Digital — City Summary</div>
-<div class="psub">Digital Channel . MTD vs LMTD . All cities</div>
-<div class="tw"><table>
-<thead><tr>
-  <th rowspan="2">City</th>
-  <th colspan="7" style="text-align:center;background:#e0f2fe;color:#0369a1;border-left:2px solid #7dd3fc">Absolute — MTD / LMTD</th>
-  <th colspan="3" style="text-align:center;background:#dcfce7;color:#166534">Funnel % vs LMTD</th>
-</tr><tr>
-  <th style="background:#e0f2fe">BQL/LMTD</th><th style="background:#e0f2fe">BQL Δ</th>
-  <th style="background:#e0f2fe">MS/LMTD</th><th style="background:#e0f2fe">MD/LMTD</th>
-  <th style="background:#e0f2fe">Ord/LMTD</th><th style="background:#e0f2fe">Ord Δ</th>
-  <th style="background:#e0f2fe">HOTO/LMTD</th>
-  <th style="background:#dcfce7">BQL→MS%</th><th style="background:#dcfce7">MS→MD%</th><th style="background:#dcfce7">MD→Ord%</th>
-</tr></thead>
-<tbody>${rows}</tbody></table></div>`;
-  autoSort(document.getElementById('p-dcity'));
-}
-
-// ================================================================
-// DIGITAL — FUNNEL (EFFORT)
-// ================================================================
-function bDigitalFunnel(){
-  const yd=DC.yd,months=DC.months,mtdDay=yd.getDate();
-  function aggD(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=x.BQL;r.MS+=x.MS;r.MD+=x.MD;r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
-  function fRows(cityFilter){
-    return months.map((mo,i)=>{
-      const r=aggD(DED.filter(x=>x.year===mo.y&&x.month===mo.m&&(!cityFilter||x.city===cityFilter)));
-      const pr=i>0?aggD(DED.filter(x=>x.year===months[i-1].y&&x.month===months[i-1].m&&(!cityFilter||x.city===cityFilter))):{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-      const isCur=i===months.length-1;
-      const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),pBMs=(pr.MS/Math.max(pr.BQL,1)*100).toFixed(1);
-      const mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),pMMd=(pr.MD/Math.max(pr.MS,1)*100).toFixed(1);
-      const mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1),pMO=(pr.Order/Math.max(pr.MD,1)*100).toFixed(1);
-      const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1),pMH=(pr.HOTO/Math.max(pr.MD,1)*100).toFixed(1);
-      return`<tr ${isCur?'style="background:#f0fff4"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">MTD</span>':''}</td>
-      <td>${isCur?cv(r.BQL,pr.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td>
-      <td>${isCur?cv(r.MS,pr.MS):`<span class="mono">${f(r.MS)}</span>`}</td>
-      <td><span class="${isCur?(parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'):''}">${bMs}%</span></td>
-      <td>${isCur?cv(r.MD,pr.MD):`<span class="mono">${f(r.MD)}</span>`}</td>
-      <td><span class="${isCur?(parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'):''}">${mMd}%</span></td>
-      <td>${isCur?cv(r.Order,pr.Order):`<span class="mono">${f(r.Order)}</span>`}</td>
-      <td><span class="${isCur?(parseFloat(mO)>=parseFloat(pMO)?'green':'red'):''}">${mO}%</span></td>
-      <td><span class="${isCur?(parseFloat(mH)>=parseFloat(pMH)?'green':'red'):''}">${mH}%</span></td></tr>`;
-    }).join('');
-  }
-  const th=`<thead><tr><th>Month</th><th>BQL</th><th>MS</th><th>BQL→MS%</th><th>MD</th><th>MS→MD%</th><th>Order</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>`;
-  document.getElementById('p-dfunnel').innerHTML=`
-<div class="ptitle">Digital — Funnel (Effort View)</div>
-<div class="psub">Digital Channel . Effort view . MoM . 6M trend</div>
-<div class="fbar"><select id="df-city" onchange="renderDFunnel()"><option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
-<div id="df-body"><div class="tw"><table>${th}<tbody>${fRows('')}</tbody></table></div></div>`;
-  window.renderDFunnel=function(){
-    const cf=document.getElementById('df-city')?.value||'';
-    document.getElementById('df-body').innerHTML=`<div class="tw"><table>${th}<tbody>${fRows(cf)}</tbody></table></div>`;
-  };
-}
-
-// ================================================================
-// DIGITAL — FUNNEL (M0)
-// ================================================================
-function bDigitalM0(){
-  const yd=DC.yd,months=DC.months,mtdDay=yd.getDate();
-  function aggM0(ms,me,cityFilter){
-    const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-    DLD.forEach(l=>{
-      if(!l.created||l.created<ms||l.created>me)return;
-      if(cityFilter&&l.city!==cityFilter)return;
-      r.BQL++;
-      if(getLeadMS(l)&&getLeadMS(l)>=ms&&getLeadMS(l)<=me)r.MS++;
-      if(getLeadMD(l)&&getLeadMD(l)>=ms&&getLeadMD(l)<=me)r.MD++;
-      if(l.ordD&&l.ordD>=ms&&l.ordD<=me)r.Order++;
-      if(l.hotoD&&l.hotoD>=ms&&l.hotoD<=me)r.HOTO++;
-    });
-    return r;
-  }
-  function m0Rows(cityFilter){
-    return months.map((mo,i)=>{
-      const isCur=(mo.y===yd.getFullYear()&&mo.m===yd.getMonth()+1);
-      const ms=new Date(mo.y,mo.m-1,1),me=isCur?yd:new Date(mo.y,mo.m,0);
-      const r=aggM0(ms,me,cityFilter);
-      const pr=i>0?(()=>{const pm=months[i-1];const isCurPm=(pm.y===yd.getFullYear()&&pm.m===yd.getMonth()+1);return aggM0(new Date(pm.y,pm.m-1,1),isCurPm?yd:new Date(pm.y,pm.m,0),cityFilter);})():{BQL:0,MS:0,MD:0,Order:0,HOTO:0};
-      const bMs=(r.MS/Math.max(r.BQL,1)*100).toFixed(1),pBMs=(pr.MS/Math.max(pr.BQL,1)*100).toFixed(1);
-      const mMd=(r.MD/Math.max(r.MS,1)*100).toFixed(1),pMMd=(pr.MD/Math.max(pr.MS,1)*100).toFixed(1);
-      const mO=(r.Order/Math.max(r.MD,1)*100).toFixed(1),pMO=(pr.Order/Math.max(pr.MD,1)*100).toFixed(1);
-      const mH=(r.HOTO/Math.max(r.MD,1)*100).toFixed(1);
-      return`<tr ${isCur?'style="background:#f0fff4"':''}><td style="font-weight:600">${mo.lbl}${isCur?' <span class="badge bb">Current</span>':''}</td>
-      <td>${isCur?cv(r.BQL,pr.BQL):`<span class="mono">${f(r.BQL)}</span>`}</td>
-      <td>${isCur?cv(r.MS,pr.MS):`<span class="mono">${f(r.MS)}</span>`}</td>
-      <td><span class="${isCur?(parseFloat(bMs)>=parseFloat(pBMs)?'green':'red'):''}">${bMs}%</span></td>
-      <td>${isCur?cv(r.MD,pr.MD):`<span class="mono">${f(r.MD)}</span>`}</td>
-      <td><span class="${isCur?(parseFloat(mMd)>=parseFloat(pMMd)?'green':'red'):''}">${mMd}%</span></td>
-      <td>${isCur?cv(r.Order,pr.Order):`<span class="mono">${f(r.Order)}</span>`}</td>
-      <td><span class="${isCur?(parseFloat(mO)>=parseFloat(pMO)?'green':'red'):''}">${mO}%</span></td>
-      <td><span class="${isCur?'mono':''}">${mH}%</span></td></tr>`;
-    }).join('');
-  }
-  const th=`<thead><tr><th>Month</th><th>BQL</th><th>MS</th><th>BQL→MS%</th><th>MD</th><th>MS→MD%</th><th>Order</th><th>MD→Ord%</th><th>MD→HOTO%</th></tr></thead>`;
-  document.getElementById('p-dm0').innerHTML=`
-<div class="ptitle">Digital — Funnel (M0 / Cohort View)</div>
-<div class="psub">Digital Channel . Same-month cohort . Lead created + stage done in same month</div>
-<div class="fbar"><select id="dm0-city" onchange="renderDM0()"><option value="">All Cities</option>${CITIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
-<div id="dm0-body"><div class="tw"><table>${th}<tbody>${m0Rows('')}</tbody></table></div></div>`;
-  window.renderDM0=function(){
-    const cf=document.getElementById('dm0-city')?.value||'';
-    document.getElementById('dm0-body').innerHTML=`<div class="tw"><table>${th}<tbody>${m0Rows(cf)}</tbody></table></div>`;
-  };
-}
-
-// ================================================================
-// COMPARISON — REFERRAL vs DIGITAL
-// ================================================================
-function bCompare(){
-  const yd=C.yd,months=C.months,mtdDay=yd.getDate();
-  const rI=C.india,dI=DC.india,rIL=C.indiaL,dIL=DC.indiaL;
-  function aggR(rows){const r={BQL:0,MS:0,MD:0,Order:0,HOTO:0};rows.forEach(x=>{r.BQL+=getBQL(x);r.MS+=getMS(x);r.MD+=getMD(x);r.Order+=x.Order;r.HOTO+=x.HOTO;});return r;}
-  // MoM growth helper
-  function momGrowth(cur,prev){if(!prev||prev===0)return null;return((cur-prev)/prev*100);}
-  function growthBadge(pct,label,inverted=false){
-    if(pct==null)return`<span style="color:var(--t3);font-size:10px">n/a</span>`;
-    const good=inverted?(pct<0):(pct>=0);
-    const col=good?'var(--gn)':'var(--rd)';
-    return`<span style="color:${col};font-size:11px;font-weight:600">${pct>=0?'+':''}${pct.toFixed(1)}%</span><span style="font-size:9px;color:var(--t3);margin-left:2px">${label}</span>`;
-  }
-  // Compare MoM growth badge: who grew faster?
-  function growthCmp(rPct,dPct,label){
-    if(rPct==null&&dPct==null)return`<td style="text-align:center;color:var(--t3)">-</td>`;
-    const rG=rPct!=null?`<span style="color:#1a56db;font-weight:600">${rPct>=0?'+':''}${rPct.toFixed(1)}%</span>`:`<span style='color:var(--t3)'>n/a</span>`;
-    const dG=dPct!=null?`<span style="color:#059669;font-weight:600">${dPct>=0?'+':''}${dPct.toFixed(1)}%</span>`:`<span style='color:var(--t3)'>n/a</span>`;
-    let winner='';
-    if(rPct!=null&&dPct!=null){
-      if(rPct>dPct+1)winner=`<span class="win-badge win-r" style="font-size:8px;margin-left:3px">REF faster</span>`;
-      else if(dPct>rPct+1)winner=`<span class="win-badge win-d" style="font-size:8px;margin-left:3px">DIG faster</span>`;
-      else winner=`<span class="win-badge win-tie" style="font-size:8px;margin-left:3px">≈ similar</span>`;
-    }
-    return`<td style="text-align:center">${rG}<br>${dG}${winner}</td>`;
-  }
-
-  // Build 6M MoM growth table (full months; MTD row is last)
-  const moData=months.map((mo,i)=>{
-    const r=aggR(ED.filter(x=>x.year===mo.y&&x.month===mo.m));
-    const d=aggR(DED.filter(x=>x.year===mo.y&&x.month===mo.m));
-    const rF={BQL:pN(r.MS,r.BQL),MS_MD:pN(r.MD,r.MS),MD_Ord:pN(r.Order,r.MD)};
-    const dF={BQL:pN(d.MS,d.BQL),MS_MD:pN(d.MD,d.MS),MD_Ord:pN(d.Order,d.MD)};
-    return{mo,r,d,rF,dF,i};
-  });
-
-  const momRows=moData.map(({mo,r,d,rF,dF,i})=>{
-    const isCur=i===months.length-1;
-    const prev=i>0?moData[i-1]:null;
-    const metrics=['BQL','MS','MD','Order','HOTO'];
-    const cells=metrics.map(m=>{
-      const rPct=prev?momGrowth(r[m],prev.r[m]):null;
-      const dPct=prev?momGrowth(d[m],prev.d[m]):null;
-      return growthCmp(rPct,dPct,m);
-    });
-    const fCells=[
-      {rF:rF.BQL,dF:dF.BQL,lbl:'BQL→MS%'},
-      {rF:rF.MS_MD,dF:dF.MS_MD,lbl:'MS→MD%'},
-      {rF:rF.MD_Ord,dF:dF.MD_Ord,lbl:'MD→Ord%'}
-    ].map(({rF:rf,dF:df})=>{
-      const rPct=prev?momGrowth(rf,prev.rF[Object.keys(prev.rF)[['BQL→MS%','MS→MD%','MD→Ord%'].indexOf(_=>false)]]):null;
-      // funnel %: just show value change in pp
-      const rPP=prev?(rf-prev.rF.BQL):null; // placeholder — use actual pp diff
-      return''; // handled below
-    });
-    // funnel pp change
-    const fCellsHtml=[
-      [rF.BQL,dF.BQL,prev?.rF.BQL,prev?.dF.BQL],
-      [rF.MS_MD,dF.MS_MD,prev?.rF.MS_MD,prev?.dF.MS_MD],
-      [rF.MD_Ord,dF.MD_Ord,prev?.rF.MD_Ord,prev?.dF.MD_Ord]
-    ].map(([rv,dv,rp,dp])=>{
-      const rPP=rp!=null?(rv-rp):null;
-      const dPP=dp!=null?(dv-dp):null;
-      const rT=`<span style="color:#1a56db;font-weight:600">${rv.toFixed(1)}%${rPP!=null?` <span style="font-size:9px">(${rPP>=0?'+':''}${rPP.toFixed(1)}pp)</span>`:''}</span>`;
-      const dT=`<span style="color:#059669;font-weight:600">${dv.toFixed(1)}%${dPP!=null?` <span style="font-size:9px">(${dPP>=0?'+':''}${dPP.toFixed(1)}pp)</span>`:''}</span>`;
-      let win='';
-      if(rPP!=null&&dPP!=null){
-        win=rPP>dPP+0.5?`<span class="win-badge win-r" style="font-size:8px">REF+</span>`:dPP>rPP+0.5?`<span class="win-badge win-d" style="font-size:8px">DIG+</span>`:`<span class="win-badge win-tie" style="font-size:8px">≈</span>`;
-      }
-      return`<td style="text-align:center">${rT}<br>${dT} ${win}</td>`;
-    }).join('');
-
-    return`<tr ${isCur?'style="background:#eff6ff"':''}>
-      <td style="font-weight:${isCur?700:500}">${mo.lbl}${isCur?` <span class="badge bb">MTD</span>`:''}</td>
-      ${cells.join('')}
-      ${fCellsHtml}
-    </tr>`;
-  }).join('');
-
-  // Summary KPI cards: current month growth vs last month, for each metric
-  const METRICS=['BQL','MS','MD','Order','HOTO'];
-  const curMo=moData[moData.length-1],prevMo=moData[moData.length-2];
-  const kpiCards=METRICS.map(m=>{
-    const rv=curMo.r[m],dv=curMo.d[m];
-    const rPct=prevMo?momGrowth(rv,prevMo.r[m]):null;
-    const dPct=prevMo?momGrowth(dv,prevMo.d[m]):null;
-    const colors={BQL:'#1a56db',MS:'#059669',MD:'#d97706',Order:'#dc2626',HOTO:'#7c3aed'};
-    let winner='';
-    if(rPct!=null&&dPct!=null){
-      winner=rPct>dPct+1?`<span class="win-badge win-r">REF grew faster</span>`:dPct>rPct+1?`<span class="win-badge win-d">DIG grew faster</span>`:`<span class="win-badge win-tie">≈ similar growth</span>`;
-    }
-    return`<div class="cmp-card">
-      <div class="cmp-metric" style="color:${colors[m]};font-weight:700">${m} — MoM Growth (MTD vs LMTD)</div>
-      <div style="display:flex;gap:14px;align-items:flex-end;margin-top:4px">
-        <div>
-          <div class="cmp-r" style="font-size:16px">${rPct!=null?(rPct>=0?'+':'')+rPct.toFixed(1)+'%':'n/a'}</div>
-          <span class="cmp-lbl">Referral (${f(rv)} vs ${f(prevMo?.r[m]||0)})</span>
-        </div>
-        <div style="font-size:12px;color:var(--t3);align-self:center">vs</div>
-        <div>
-          <div class="cmp-d" style="font-size:16px">${dPct!=null?(dPct>=0?'+':'')+dPct.toFixed(1)+'%':'n/a'}</div>
-          <span class="cmp-lbl">Digital (${f(dv)} vs ${f(prevMo?.d[m]||0)})</span>
-        </div>
-        <div style="align-self:center;margin-left:auto">${winner}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Funnel growth cards
-  const rBMS=pN(rI.MS,rI.BQL),dBMS=pN(dI.MS,dI.BQL);
-  const rMMD=pN(rI.MD,rI.MS),dMMD=pN(dI.MD,dI.MS);
-  const rMO=pN(rI.Order,rI.MD),dMO=pN(dI.Order,dI.MD);
-  const rLBMS=pN(C.indiaL.MS,C.indiaL.BQL),dLBMS=pN(DC.indiaL.MS,DC.indiaL.BQL);
-  const rLMMD=pN(C.indiaL.MD,C.indiaL.MS),dLMMD=pN(DC.indiaL.MD,DC.indiaL.MS);
-  const rLMO=pN(C.indiaL.Order,C.indiaL.MD),dLMO=pN(DC.indiaL.Order,DC.indiaL.MD);
-
-  const funnelCards=[
-    {lbl:'BQL→MS%',rv:rBMS,dv:dBMS,rvL:rLBMS,dvL:dLBMS},
-    {lbl:'MS→MD%',rv:rMMD,dv:dMMD,rvL:rLMMD,dvL:dLMMD},
-    {lbl:'MD→Order%',rv:rMO,dv:dMO,rvL:rLMO,dvL:dLMO}
-  ].map(({lbl,rv,dv,rvL,dvL})=>{
-    const rPP=rv-rvL,dPP=dv-dvL;
-    let winner=rPP>dPP+0.5?`<span class="win-badge win-r">REF improving faster</span>`:dPP>rPP+0.5?`<span class="win-badge win-d">DIG improving faster</span>`:`<span class="win-badge win-tie">≈ similar</span>`;
-    return`<div class="cmp-card">
-      <div class="cmp-metric" style="font-weight:700">${lbl} — MTD vs LMTD change (pp)</div>
-      <div style="display:flex;gap:14px;align-items:flex-end;margin-top:4px">
-        <div>
-          <div class="cmp-r" style="font-size:16px">${rv.toFixed(1)}% <span style="font-size:11px;color:${rPP>=0?'var(--gn)':'var(--rd)'}">(${rPP>=0?'+':''}${rPP.toFixed(1)}pp)</span></div>
-          <span class="cmp-lbl">Referral (was ${rvL.toFixed(1)}%)</span>
-        </div>
-        <div style="font-size:12px;color:var(--t3);align-self:center">vs</div>
-        <div>
-          <div class="cmp-d" style="font-size:16px">${dv.toFixed(1)}% <span style="font-size:11px;color:${dPP>=0?'var(--gn)':'var(--rd)'}">(${dPP>=0?'+':''}${dPP.toFixed(1)}pp)</span></div>
-          <span class="cmp-lbl">Digital (was ${dvL.toFixed(1)}%)</span>
-        </div>
-        <div style="align-self:center;margin-left:auto">${winner}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Channel insights — growth narrative
-  const insights=[];
-  const checkGrowth=(m,rPct,dPct)=>{
-    if(rPct==null||dPct==null)return;
-    const diff=rPct-dPct;
-    if(Math.abs(diff)<3)insights.push({lv:'info',line:`<strong>${m} growing at similar pace</strong> — Referral ${rPct>=0?'+':''}${rPct.toFixed(1)}% vs Digital ${dPct>=0?'+':''}${dPct.toFixed(1)}% MoM. Both channels aligned.`});
-    else if(diff>3)insights.push({lv:'appr',line:`<strong>Referral outgrowing Digital on ${m}</strong> — ${rPct.toFixed(1)}% vs ${dPct.toFixed(1)}% MoM (+${diff.toFixed(1)}pp gap). Referral momentum stronger.`});
-    else insights.push({lv:'warn',line:`<strong>Digital outgrowing Referral on ${m}</strong> — ${dPct.toFixed(1)}% vs ${rPct.toFixed(1)}% MoM (+${Math.abs(diff).toFixed(1)}pp gap). Digital accelerating; check referral quality initiatives.`});
-  };
-  METRICS.forEach(m=>{
-    const rPct=prevMo?momGrowth(curMo.r[m],prevMo.r[m]):null;
-    const dPct=prevMo?momGrowth(curMo.d[m],prevMo.d[m]):null;
-    checkGrowth(m,rPct,dPct);
-  });
-  // Funnel comparison
-  const rBMSdiff=rBMS-rLBMS,dBMSdiff=dBMS-dLBMS;
-  if(Math.abs(rBMSdiff-dBMSdiff)>2)insights.push({lv:'info',line:`<strong>BQL→MS funnel shift</strong> — Referral ${rBMSdiff>=0?'+':''}${rBMSdiff.toFixed(1)}pp vs Digital ${dBMSdiff>=0?'+':''}${dBMSdiff.toFixed(1)}pp. ${rBMSdiff>dBMSdiff?'Referral LRM engagement improving faster.':'Digital LRM response improving faster.'}`});
-  const rMOdiff=rMO-rLMO,dMOdiff=dMO-dLMO;
-  if(Math.abs(rMOdiff-dMOdiff)>2)insights.push({lv:'info',line:`<strong>MD→Order closure shift</strong> — Referral ${rMOdiff>=0?'+':''}${rMOdiff.toFixed(1)}pp vs Digital ${dMOdiff>=0?'+':''}${dMOdiff.toFixed(1)}pp. ${rMOdiff>dMOdiff?'Referral SC closing improving faster.':'Digital SC closing improving faster.'}`});
-  if(!insights.length)insights.push({lv:'info',line:'Both channels growing at comparable rates across all metrics this month.'});
-  const IAC2={info:{bg:'#eff6ff',bd:'#bfdbfe',dk:'#1a56db'},appr:{bg:'#f0fdf4',bd:'#bbf7d0',dk:'#166534'},warn:{bg:'#fffbeb',bd:'#fde68a',dk:'#d97706'},crit:{bg:'#fef2f2',bd:'#fecaca',dk:'#dc2626'}};
-  const insHtml=insights.map(i=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:${IAC2[i.lv]?.bg||'#f9fafb'};border:1px solid ${IAC2[i.lv]?.bd||'#e5e7eb'};border-left:3px solid ${IAC2[i.lv]?.dk||'#6b7280'};border-radius:6px;margin-bottom:5px">
-    <span style="font-size:11px;line-height:1.5;color:var(--t1)">${i.line}</span>
-  </div>`).join('');
-
-  document.getElementById('p-compare').innerHTML=`
-<div class="ptitle">Referral vs Digital — MoM Growth Comparison</div>
-<div class="psub">How fast is each channel growing? <span style="color:#1a56db;font-weight:600">Blue = Referral MoM%</span> · <span style="color:#059669;font-weight:600">Green = Digital MoM%</span> · MTD vs LMTD · ${yd.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
-<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 13px;margin-bottom:12px;font-size:11px;color:#1e40af;line-height:1.6"><strong>How to read:</strong> Each cell shows MoM growth rate for Referral and Digital independently. If Referral BQL grew +15% and Digital grew +8%, Referral is accelerating faster. Funnel % rows show pp change vs prior month.</div>
-<div class="stitle">Volume Growth — MTD vs LMTD <span style="font-size:10px;font-weight:400;color:var(--t3)">(% change each channel grew this MTD vs last MTD)</span></div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px">${kpiCards}</div>
-
-<div class="stitle">Funnel Efficiency — MTD vs LMTD <span style="font-size:10px;font-weight:400;color:var(--t3)">(conversion % this MTD vs last MTD, and pp change)</span></div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:14px">${funnelCards}</div>
-
-<div class="stitle">6-Month MoM Growth Trend <span style="font-size:10px;font-weight:400;color:var(--t3)">(each month's growth % vs prior month · <span style="color:#1a56db">Blue=Referral</span> / <span style="color:#059669">Green=Digital</span> · "REF faster" / "DIG faster" when gap >1pp)</span></div>
-<div class="tw"><table>
-<thead><tr style="background:#f1f3f6">
-  <th>Month</th>
-  <th style="text-align:center">BQL MoM%</th>
-  <th style="text-align:center">MS MoM%</th>
-  <th style="text-align:center">MD MoM%</th>
-  <th style="text-align:center">Order MoM%</th>
-  <th style="text-align:center">HOTO MoM%</th>
-  <th style="text-align:center">BQL→MS% (pp Δ)</th>
-  <th style="text-align:center">MS→MD% (pp Δ)</th>
-  <th style="text-align:center">MD→Ord% (pp Δ)</th>
-</tr></thead>
-<tbody>${momRows}</tbody></table></div>
-
-<div class="stitle">⚡ Growth Narrative</div>
-${insHtml}`;
-  autoSort(document.getElementById('p-compare'));
-}
-
-// ================================================================
-// CUSTOMER APP (Metabase-sourced, independent of Referral/Digital)
+// CUSTOMER APP (Metabase-sourced, independent of the Referral data)
 // Phase 2: City x Milestone FIRST-login counts, + % of Commissioned/Installed/
 // HOTO base that has ever logged in. P50/P90/P95/Avg days-since-milestone and
 // the month-level/custom-cohort views are Phase 3/4, not built yet.
@@ -6971,7 +6467,7 @@ function bCApp(){
   if(!el)return;
   el.innerHTML=`
 <div class="ptitle">Customer App — Overview</div>
-<div class="psub">First-login tracking by city and lifecycle milestone . Source: Metabase (independent of Referral/Digital data) . Active/Completed projects only</div>
+<div class="psub">First-login tracking by city and lifecycle milestone . Source: Metabase (independent of the Referral data) . Active/Completed projects only</div>
 <div class="fbar"><span id="capp-city-mc-wrap"></span></div>
 <div id="capp-body"></div>`;
   insertMSWidget('capp-city-mc-wrap','capp-city',CAPP_ALL_CITIES,CAPP_CITY_CFG,()=>rebuildCApp());

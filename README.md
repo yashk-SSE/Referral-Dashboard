@@ -39,7 +39,7 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
   and lead-level, and pushes the resulting JSON straight to this repo's `main` branch via
   the GitHub API. This is the only data pipeline — run it on a time-based trigger, not
   manually (manual Apps Script runs are capped at 6 min; the trigger gets 30 min).
-- `data/` (~66 MB) — the JSON files read directly by `index.html`. From the Apps Script:
+- `data/` (~55 MB) — the JSON files read directly by `index.html`. From the Apps Script:
   `referral_effort.json` and `referral_leads.json` (the leads file is a rolling
   ~10-month window, current month plus the 9 before, so it stays under GitHub's API
   size limit). Plus `referral_mop.json` (MOP targets, maintained separately —
