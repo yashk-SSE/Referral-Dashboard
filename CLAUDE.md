@@ -1429,13 +1429,14 @@ performance for SolarSquare, a B2C solar company, across **40 Indian cities in 6
 - **Metabase IS now connected (2026-08-03) — but for a separate, independent branch,
   not this pipeline.** See Section 15: a brand new "Customer App" branch sources from
   Metabase entirely independently of BigQuery/Apps Script. Don't confuse the two — the
-  Referral/Digital pipeline above is untouched by this.
+  Referral pipeline above is untouched by this.
 - **Digital channel removed 2026-11-25** (Yash: unused) - tabs, data files and
   Apps Script functions all gone. The dashboard is Referral + Customer App only.
 - **Repo bloat from daily full-JSON commits — suggested long-term fix (not urgent,
   not implemented):** the Apps Script pushes full rewrites of `data/*.json` (tens of MB)
-  to git on every run, so repo history grows every day forever. Removing the Digital
-  JSONs helps some but `referral_effort.json`/`referral_leads.json` will keep growing.
+  to git on every run, so repo history grows every day forever. The Digital JSONs
+  are gone (2026-11-25) and `referral_leads.json` is now a rolling ~10-month window,
+  but every push still adds a full copy of each file to history.
   Git LFS doesn't really solve this — the files change daily so there's no dedup benefit.
   The clean long-term fix is to **stop storing this data in git at all**: have the Apps
   Script (or its Python/Actions successor) write the JSON to a small storage layer
@@ -1458,7 +1459,7 @@ performance for SolarSquare, a B2C solar company, across **40 Indian cities in 6
 | `signals.preview.html` | ~90 KB, gitignored | The Signals page, work in progress (Section 0a, 2026-09-08). Becomes `signals.html` once Yash approves it. |
 | `preview-local.bat` | script | Local server on 8743, opening `index.preview.html` (or `index.html`). Calls a bare `python`, which works from Yash's shell but not from Claude's. |
 | `README.md` | — | Was outdated 1-line stub; now kept in sync with this file (see Section 12). |
-| `Referral Dashboard.gs` | ~36 KB | Apps Script v5. Queries BigQuery for **both** Referral and Digital (effort + lead-level), pushes each JSON straight to `main` via GitHub's API. This is the live, authoritative pipeline. **Was never committed to git before 2026-08-03** (existed only in the Apps Script editor / this local copy) — now tracked in the repo so the pipeline source has version history. |
+| `Referral Dashboard.gs` | ~27 KB | Apps Script v5. Queries BigQuery for the Referral channel (effort + lead-level; Digital removed 2026-11-25), pushes each JSON straight to `main` via GitHub's API. This is the live, authoritative pipeline. **Was never committed to git before 2026-08-03** (existed only in the Apps Script editor / this local copy) — now tracked in the repo so the pipeline source has version history. |
 | `referral-dashboard` | 1 byte, no extension | Confirmed: a single newline, no content, no function. Not a config or script. Yash's call (2026-08-03): leave it as-is, no action needed. |
 
 **Note on Section 7 below:** the "Raw_Data_Effort" / "Raw_Lead_Data_updated" Google Sheets
@@ -1797,8 +1798,8 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
   **Two more Referral tabs are reachable from the sidebar but deliberately left out
   of that list** so Timeframe mode skips them: `avm` (Actuals vs MOP, 2026-08-19) and
   `lmp` (Last Month Performance, 2026-09-03). The channel switcher (`Referral /
-  Digital / Ref vs Digital / Customer App`) isn't itself a tab. (Re-checked
-  2026-10-05.) `aging` (Stage Aging) exists in the code's internal `allTabs`
+  Customer App`; Digital and Ref vs Digital removed 2026-11-25) isn't itself a
+  tab. (Re-checked 2026-11-25.) `aging` (Stage Aging) exists in the code's internal `allTabs`
   list but is **not** in `REFERRAL_TABS` — see Section 13, it's built but unreachable.
 - Helper functions `pN`, `f`, `getBQL()`, `getMS()`, `getMD()`, `METRIC_SEL` — **confirmed
   present and working exactly as described**: `METRIC_SEL = {bql, ms, md}` routes the
@@ -1922,9 +1923,10 @@ been verified directly in `index.html` / `Referral Dashboard.gs`, not just recal
 - **Signals page** (`signals.preview.html`): Steps 0-4 built, awaiting Yash's
   review. Step 5 (lifecycle, suppression, sharing) and Step 6 (loss-rate signals)
   not started. Open question: New-tier cities now fall inside its scope gate.
-- **Page load:** parallel loading, plus lazy-loading `digital_leads`,
-  `customer_app` and `referral_leads` (~53% of the payload). Scoped 2026-09-08,
-  not done.
+- **Page load:** much smaller since 2026-11-25 (~55 MB, Digital gone), but
+  `init()` still fetches files with sequential `await`s. Remaining fix:
+  `Promise.all`, plus lazy-loading `customer_app` by channel and `referral_leads`
+  by tab. Scoped 2026-09-08, not done.
 - **Unmapped city values:** `Inactive`, `Surat`, `Ajmer` need a decision from Yash
   (Section 0a, 2026-09-03). **`Ahilyanagar`** is a display-only removal; a hard
   exclusion from India totals only if Yash asks (Section 0a, 2026-09-22).
@@ -1959,7 +1961,7 @@ Do this **before** making any code changes:
 
 A separate branch of this dashboard, tracking Customer App logins against 5
 lifecycle milestones. Not a Referral-channel feature: it has its own entry in the
-channel switcher alongside Referral / Digital / Ref vs Digital. [Corrected
+channel switcher alongside Referral. [Corrected
 2026-10-05: the phase notes below say "built in `index.preview.html`, not yet
 merged". All of it has since shipped: Overview + MoM Trend `7d1b610`, Login
 Velocity `e651ef4`, Day on Day `c52ed6b`.] Sourced from **Metabase**, not BigQuery — an entirely
