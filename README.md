@@ -2,19 +2,18 @@
 
 SolarSquare's Referral sales-channel performance dashboard — funnel tracking (BQL →
 MS → MD → Order → HOTO), MOP-vs-actual, city/sub-channel breakdowns, cohort and
-velocity analysis. Also covers the Digital channel and a Ref-vs-Digital comparison
-view in the same file, plus a separate Customer App login-tracking branch.
+velocity analysis, plus a separate Customer App login-tracking branch. (The Digital
+channel and the Ref-vs-Digital view were removed on 2026-11-25; they were unused.)
 
 ## What's in the dashboard
 
-Four channels, picked from the switcher in the top bar:
+Two channels, picked from the switcher in the top bar:
 
 - **Referral**: Executive Summary, MOP vs MTD, Actuals vs MOP, Last Month
   Performance, India Summary, City Summary, Sub-Channel, Effort and M0 funnels, BQL
   Quality, Velocity, WoW, Day on Day (counts and funnel), MoM Cohort, City MoM, City Deep
   Dive, Insights, Action Recommended. The four MOP tabs have their own 5-way target
   split (Sales / Non-Sales / BTL / Sales + Non-Sales / All).
-- **Digital** and **Ref vs Digital**: being phased out eventually, no timeline.
 - **Customer App**: Overview, MoM Trend, Login Velocity, Day on Day.
 
 The Referral views carry a running FY27 tracker against the 40,000-HOTO target.
@@ -36,13 +35,14 @@ what's done, what's mid-review, and what to do next, kept up to date as work pro
 - `index.html` — the entire dashboard (single file, no build step). Open it directly
   or serve it statically (currently GitHub Pages).
 - `Referral Dashboard.gs` — Google Apps Script (v5). Queries BigQuery
-  (`presales-442917.leadcsv.Samagam`) for both Referral and Digital channels, effort-level
+  (`presales-442917.leadcsv.Samagam`) for the Referral channel, effort-level
   and lead-level, and pushes the resulting JSON straight to this repo's `main` branch via
   the GitHub API. This is the only data pipeline — run it on a time-based trigger, not
   manually (manual Apps Script runs are capped at 6 min; the trigger gets 30 min).
-- `data/` (~107 MB, and growing) — the JSON files the Apps Script produces, read directly by `index.html`:
-  `referral_effort.json`, `referral_leads.json`, `digital_effort.json`,
-  `digital_leads.json`, plus `referral_mop.json` (MOP targets, maintained separately —
+- `data/` (~66 MB) — the JSON files read directly by `index.html`. From the Apps Script:
+  `referral_effort.json` and `referral_leads.json` (the leads file is a rolling
+  ~10-month window, current month plus the 9 before, so it stays under GitHub's API
+  size limit). Plus `referral_mop.json` (MOP targets, maintained separately —
   see `scripts/build_mop_json.py` below; it won't have every city, and that's
   expected for Expansion-tier cities without a monthly MOP).
 - `data/referral_mop_history.json` — every past month's MOP, keyed by month, each

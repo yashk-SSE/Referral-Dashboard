@@ -1,6 +1,6 @@
 // ============================================================
 // SOLARSQUARE DASHBOARD — App Script v5
-// Referral + Digital channels
+// Referral channel (Digital removed 2026-11-25 -- unused)
 // Queries BigQuery → Pushes JSON to GitHub
 // ============================================================
 // IMPORTANT: Run via TIME-BASED TRIGGER only (not manually)
@@ -29,7 +29,7 @@ var BQ_PROJECT   = 'presales-442917';
 
 // ============================================================
 // MASTER FUNCTION — Schedule THIS via trigger at 10:30 AM
-// Runs all 4 queries sequentially
+// Runs both Referral queries sequentially
 // ============================================================
 function runDashboardUpdate() {
   Logger.log('========================================');
@@ -39,8 +39,6 @@ function runDashboardUpdate() {
 
   try { runReferralEffort(); } catch(e) { Logger.log('❌ Referral Effort FAILED: ' + e.message + '\n' + e.stack); }
   try { runReferralLeads();  } catch(e) { Logger.log('❌ Referral Leads FAILED: '  + e.message + '\n' + e.stack); }
-  try { runDigitalEffort();  } catch(e) { Logger.log('❌ Digital Effort FAILED: '  + e.message + '\n' + e.stack); }
-  try { runDigitalLeads();   } catch(e) { Logger.log('❌ Digital Leads FAILED: '   + e.message + '\n' + e.stack); }
 
   var mins = ((new Date() - start) / 60000).toFixed(1);
   Logger.log('========================================');
@@ -49,20 +47,17 @@ function runDashboardUpdate() {
 }
 
 // ============================================================
-// 4 INDIVIDUAL FUNCTIONS
+// INDIVIDUAL FUNCTIONS
 // Can also be run/tested separately anytime
 // ============================================================
 function runReferralEffort() { runEffortData('Referral'); }
 function runReferralLeads()  { runLeadData('Referral');   }
-function runDigitalEffort()  { runEffortData('Digital');  }
-function runDigitalLeads()   { runLeadData('Digital');    }
 
 
 // ============================================================
 // REFERRAL EFFORT QUERY — outputs BQL_Old, BQL_New,
 // First_MS, Total_MS, First_MD, Total_MD, Order, HOTO
 //
-// DIGITAL EFFORT QUERY — unchanged (single BQL, MS, MD)
 // ============================================================
 function runEffortData(channel) {
   Logger.log('▶ Starting Effort Data: ' + channel);
@@ -332,169 +327,14 @@ ORDER BY PARSE_DATE('%d/%m/%Y', action_date) DESC
     pushToGitHub(JSON.stringify(jsonData), 'data/referral_effort.json', '📊 Referral effort: ' + formatDate(new Date()));
     Logger.log('✅ data/referral_effort.json — ' + jsonData.length + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
 
-  } else {
-    // ── DIGITAL: unchanged query (single BQL, MS, MD) ──
-    var sourceFilter = "Source_Class_final = 'Digital'";
-
-    var query = `
-DECLARE d1 DATE DEFAULT DATE('2025-10-01');
-DECLARE d2 DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY);
-
-WITH
-date_list AS (
-  SELECT date_ AS Action_Date
-  FROM UNNEST(GENERATE_DATE_ARRAY(d1, d2, INTERVAL 1 DAY)) AS date_
-),
-LEAD_BASE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(created_on) BETWEEN d1 AND d2 AND Phone_Number IS NOT NULL
-),
-BQL_BASE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(created_on) BETWEEN d1 AND d2
-  AND PincodeStatus = 'Active'
-  AND Monthly_Bill_Amount NOT IN ('<1500', '< 1500')
-  AND Exception IS NULL AND Phone_Number IS NOT NULL
-),
-DEV_CONFIRMATION AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE COALESCE(DATE(Latest_Dev_Confirmed_At), DATE(SIQ_DEV_Confirmed_At)) BETWEEN d1 AND d2
-),
-DEV_DONE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE COALESCE(DATE(dev_details_dev_done_on), DATE(Latest_Dev_Done_At)) BETWEEN d1 AND d2
-),
-DESIGN_DONE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE COALESCE(DATE(dev_details_design_done_on), DATE(DES_Done_At)) BETWEEN d1 AND d2
-),
-MEETING_SCHEDULED AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(Meeting_Scheduled_Date) BETWEEN d1 AND d2
-),
-MEETING_DONE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(Meeting_Done_Date) BETWEEN d1 AND d2
-),
-ORDER_BASE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(Order_closure_Date) BETWEEN d1 AND d2
-),
-HOTO_BASE AS (
-  SELECT DISTINCT Phone_Number FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(Approved_by_customer_Date) BETWEEN d1 AND d2
-),
-MASTER_BASE AS (
-  SELECT DISTINCT Phone_Number FROM (
-    SELECT * FROM LEAD_BASE UNION ALL SELECT * FROM BQL_BASE
-    UNION ALL SELECT * FROM DEV_CONFIRMATION UNION ALL SELECT * FROM DEV_DONE
-    UNION ALL SELECT * FROM DESIGN_DONE UNION ALL SELECT * FROM MEETING_SCHEDULED
-    UNION ALL SELECT * FROM MEETING_DONE UNION ALL SELECT * FROM ORDER_BASE
-    UNION ALL SELECT * FROM HOTO_BASE
-  )
-),
-SAMAGAM_MAPPING AS (
-  SELECT * FROM \`presales-442917.leadcsv.Samagam\`
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY Phone_Number, Lead_ID ORDER BY Last_Action_Date DESC) = 1
-),
-MASTER_DATA AS (
-  SELECT
-    A.Phone_Number,
-    COALESCE(B.Lead_ID, B.opportunity_id) AS Lead_ID,
-    COALESCE(B.LSQ_City, B.Cluster) AS CITY,
-    B.Source_Class, B.Source_Sub_Class, B.LRM_Email_Id,
-    B.Exception, B.PincodeStatus,
-    COALESCE(B.Monthly_Bill_Amount, B.Monthly_Bill) AS Monthly_Bill_Amount,
-    B.Created_On,
-    COALESCE(B.Latest_Dev_Confirmed_At, B.SIQ_DEV_Confirmed_At) AS DEV_Confirmed_At,
-    COALESCE(B.dev_details_dev_done_on, B.Latest_Dev_Done_At) AS Dev_Done_At,
-    COALESCE(B.dev_details_design_done_on, B.DES_Done_At) AS DES_Date,
-    B.Meeting_Scheduled_Date, B.Meeting_Done_Date,
-    B.Order_closure_Date, B.Approved_by_customer_Date
-  FROM MASTER_BASE A
-  LEFT JOIN SAMAGAM_MAPPING B ON A.Phone_Number = B.Phone_Number
-),
-LEAD_DATA AS (
-  SELECT *,
-    -- Customer_App sub-channel removed from BigQuery pickup 2026-08-05 -- see
-    -- the matching comment in runEffortData() above for full context.
-    CASE
-      WHEN Source_Class LIKE '%Referral%' THEN 'Referral'
-      WHEN Source_Class LIKE '%Digital%' THEN 'Digital'
-      ELSE 'Others'
-    END AS Source_Class_final,
-    CASE
-      WHEN Source_Class LIKE '%Referral%' THEN COALESCE(Source_Sub_Class,'WhatsApp')
-      ELSE Source_Sub_Class
-    END AS Source_Sub_Class_final,
-    CASE
-      WHEN Meeting_Done_Date IS NOT NULL THEN
-        CASE WHEN Dev_Done_At < Meeting_Done_Date AND DES_Date < Meeting_Done_Date THEN 'SO' ELSE 'BAU' END
-      WHEN Meeting_Scheduled_Date IS NOT NULL THEN 'SO'
-      WHEN Dev_Done_At IS NOT NULL THEN 'SO'
-      ELSE 'NA'
-    END AS DELIVERY_TYPE
-  FROM MASTER_DATA
-),
-EFFORT_DATA AS (
-  SELECT
-    d.Action_Date, l.CITY, l.Source_Class_final, l.Source_Sub_Class_final,
-    COUNT(DISTINCT CASE WHEN DATE(l.Created_On) = d.Action_Date
-      AND l.PincodeStatus = 'Active'
-      AND l.Monthly_Bill_Amount NOT IN ('<1500','< 1500')
-      AND l.Exception IS NULL THEN l.Lead_ID END) AS bill_qualified,
-    COUNT(DISTINCT CASE WHEN DATE(l.Meeting_Scheduled_Date) = d.Action_Date THEN l.Lead_ID END) AS meeting_scheduled,
-    COUNT(DISTINCT CASE WHEN DATE(l.Meeting_Done_Date)      = d.Action_Date THEN l.Lead_ID END) AS meeting_done,
-    COUNT(DISTINCT CASE WHEN DATE(l.Order_closure_Date)     = d.Action_Date THEN l.Lead_ID END) AS order_closure,
-    COUNT(DISTINCT CASE WHEN DATE(l.Approved_by_customer_Date) = d.Action_Date THEN l.Lead_ID END) AS approved_by_customer
-  FROM date_list d
-  LEFT JOIN LEAD_DATA l ON d.Action_Date IN (
-    DATE(l.Created_On), DATE(l.Meeting_Scheduled_Date), DATE(l.Meeting_Done_Date),
-    DATE(l.Order_closure_Date), DATE(l.Approved_by_customer_Date)
-  )
-  GROUP BY d.Action_Date, l.CITY, l.Source_Class_final, l.Source_Sub_Class_final
-)
-
-SELECT
-  FORMAT_DATE('%d/%m/%Y', Action_Date) AS action_date,
-  EXTRACT(MONTH FROM Action_Date)       AS month,
-  EXTRACT(YEAR  FROM Action_Date)       AS year,
-  CITY                                  AS city,
-  Source_Sub_Class_final                AS sub_channel,
-  SUM(bill_qualified)                   AS BQL,
-  SUM(meeting_scheduled)                AS MS,
-  SUM(meeting_done)                     AS MD,
-  SUM(order_closure)                    AS \`Order\`,
-  SUM(approved_by_customer)             AS HOTO
-FROM EFFORT_DATA
-WHERE ${sourceFilter}
-GROUP BY action_date, month, year, city, sub_channel
-ORDER BY PARSE_DATE('%d/%m/%Y', action_date) DESC
-    `;
-
-    var rows = runBigQuery(query);
-    if (!rows) { Logger.log('No data returned for Digital effort'); return; }
-
-    var jsonData = rows.map(function(row) {
-      return {
-        action_date: row[0], month: parseInt(row[1])||0, year: parseInt(row[2])||0,
-        city: (row[3]||'').trim(), sub_channel: (row[4]||'').trim(),
-        BQL: parseFloat(row[5])||0, MS: parseFloat(row[6])||0, MD: parseFloat(row[7])||0,
-        Order: parseFloat(row[8])||0, HOTO: parseFloat(row[9])||0
-      };
-    });
-
-    pushToGitHub(JSON.stringify(jsonData), 'data/digital_effort.json', '📊 Digital effort: ' + formatDate(new Date()));
-    Logger.log('✅ data/digital_effort.json — ' + jsonData.length + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
   }
 }
 
 
 // ============================================================
-// LEAD LEVEL DATA QUERY — Referral OR Digital
+// LEAD LEVEL DATA QUERY — Referral
 // Referral: v5 — widened to BQL_New definition + pincode/bill/
 //           exception/BQL_Old/BQL_New fields for segmentation
-// Digital: unchanged
 // ============================================================
 function runLeadData(channel) {
   Logger.log('▶ Starting Lead Data: ' + channel);
@@ -662,80 +502,6 @@ FROM MASTER_DATA
     pushToGitHub(content, 'data/referral_leads.json', '📊 Referral leads: ' + formatDate(new Date()));
     Logger.log('✅ data/referral_leads.json — ' + nRows + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
 
-  } else {
-    // ── DIGITAL: unchanged query ──
-    var sourceFilter = "Source_Class LIKE '%Digital%'";
-
-    var query = `
-WITH
-BQL_BASE AS (
-  SELECT DISTINCT Opportunity_Id, Lead_ID
-  FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(created_on) BETWEEN DATE('2025-04-01') AND DATE('${d2}')
-  AND PincodeStatus = 'Active'
-  AND Monthly_Bill_Amount NOT IN ('<1500','< 1500')
-  AND Exception IS NULL
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY Opportunity_Id ORDER BY Last_Action_Date DESC) = 1
-),
-SAMAGAM_MAPPING AS (
-  SELECT *
-  FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE (
-    DATE(Created_On)                BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Lead_Creation_Date)     BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(lead_sent_to_siq)       BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(lead_delivered_to_lrm)  BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Initial_Dev_Confirmed_At)  BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Latest_Dev_Scheduled_At)   BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(SIQ_DEV_Scheduled_At)      BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Initial_Dev_Done_At)       BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Meeting_Scheduled_Date)    BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Meeting_Done_Date)         BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Order_closure_Date)        BETWEEN '2024-01-01' AND CURRENT_DATE()
-    OR DATE(Approved_by_customer_Date) BETWEEN '2024-01-01' AND CURRENT_DATE()
-  )
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY Opportunity_Id ORDER BY Last_Action_Date DESC) = 1
-),
-MASTER_DATA AS (
-  SELECT
-    A.Opportunity_Id, A.Lead_ID,
-    COALESCE(B.LSQ_City, B.Cluster)   AS CITY,
-    B.Source_Class,
-    B.Source_Sub_Class                AS Source_Sub_Class_final,
-    B.Created_On,
-    B.Meeting_Scheduled_Date,
-    B.Meeting_Done_Date,
-    B.Order_closure_Date,
-    B.Approved_by_customer_Date
-  FROM BQL_BASE A
-  LEFT JOIN SAMAGAM_MAPPING B ON A.Opportunity_Id = B.Opportunity_Id
-)
-
-SELECT
-  CITY                                                       AS city,
-  Source_Sub_Class_final                                     AS sub_channel,
-  FORMAT_DATE('%d/%m/%Y', DATE(Created_On))                  AS created,
-  FORMAT_DATE('%d/%m/%Y', DATE(Meeting_Scheduled_Date))      AS msD,
-  FORMAT_DATE('%d/%m/%Y', DATE(Meeting_Done_Date))           AS mdD,
-  FORMAT_DATE('%d/%m/%Y', DATE(Order_closure_Date))          AS ordD,
-  FORMAT_DATE('%d/%m/%Y', DATE(Approved_by_customer_Date))   AS hotoD
-FROM MASTER_DATA
-WHERE ${sourceFilter}
-    `;
-
-    var rows = runBigQuery(query);
-    if (!rows) { Logger.log('No lead data returned for Digital'); return; }
-
-    var jsonData = rows.map(function(row) {
-      return {
-        city: (row[0]||'').trim(), sub_channel: (row[1]||'').trim(),
-        created: row[2]||null, msD: row[3]||null,
-        mdD: row[4]||null, ordD: row[5]||null, hotoD: row[6]||null
-      };
-    });
-
-    pushToGitHub(JSON.stringify(jsonData), 'data/digital_leads.json', '📊 Digital leads: ' + formatDate(new Date()));
-    Logger.log('✅ data/digital_leads.json — ' + jsonData.length + ' rows in ' + ((new Date()-start)/60000).toFixed(1) + ' min');
   }
 }
 

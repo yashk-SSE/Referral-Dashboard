@@ -58,6 +58,14 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   review, and whether New-tier cities belong in its scope · `Inactive`/`Surat`/
   `Ajmer` unmapped values · whether Ahilyanagar needs a hard exclusion · Stage
   Aging nav entry. Full list in Section 13.
+- **Digital channel REMOVED 2026-11-25 (per Yash: unused) - pending review/push.**
+  `index.preview.html` drops the Digital + Ref-vs-Digital tabs, buttons, panels,
+  loaders and `precomputeDigital` (~500 lines); `Referral Dashboard.gs` drops the
+  Digital functions and query branches (committed locally). On push:
+  copy the preview over `index.html` and `git rm` `data/digital_effort.json` +
+  `data/digital_leads.json` (~41 MB off every page load). Yash must also paste the
+  `.gs` into the live Apps Script and **delete any triggers on
+  `runDigitalEffort`/`runDigitalLeads`** - those functions no longer exist.
 - **⚠️ `referral_leads.json` has NOT updated since 2026-11-22** - GitHub rejects
   the push as too large (422). Fix is ready, awaiting Yash: rolling 10-month lead
   window in `Referral Dashboard.gs` (committed locally, must be pasted into the
@@ -80,6 +88,25 @@ can be stale.** Where a later entry or the snapshot above disagrees, the later
 one wins. On 2026-10-05 several entries were corrected in place where they said
 something was pending that had since shipped; those corrections are marked
 "[Corrected 2026-10-05]".
+
+**2026-11-25 — Digital channel removed (Yash: "not being used").** Everything
+Digital is gone from the dashboard and the pipeline, done in `index.preview.html`
+together with the MoM Cohort fix below:
+- **`index.html`:** channel buttons `Digital` / `Ref vs Digital`, the 8 sidebar
+  entries, the 6 panels, `bDigitalExec/India/City/Funnel/M0` + `bCompare` (one
+  contiguous block), `precomputeDigital()`, the `DED`/`DLD`/`DC` globals, the two
+  fetches (loader steps now 1/4..4/4), their entries in `allTabs`, `buildTab`'s map,
+  `tabNames` and `setChannel` defaults, the Digital nav CSS, and the "Referral/
+  Digital" wording in labels. The page no longer requests either Digital file.
+- **Verified in the browser:** only Referral + Customer App in the switcher; all
+  19 Referral tabs and all 4 Customer App tabs build non-empty; no console errors;
+  the word "Digital" appears nowhere on the page; `FELL_BACK` empty.
+- **`Referral Dashboard.gs`:** `runDigitalEffort`/`runDigitalLeads`, their calls in
+  `runDashboardUpdate`, and both `else` (Digital) query branches removed (837 ->
+  603 lines). One `'%Digital%'` line stays on purpose: it is the Referral query's
+  own source classification, which keeps Digital leads OUT of Referral.
+- **`cityFix`'s `MERGE_STATS` quirk (2026-09-03 entry) no longer applies** - it
+  only ever counted Digital rows on top of Referral ones.
 
 **2026-11-25 — `runReferralLeads` failing: GitHub 422 "input was too large".
 Fix: drop leads created before Feb 2026 via a ROLLING window.**
@@ -1411,11 +1438,8 @@ performance for SolarSquare, a B2C solar company, across **40 Indian cities in 6
   not this pipeline.** See Section 15: a brand new "Customer App" branch sources from
   Metabase entirely independently of BigQuery/Apps Script. Don't confuse the two — the
   Referral/Digital pipeline above is untouched by this.
-- **Digital channel is being gradually removed (2026-08-03, no timeline yet):** Yash's
-  plan is to eventually drop the Digital-channel JSONs (`digital_effort.json`,
-  `digital_leads.json`) and the Ref-vs-Digital compare view entirely, narrowing this
-  dashboard back to Referral only (matching Section 1's original framing). Not urgent,
-  no code changes made yet — don't touch the Digital channel code until told to.
+- **Digital channel removed 2026-11-25** (Yash: unused) - tabs, data files and
+  Apps Script functions all gone. The dashboard is Referral + Customer App only.
 - **Repo bloat from daily full-JSON commits — suggested long-term fix (not urgent,
   not implemented):** the Apps Script pushes full rewrites of `data/*.json` (tens of MB)
   to git on every run, so repo history grows every day forever. Removing the Digital
