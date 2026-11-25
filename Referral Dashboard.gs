@@ -511,7 +511,13 @@ WITH
 BQL_BASE AS (
   SELECT DISTINCT Opportunity_Id, Lead_ID
   FROM \`presales-442917.leadcsv.Samagam\`
-  WHERE DATE(created_on) BETWEEN DATE('2025-04-01') AND DATE('${d2}')
+  -- Rolling window, 2026-11-25: the current month + the 9 before it (on
+  -- 2026-11-25 that is 2026-02-01 onward). The fixed 2025-04-01 start had grown
+  -- the file to 41.9 MB, and GitHub's blob API rejected the push with 422 "input
+  -- was too large". A rolling start keeps the file at a steady ~10 months instead
+  -- of growing forever. The FY27 HOTO tracker reads referral_effort.json, which
+  -- this does not touch.
+  WHERE DATE(created_on) BETWEEN DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 9 MONTH) AND DATE('${d2}')
     AND (PincodeStatus = 'Active' OR PincodeStatus IS NULL)
     AND Exception IS NULL
     -- Customer App-sourced leads no longer picked up here at all, 2026-08-05

@@ -58,6 +58,11 @@ claims that had stopped being true weeks before (see the 2026-10-05 log entry).
   review, and whether New-tier cities belong in its scope · `Inactive`/`Surat`/
   `Ajmer` unmapped values · whether Ahilyanagar needs a hard exclusion · Stage
   Aging nav entry. Full list in Section 13.
+- **⚠️ `referral_leads.json` has NOT updated since 2026-11-22** - GitHub rejects
+  the push as too large (422). Fix is ready, awaiting Yash: rolling 10-month lead
+  window in `Referral Dashboard.gs` (committed locally, must be pasted into the
+  live Apps Script) + a MoM Cohort start fix in `index.preview.html` (unreviewed).
+  See the 0a entry of 2026-11-25.
 - **BigQuery -> Metabase `samagam_mv` migration: assessed 2026-11-18, NOT ready.**
   See the 0a entry of that date. Two blockers (blank source attribution in the MV,
   missing `Exception` column) and three decisions for Yash before any build.
@@ -75,6 +80,33 @@ can be stale.** Where a later entry or the snapshot above disagrees, the later
 one wins. On 2026-10-05 several entries were corrected in place where they said
 something was pending that had since shipped; those corrections are marked
 "[Corrected 2026-10-05]".
+
+**2026-11-25 — `runReferralLeads` failing: GitHub 422 "input was too large".
+Fix: drop leads created before Feb 2026 via a ROLLING window.**
+- **Cause:** `referral_leads.json` started at a fixed 2025-04-01 and only grew
+  (28.6 MB Jul -> 38.5 MB Oct -> 41.9 MB on Nov 22). `pushToGitHub` sends it as
+  one JSON-escaped string, ~47.8 MB per request, and GitHub's blob API started
+  refusing it after the 2026-11-22 push. Effort file (6.6 MB) unaffected. Every
+  lead-level view (M0 funnels, Velocity, Cohort, Signals worklists) froze at
+  Nov 22 until the fix is live.
+- **Fix, per Yash ("drop leads from April 2025 to Jan 2026"):** the Referral
+  `BQL_BASE` now starts at `DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL
+  9 MONTH)` - current month + the 9 before, = 2026-02-01 today. **Rolling, not a
+  fixed date, on purpose:** at ~7k leads/month a fixed Feb'26 cutoff would hit
+  the limit again around Mar'27. Upload 47.8 -> 32.4 MB; rows 89,942 -> 60,869.
+  The Digital leads query was deliberately left alone.
+- **What it costs:** lead-level views lose leads created before the window -
+  191 Orders / 164 HOTOs / 482 MDs since Jun'26 belong to older leads, plus 851
+  still-open older leads leave the Signals worklists. **The FY27 HOTO tracker and
+  every effort-based number are unaffected** (`C.ytdHoto` reads `ED_ALL`).
+- **Dashboard fix needed and made (preview only):** MoM Cohort hard-coded its
+  first cohort as Jan 2026, so trimmed months would render as zero-volume rows.
+  `renderCohort()` now starts at the later of Jan 2026 and the earliest
+  `created` month in `LD`. Verified by trimming `LD` in the browser: first row
+  moves Jan'26 -> Feb'26; m0funnel/vel/bqlq/citydeep/citymom/dodfunnel/exec all
+  build, no console errors. No other lead-level tab looks back more than 6 months.
+- **Option 2 if this ever needs more headroom:** columnar JSON (field names once)
+  takes the same data from 47.8 to 22.1 MB - needs a loader change in index.html.
 
 **2026-11-18 — Can the Referral dashboard run off Metabase `public.samagam_mv`
 instead of BigQuery `leadcsv.Samagam`? Assessed; verdict NOT YET.** Nothing built,
